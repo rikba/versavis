@@ -22,14 +22,18 @@ class GnssSync {
 public:
   GnssSync(Uart *uart, const uint8_t timeout_nmea_s_ = 30,
            const double R_tps = 100.0, const double Q_tps = 1.0);
-  void setup(const uint32_t baud_rate = 115200, const uint8_t pps_pin = 3);
+  // pps_pin_samd_io can be 11, 14 or 27 on AUX connector.
+  void setup(const uint32_t baud_rate = 115200);
   void update();
   void reset();
   void getTimeNow(uint32_t *sec, uint32_t *nsec);
 
+//static GnssSync* instance;
+
 private:
+
   void setupSerial(const uint32_t baud_rate);
-  void setupCounter(const uint8_t pps_pin);
+  void setupCounter();
   void waitForNmea();
 
   // Parameters

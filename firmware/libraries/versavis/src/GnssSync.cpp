@@ -11,10 +11,9 @@ GnssSync::GnssSync(Uart *uart, const uint8_t timeout_nmea_s /*= 30*/,
     : uart_(uart), timeout_nmea_s_(timeout_nmea_s), R_tps_(R_tps),
       Q_tps_(Q_tps) {}
 
-void GnssSync::setup(const uint32_t baud_rate /*= 115200*/,
-                     const uint8_t pps_pin /*= 3*/) {
+void GnssSync::setup(const uint32_t baud_rate /*= 115200*/) {
   GnssSync::setupSerial(baud_rate);
-  GnssSync::setupCounter(pps_pin);
+  GnssSync::setupCounter();
 }
 
 void GnssSync::update() {
@@ -42,9 +41,103 @@ void GnssSync::setupSerial(const uint32_t baud_rate) {
   }
 }
 
-void GnssSync::setupCounter(const uint8_t pps_pin) {
-  DEBUG_PRINT("[GnssSync]: Setup PPS pin ");
-  DEBUG_PRINTLN(pps_pin);
+void GnssSync::setupCounter() {
+  DEBUG_PRINT("[GnssSync]: Setup PPS interrupt and counter.");
+
+  DEBUG_PRINTLN("[GnssSync]: Enabling system peripheral.");
+  REG_PM_APBAMASK |= PM_APBAMASK_GCLK;  // GCLK APB Clock Enable
+  REG_PM_APBBMASK |= PM_APBBMASK_PORT;  // Port ABP Clock Enable.
+  REG_PM_APBCMASK |= PM_APBCMASK_EVSYS; // Switch on the event system peripheral
+  REG_PM_APBCMASK |=
+      PM_APBCMASK_TC4; // Enable TC4 Bus clock (Timer counter control clock)
+
+  DEBUG_PRINTLN("[GnssSync]: Configuring GENCTRL register to route XOSC32K to "
+                "generic clock 4.");
+  REG_GCLK_GENCTRL = GCLK_GENCTRL_GENEN |       // Enable clock.
+                     GCLK_GENCTRL_SRC_XOSC32K | // Set to internal 32kHz oszi
+                     GCLK_GENCTRL_ID(4);        // Set clock source to GCLK4
+  while (GCLK->STATUS.bit.SYNCBUSY) {
+  } // Wait for synchronization
+
+  DEBUG_PRINTLN("[GnssSync]: Enabling generic clock for TC4/TC5");
+  REG_GCLK_CLKCTRL =
+      GCLK_CLKCTRL_CLKEN |     // Enable the generic clock...
+      GCLK_CLKCTRL_GEN_GCLK4 | // ....on GCLK4...
+      GCLK_CLKCTRL_ID_TC4_TC5; // ... to feed the GCLK4 to TC4 and TC5
+  while (GCLK->STATUS.bit.SYNCBUSY) {
+  } // Wait for synchronization
+
+  DEBUG_PRINTLN("[GnssSync]: Configuring input on SAMD PA 11");
+  PORT->Group[PORTA].DIRCLR.reg =
+      PORT_DIRCLR_DIRCLR(1 << 11); // Set pin PA11 pin as input
+  PORT->Group[PORTA].PMUX[11 >> 1].reg |=
+      PORT_PMUX_PMUXO_A; // Connect PA pin to peripheral A (EXTINT[11])
+  PORT->Group[PORTA].PINCFG[11].reg |=
+      PORT_PINCFG_PMUXEN; // Enable pin peripheral multiplexation
+  PORT->Group[PORTA].PINCFG[11].reg |= PORT_PINCFG_INEN; // Enable input
+
+  DEBUG_PRINTLN("[GnssSync]: Enabling generic clock 4 for edge detection.");
+  REG_GCLK_CLKCTRL = GCLK_CLKCTRL_CLKEN |     // Enable the generic clock...
+                     GCLK_CLKCTRL_GEN_GCLK4 | // ....on GCLK4...
+                     GCLK_CLKCTRL_ID_EIC;     // ... to detect edges
+  while (GCLK->STATUS.bit.SYNCBUSY) {
+  } // Wait for synchronization
+
+  DEBUG_PRINTLN("[GnssSync]: Configuring EIC.");
+  // Enable event from pin on external interrupt 11 (EXTINT11)
+  REG_EIC_EVCTRL |= EIC_EVCTRL_EXTINTEO11;
+  // Enable GCLK_EIC for edge detection.
+  // Set event on high edge of signal
+  REG_EIC_CONFIG1 |= EIC_CONFIG_SENSE3_RISE;
+  REG_EIC_CTRL |= EIC_CTRL_ENABLE; // Enable EIC peripheral
+  while (EIC->STATUS.bit.SYNCBUSY) {
+  } // Wait for synchronization
+
+  DEBUG_PRINTLN("[GnssSync]: Configuring EVSYS such that TC4 is event user.");
+  // Attach the event user (receiver) to channel n=0 (n + 1)
+  // Set the event user (receiver) to timer TC4
+  REG_EVSYS_USER =
+      EVSYS_USER_CHANNEL(1) | EVSYS_USER_USER(EVSYS_ID_USER_TC4_EVU);
+
+  DEBUG_PRINTLN("[GnssSync]: Configuring Event Channel.");
+  REG_EVSYS_CHANNEL =
+      EVSYS_CHANNEL_EDGSEL_NO_EVT_OUTPUT | // No event output edge detection
+      EVSYS_CHANNEL_PATH_ASYNCHRONOUS |    // Set event path as asynchronous
+      EVSYS_CHANNEL_EVGEN(
+          EVSYS_ID_GEN_EIC_EXTINT_11) | // Set event generator (sender) as
+                                        // external interrupt 11
+      EVSYS_CHANNEL_CHANNEL(0); // Attach the generator (sender) to channel 0
+
+  DEBUG_PRINTLN("[GnssSync]: Disabling TC4.");
+  REG_TC4_CTRLA &= ~TC_CTRLA_ENABLE; // Disable TC4
+
+  DEBUG_PRINTLN("[GnssSync]: Setting TC4 to 32 Bit.");
+  REG_TC4_CTRLA |= TC_CTRLA_MODE_COUNT32; // Set the counter to 32-bit mode
+  while (TC4->COUNT32.STATUS.bit.SYNCBUSY) {
+  } // Wait for synchronization
+
+  DEBUG_PRINTLN("[GnssSync]: Enabling TC4 input event.");
+  REG_TC4_EVCTRL |= TC_EVCTRL_TCEI |         // Enable the TC4 event input
+                    TC_EVCTRL_EVACT_PPW_Val; // Period capture in CC0
+
+  DEBUG_PRINTLN("[GnssSync]: Enabling NVIC.");
+  // Set the Nested Vector Interrupt Controller
+  // (NVIC) priority for TC4 to 0 (highest)
+  NVIC_SetPriority(TC4_IRQn, 0);
+  // Connect TC4 to Nested Vector Interrupt Controller (NVIC)
+  NVIC_EnableIRQ(TC4_IRQn);
+
+  DEBUG_PRINTLN("[GnssSync]: Clearing interrupt flags.");
+  REG_TC4_INTFLAG |= TC_INTFLAG_MC0; // Clear the interrupt flags
+  DEBUG_PRINTLN("[GnssSync]: Enabling interrupts on channel 0 events.");
+  REG_TC4_INTENSET = TC_INTENSET_MC0; // Enable TC4 interrupts
+
+  DEBUG_PRINTLN("[GnssSync]: Disabling prescaler and enable TC4.");
+  REG_TC4_CTRLA |=
+      TC_CTRLA_PRESCALER_DIV1 | // Set prescaler to 1, 10MHz/1 = 10MHz
+      TC_CTRLA_ENABLE;          // Enable TC4
+  while (TC4->COUNT32.STATUS.bit.SYNCBUSY) {
+  } // Wait for synchronization
 }
 
 void GnssSync::waitForNmea() {
@@ -83,4 +176,18 @@ void GnssSync::waitForNmea() {
   DEBUG_PRINT("[GnssSync]: Unix time at pps_cnt == 0: ");
   DEBUG_PRINTLN(t_nmea_);
 #endif
+}
+
+// Interrupt Service Routine (ISR) for timer TC4
+void TC4_Handler() {
+  if (TC4->COUNT32.INTFLAG.bit.MC0) {
+  //  GnssSync::instance->incrementPPS();
+  //  pps_cnt_++;
+    DEBUG_PRINT("[GnssSync]: Received PPS signal: ");
+    //DEBUG_PRINTLN(pps_cnt)
+    DEBUG_PRINT("Ticks: ");
+    DEBUG_PRINTLN(REG_TC4_COUNT32_CC0);
+//    tps_meas_ = REG_TC4_COUNT32_CC0;
+    REG_TC4_INTFLAG = TC_INTFLAG_MC0; // Clear the MC0 interrupt flag
+  }
 }
