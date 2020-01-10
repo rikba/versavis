@@ -42,7 +42,7 @@ private:
 
   // States
   bool reset_time_ = true;
-  Uart *uart_ = nullptr;
+  Uart *uart_;
 
   // PPS update.
   volatile uint32_t pps_cnt_ = 0;
@@ -56,7 +56,7 @@ private:
 #else
   double x_tps_ = 32768.0;
 #endif
-  double P_tps_ = 100.0 = R_tps_; // Tick prior covariance. [Ticks^2/second^2]
+  double P_tps_ = R_tps_; // Tick prior covariance. [Ticks^2/second^2]
   double x_nspt_ = 1000000000.0 / x_tps_; // Nanoseconds per tick.
 };
 
