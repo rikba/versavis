@@ -59,14 +59,40 @@ void GnssSync::reset() {
   pps_cnt_ = 0;
 }
 
-void GnssSync::getTimeNow(uint32_t *sec, uint32_t *nsec) {
+void GnssSync::computeTime(const uint32_t t_nmea, const uint32_t pps_cnt,
+                           const uint32_t ticks, const double nspt,
+                           uint32_t *sec, uint32_t *nsec) {
   if (sec) {
-    *sec = t_nmea_ + pps_cnt_;
+    *sec = t_nmea + pps_cnt;
   }
   if (nsec) {
-    *nsec = double(REG_TC4_COUNT32_COUNT) * x_nspt_;
+    *nsec = double(ticks) * nspt;
   }
   ros::normalizeSecNSec(*sec, *nsec);
+}
+
+void GnssSync::getTimeNow(uint32_t *sec, uint32_t *nsec) {
+  computeTime(t_nmea_, pps_cnt_, REG_TC4_COUNT32_COUNT, x_nspt_, sec, nsec);
+}
+
+// Return time once. Resets valid flag.
+bool Timestamp::getTime(uint32_t *sec, uint32_t *nsec) {
+  if (!hasTime())
+    return false;
+
+  GnssSync::computeTime(t_nmea_, pps_cnt_, ticks_, x_nspt_, sec, nsec);
+  valid_ = false;
+
+  return true;
+}
+
+void Timestamp::setTime(const uint32_t t_nmea, const uint32_t pps_cnt,
+                        const uint32_t ticks, const double x_nspt) {
+  t_nmea_ = t_nmea;
+  pps_cnt_ = pps_cnt;
+  ticks_ = ticks;
+  x_nspt_ = x_nspt;
+  valid_ = true;
 }
 
 void GnssSync::setupSerial(Uart *uart, const uint32_t baud_rate) {
@@ -221,9 +247,9 @@ void GnssSync::setupInterruptPa14() {
   // Enable interrupt
   REG_EIC_INTENCLR |= EIC_INTENCLR_EXTINT14;
   REG_EIC_INTENSET |= EIC_INTENSET_EXTINT14;
-  REG_EIC_INTFLAG |= EIC_INTFLAG_EXTINT14; // Clear flag
+  REG_EIC_INTFLAG |= EIC_INTFLAG_EXTINT14;   // Clear flag
   REG_EIC_CONFIG1 |= EIC_CONFIG_SENSE6_RISE; // Rising edge.
-  REG_EIC_CTRL |= EIC_CTRL_ENABLE; // Enable EIC peripheral
+  REG_EIC_CTRL |= EIC_CTRL_ENABLE;           // Enable EIC peripheral
   while (EIC->STATUS.bit.SYNCBUSY) {
   } // Wait for synchronization
 
@@ -271,7 +297,9 @@ void GnssSync::waitForNmea() {
 #endif
 }
 
+uint32_t GnssSync::getTnmea() { return t_nmea_; }
 uint32_t GnssSync::getPpsCnt() { return pps_cnt_; }
+double GnssSync::getNspt() { return x_nspt_; }
 uint32_t GnssSync::getTpsMeas() { return tps_meas_; }
 
 // Interrupt Service Routine (ISR) for timer TC4
@@ -290,8 +318,16 @@ void TC4_Handler() {
 }
 
 void EIC_Handler() {
-  if (REG_EIC_INTFLAG &  EIC_INTFLAG_EXTINT14) {
-    SerialUSB.println("Callback");
+  if (REG_EIC_INTFLAG & EIC_INTFLAG_EXTINT14) {
+    GnssSync::getInstance().setTimePa14(REG_TC4_COUNT32_COUNT);
     REG_EIC_INTFLAG |= EIC_INTFLAG_EXTINT14; // Clear flag.
   }
+}
+
+bool GnssSync::getTimePa14(uint32_t *sec, uint32_t *nsec) {
+  return timestamp_pa14_.getTime(sec, nsec);
+}
+
+void GnssSync::setTimePa14(const uint32_t ticks) {
+  timestamp_pa14_.setTime(t_nmea_, pps_cnt_, ticks, x_nspt_);
 }

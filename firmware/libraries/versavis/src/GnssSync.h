@@ -18,6 +18,21 @@
 
 #include "versavis_configuration.h"
 
+class Timestamp {
+public:
+  inline bool hasTime() { return valid_; }
+  bool getTime(uint32_t *sec, uint32_t *nsec);
+  void setTime(const uint32_t t_nmea, const uint32_t pps_cnt,
+               const uint32_t ticks, const double x_nspt);
+
+private:
+  uint32_t t_nmea_ = 0;
+  uint32_t pps_cnt_ = 0;
+  uint32_t ticks_ = 0;
+  double x_nspt_ = 0;
+  bool valid_ = false;
+};
+
 class GnssSync {
 public:
   // Singleton implementation.
@@ -44,8 +59,17 @@ public:
     tps_meas_ = tps_meas;
   }
 
+  uint32_t getTnmea();
   uint32_t getPpsCnt();
+  double getNspt();
   uint32_t getTpsMeas();
+
+  bool getTimePa14(uint32_t *sec, uint32_t *nsec);
+  void setTimePa14(const uint32_t ticks);
+
+  static void computeTime(const uint32_t t_nmea, const uint32_t pps_cnt,
+                          const uint32_t ticks, const double nspt,
+                          uint32_t *sec, uint32_t *nsec);
 
 private:
   GnssSync() {}
@@ -89,6 +113,9 @@ private:
 
   double P_tps_ = R_tps_; // Tick prior covariance. [Ticks^2/second^2]
   double x_nspt_ = 1000000000.0 / x_tps_; // Nanoseconds per tick.
+
+  // External events.
+  Timestamp timestamp_pa14_;
 };
 
 #endif
