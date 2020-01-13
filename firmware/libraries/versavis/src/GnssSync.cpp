@@ -10,6 +10,7 @@
 void GnssSync::setup(Uart *uart, const uint32_t baud_rate /*= 115200*/) {
   setupSerial(uart, baud_rate);
   setupCounter();
+  setupInterruptPa14();
 }
 
 void GnssSync::setTimeoutNmea(const uint8_t timeout_nmea_s) {
@@ -216,25 +217,33 @@ void GnssSync::setupInterruptPa14() {
 
 #ifdef USE_GCLKIN_10MHZ
   DEBUG_PRINTLN("[GnssSync]: Configuring GENCTRL register to route GCLKIN to "
-                "generic clock 2.");
+                "generic clock 3.");
   REG_GCLK_GENCTRL =
       GCLK_GENCTRL_GENEN |      // Enable clock.
       GCLK_GENCTRL_SRC_GCLKIN | // Set to external 10MHz oscillator
-      GCLK_GENCTRL_ID(2);       // Set clock source to GCLK2
+      GCLK_GENCTRL_ID(5);       // Set clock source to GCLK5
 #elif defined USE_DFLL48M
   DEBUG_PRINTLN("[GnssSync]: Configuring GENCTRL register to route DFLL48M to "
-                "generic clock 2.");
+                "generic clock 3.");
   REG_GCLK_GENCTRL =
       GCLK_GENCTRL_GENEN |       // Enable clock.
       GCLK_GENCTRL_SRC_DFLL48M | // Set to internal PLL 48MHz clock
-      GCLK_GENCTRL_ID(2);        // Set clock source to GCLK4
+      GCLK_GENCTRL_ID(5);        // Set clock source to GCLK5
 #else
   DEBUG_PRINTLN("[GnssSync]: Configuring GENCTRL register to route XOSC32K to "
-                "generic clock 2.");
+                "generic clock 3.");
   REG_GCLK_GENCTRL = GCLK_GENCTRL_GENEN |       // Enable clock.
                      GCLK_GENCTRL_SRC_XOSC32K | // Set to internal 32kHz osci
-                     GCLK_GENCTRL_ID(2);        // Set clock source to GCLK4
+                     GCLK_GENCTRL_ID(5);        // Set clock source to GCLK5
 #endif
+  while (GCLK->STATUS.bit.SYNCBUSY) {
+  } // Wait for synchronization
+
+  DEBUG_PRINTLN("[GnssSync]: Enabling generic clock for TC3");
+  REG_GCLK_CLKCTRL =
+      GCLK_CLKCTRL_CLKEN |      // Enable the generic clock...
+      GCLK_CLKCTRL_GEN_GCLK5 |  // ....on GCLK5...
+      GCLK_CLKCTRL_ID_TCC2_TC3; // ... to feed the GCLK5 to TC3_IRQn
   while (GCLK->STATUS.bit.SYNCBUSY) {
   } // Wait for synchronization
 
@@ -247,9 +256,9 @@ void GnssSync::setupInterruptPa14() {
       PORT_PINCFG_PMUXEN; // Enable pin peripheral multiplexation
   PORT->Group[PORTA].PINCFG[14].reg |= PORT_PINCFG_INEN; // Enable input
 
-  DEBUG_PRINTLN("[GnssSync]: Enabling generic clock 2 for edge detection.");
-  REG_GCLK_CLKCTRL = GCLK_CLKCTRL_CLKEN |     // Enable the generic clock...
-                     GCLK_CLKCTRL_GEN_GCLK2 | // ....on GCLK2...
+  DEBUG_PRINTLN("[GnssSync]: Enabling generic clock 5 for edge detection.");
+  REG_GCLK_CLKCTRL = GCLK_CLKCTRL_CLKEN |     // Enable the  generic clock...
+                     GCLK_CLKCTRL_GEN_GCLK5 | // ....on GCLK5...
                      GCLK_CLKCTRL_ID_EIC;     // ... to detect edges
   while (GCLK->STATUS.bit.SYNCBUSY) {
   } // Wait for synchronization
@@ -264,48 +273,62 @@ void GnssSync::setupInterruptPa14() {
   while (EIC->STATUS.bit.SYNCBUSY) {
   } // Wait for synchronization
 
-  DEBUG_PRINTLN("[GnssSync]: Configuring EVSYS such that TC3 is event user.");
+  DEBUG_PRINTLN("[GnssSync]: Configuring EVSYS such that TC3 is user.");
   // Attach the event user (receiver) to channel n=0 (n + 1)
   // Set the event user (receiver) to timer TC3
   REG_EVSYS_USER =
       EVSYS_USER_CHANNEL(1) | EVSYS_USER_USER(EVSYS_ID_USER_TC3_EVU);
 
   DEBUG_PRINTLN("[GnssSync]: Configuring Event Channel.");
-  REG_EVSYS_CHANNEL =
-      EVSYS_CHANNEL_EDGSEL_NO_EVT_OUTPUT | // No event output edge detection
-      EVSYS_CHANNEL_PATH_ASYNCHRONOUS |    // Set event path as asynchronous
-      EVSYS_CHANNEL_EVGEN(
-          EVSYS_ID_GEN_EIC_EXTINT_14) | // Set event generator (sender) as
-                                        // external interrupt 14
-      EVSYS_CHANNEL_CHANNEL(0); // Attach the generator (sender) to channel 0
-
-  DEBUG_PRINTLN("[GnssSync]: Disabling TC3.");
-  REG_TC3_CTRLA &= ~TC_CTRLA_ENABLE; // Disable TC3
-
-  DEBUG_PRINTLN("[GnssSync]: Enabling TC3 input event.");
-  REG_TC3_EVCTRL |= TC_EVCTRL_TCEI; // Enable the TC3 event input
-
-  DEBUG_PRINTLN("[GnssSync]: Capturing channel 0 event.");
-  REG_TC3_EVCTRL |= TC_CTRLC_CPTEN0; // Capture channel 0 event.
-
-  DEBUG_PRINTLN("[GnssSync]: Enabling NVIC.");
-  // Set the Nested Vector Interrupt Controller
-  // (NVIC) priority for TC3 to 1 (second highest)
-  NVIC_SetPriority(TC3_IRQn, 1);
-  // Connect TC3 to Nested Vector Interrupt Controller (NVIC)
-  NVIC_EnableIRQ(TC3_IRQn);
-
-  DEBUG_PRINTLN("[GnssSync]: Clearing TC3 interrupt flags.");
-  REG_TC3_INTFLAG |= TC_INTFLAG_MC0; // Clear the interrupt flags
-  DEBUG_PRINTLN("[GnssSync]: Enabling TC3 interrupts on channel 0 events.");
-  REG_TC3_INTENSET = TC_INTENSET_MC0; // Enable TC4 interrupts
-
-  DEBUG_PRINTLN("[GnssSync]: Disabling prescaler and enable TC3.");
-  REG_TC3_CTRLA |=
-      TC_CTRLA_PRESCALER_DIV1 | // Set prescaler to 1, 10MHz/1 = 10MHz
-      TC_CTRLA_ENABLE;          // Enable TC3
-  while (TC3->COUNT32.STATUS.bit.SYNCBUSY) {
-  } // Wait for synchronization
+  //REG_EVSYS_CHANNEL =
+  //    EVSYS_CHANNEL_EDGSEL_NO_EVT_OUTPUT | // No event output edge detection
+  //    EVSYS_CHANNEL_PATH_ASYNCHRONOUS |    // Set event path as asynchronous
+  //    EVSYS_CHANNEL_EVGEN(
+  //        EVSYS_ID_GEN_EIC_EXTINT_14) | // Set event generator (sender) as
+  //                                      // external interrupt 14
+  //    EVSYS_CHANNEL_CHANNEL(0); // Attach the generator (sender) to channel 0
+  //
+  //   DEBUG_PRINTLN("[GnssSync]: Disabling TC3.");
+  //   REG_TC3_CTRLA &= ~TC_CTRLA_ENABLE; // Disable TC3
+  //
+  //   DEBUG_PRINTLN("[GnssSync]: Setting TC3 to 16 Bit.");
+  //   REG_TC3_CTRLA |= TC_CTRLA_MODE_COUNT16; // Set the counter to 16-bit mode
+  //   while (TC3->COUNT16.STATUS.bit.SYNCBUSY) {
+  //   } // Wait for synchronization
+  //
+  //   DEBUG_PRINTLN("[GnssSync]: Enabling TC3 input event.");
+  //   REG_TC3_EVCTRL |= TC_EVCTRL_TCEI; // Enable the TC3 event input
+  //   while (TC3->COUNT16.STATUS.bit.SYNCBUSY) {
+  //   } // Wait for synchronization
+  //
+  //   DEBUG_PRINTLN("[GnssSync]: Capturing channel 0 event.");
+  //   REG_TC3_EVCTRL |= TC_CTRLC_CPTEN0; // Capture channel 0 event.
+  //   while (TC3->COUNT16.STATUS.bit.SYNCBUSY) {
+  //   } // Wait for synchronization
+  //
+  //   DEBUG_PRINTLN("[GnssSync]: Enabling NVIC.");
+  //   // Set the Nested Vector Interrupt Controller
+  //   // (NVIC) priority for TC3 to 1 (second highest)
+  //   NVIC_SetPriority(TC3_IRQn, 1);
+  //   // Connect TC3 to Nested Vector Interrupt Controller (NVIC)
+  //   NVIC_EnableIRQ(TC3_IRQn);
+  //
+  //   DEBUG_PRINTLN("[GnssSync]: Clearing TC3 interrupt flags.");
+  //   REG_TC3_INTFLAG |= TC_INTFLAG_MC0; // Clear the interrupt flags
+  //   while (TC3->COUNT16.STATUS.bit.SYNCBUSY) {
+  //   } // Wait for synchronization
+  //   DEBUG_PRINTLN("[GnssSync]: Enabling TC3 interrupts on channel 0
+  //   events."); REG_TC3_INTENSET = TC_INTENSET_MC0; // Enable TC3 interrupts
+  //   while (TC3->COUNT16.STATUS.bit.SYNCBUSY) {
+  //   } // Wait for synchronization
+  //
+  //   DEBUG_PRINTLN("[GnssSync]: Disabling prescaler and enable TC3.");
+  //   REG_TC3_CTRLA |=
+  //       TC_CTRLA_PRESCALER_DIV1 | // Set prescaler to 1, 10MHz/1 = 10MHz
+  //       TC_CTRLA_ENABLE;          // Enable TC3
+  //   while (TC3->COUNT16.STATUS.bit.SYNCBUSY) {
+  //   } // Wait for synchronization
+  DEBUG_PRINTLN("[GnssSync]: Done configuring PA14 interrupt.");
 }
 
 void GnssSync::waitForNmea() {
@@ -362,4 +385,10 @@ void TC4_Handler() {
     DEBUG_PRINTLN(GnssSync::getInstance().getTpsMeas());
   }
   // TODO(rikba): catch and manage overflow
+}
+
+void TC3_Handler() {
+  if (TC3->COUNT16.INTFLAG.bit.MC0) {
+    DEBUG_PRINT("[GnssSync]: Received external event.");
+  }
 }
