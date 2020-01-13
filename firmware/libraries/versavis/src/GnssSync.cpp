@@ -6,15 +6,18 @@
 #include "helper.h"
 #include "versavis_configuration.h"
 
-GnssSync::GnssSync(Uart *uart, const uint8_t timeout_nmea_s /*= 30*/,
-                   const double R_tps /*= 100.0*/, const double Q_tps /*= 1.0*/)
-    : uart_(uart), timeout_nmea_s_(timeout_nmea_s), R_tps_(R_tps),
-      Q_tps_(Q_tps) {}
-
-void GnssSync::setup(const uint32_t baud_rate /*= 115200*/) {
-  GnssSync::setupSerial(baud_rate);
-  GnssSync::setupCounter();
+void GnssSync::setup(Uart *uart, const uint32_t baud_rate /*= 115200*/) {
+  setupSerial(uart, baud_rate);
+  setupCounter();
 }
+
+void GnssSync::setTimeoutNmea(const uint8_t timeout_nmea_s) {
+  timeout_nmea_s_ = timeout_nmea_s;
+}
+
+void GnssSync::setMeasurementNoise(const double R_tps) { R_tps_ = R_tps; }
+
+void GnssSync::setProcessNoise(const double Q_tps) { Q_tps_ = Q_tps; }
 
 void GnssSync::update() {
   if (reset_time_) {
@@ -33,9 +36,10 @@ void GnssSync::getTimeNow(uint32_t *sec, uint32_t *nsec) {
   }
 }
 
-void GnssSync::setupSerial(const uint32_t baud_rate) {
+void GnssSync::setupSerial(Uart *uart, const uint32_t baud_rate) {
   DEBUG_PRINT("[GnssSync]: Setup serial connection with baud rate ");
   DEBUG_PRINTLN(baud_rate);
+  uart_ = uart;
   if (uart_) {
     uart_->begin(baud_rate);
   }
@@ -181,13 +185,13 @@ void GnssSync::waitForNmea() {
 // Interrupt Service Routine (ISR) for timer TC4
 void TC4_Handler() {
   if (TC4->COUNT32.INTFLAG.bit.MC0) {
-  //  GnssSync::instance->incrementPPS();
-  //  pps_cnt_++;
+    //  GnssSync::instance->incrementPPS();
+    //  pps_cnt_++;
     DEBUG_PRINT("[GnssSync]: Received PPS signal: ");
-    //DEBUG_PRINTLN(pps_cnt)
+    // DEBUG_PRINTLN(pps_cnt)
     DEBUG_PRINT("Ticks: ");
     DEBUG_PRINTLN(REG_TC4_COUNT32_CC0);
-//    tps_meas_ = REG_TC4_COUNT32_CC0;
+    //    tps_meas_ = REG_TC4_COUNT32_CC0;
     REG_TC4_INTFLAG = TC_INTFLAG_MC0; // Clear the MC0 interrupt flag
   }
 }

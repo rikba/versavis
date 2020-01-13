@@ -20,29 +20,41 @@
 
 class GnssSync {
 public:
-  GnssSync(Uart *uart, const uint8_t timeout_nmea_s_ = 30,
-           const double R_tps = 100.0, const double Q_tps = 1.0);
+  // Singleton implementation.
+  inline static GnssSync &getInstance() {
+    static GnssSync instance;
+    return instance;
+  }
+  GnssSync(GnssSync const &) = delete;
+  void operator=(GnssSync const &) = delete;
+
   // pps_pin_samd_io can be 11, 14 or 27 on AUX connector.
-  void setup(const uint32_t baud_rate = 115200);
+  void setup(Uart *uart, const uint32_t baud_rate = 115200);
+
+  void setTimeoutNmea(const uint8_t timeout_nmea_s);
+  void setMeasurementNoise(const double R_tps);
+  void setProcessNoise(const double Q_tps);
+
   void update();
   void reset();
   void getTimeNow(uint32_t *sec, uint32_t *nsec);
 
-//static GnssSync* instance;
+  // static GnssSync* instance;
 
 private:
+  GnssSync() {}
 
-  void setupSerial(const uint32_t baud_rate);
+  void setupSerial(Uart *uart, const uint32_t baud_rate);
   void setupCounter();
   void waitForNmea();
 
   // Parameters
   // Timeout to wait for NMEA absolute time.
-  const uint8_t timeout_nmea_s_;
+  uint8_t timeout_nmea_s_ = 30.0;
   // Measurement noise covariance. [Ticks^2/second^2]
-  const double R_tps_;
+  double R_tps_ = 100.0;
   // Process noise covariance. [Ticks^2/second^2]
-  const double Q_tps_;
+  double Q_tps_ = 1.0;
 
   // States
   bool reset_time_ = true;
