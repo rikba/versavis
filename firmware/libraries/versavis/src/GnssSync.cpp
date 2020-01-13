@@ -2,6 +2,7 @@
 
 #include <MicroNMEA.h>
 #include <RTClib.h>
+#include <ros/time.h>
 
 #include "helper.h"
 #include "versavis_configuration.h"
@@ -65,6 +66,7 @@ void GnssSync::getTimeNow(uint32_t *sec, uint32_t *nsec) {
   if (nsec) {
     *nsec = double(REG_TC4_COUNT32_COUNT) * x_nspt_;
   }
+  ros::normalizeSecNSec(*sec, *nsec);
 }
 
 void GnssSync::setupSerial(Uart *uart, const uint32_t baud_rate) {
