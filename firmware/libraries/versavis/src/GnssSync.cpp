@@ -36,11 +36,12 @@ void GnssSync::update() {
 void GnssSync::updateTps() {
   // Update Kalman filter to estimate ticks per second.
   // Prediction.
-  P_tps_ = P_tps_ + (pps_cnt_prev_ - pps_cnt_) * Q_tps_;
+  P_tps_ = P_tps_ + static_cast<double>(pps_cnt_ - pps_cnt_prev_) * Q_tps_;
   // Measurement.
-  double y = tps_meas_ - x_tps_;
+  double y = static_cast<double>(tps_meas_) - x_tps_;
   double S_inv = 1.0 / (P_tps_ + R_tps_);
   double K = P_tps_ * S_inv;
+
   x_tps_ += K * y;
   P_tps_ = (1.0 - K) * P_tps_;
   x_nspt_ = 1000000000.0 / x_tps_;
@@ -101,11 +102,18 @@ void GnssSync::setupCounter() {
       GCLK_GENCTRL_GENEN |      // Enable clock.
       GCLK_GENCTRL_SRC_GCLKIN | // Set to external 10MHz oscillator
       GCLK_GENCTRL_ID(4);       // Set clock source to GCLK4
+#elif defined USE_DFLL48M
+  DEBUG_PRINTLN("[GnssSync]: Configuring GENCTRL register to route DFLL48M to "
+                "generic clock 4.");
+  REG_GCLK_GENCTRL =
+      GCLK_GENCTRL_GENEN |       // Enable clock.
+      GCLK_GENCTRL_SRC_DFLL48M | // Set to internal PLL 48MHz clock
+      GCLK_GENCTRL_ID(4);        // Set clock source to GCLK4
 #else
   DEBUG_PRINTLN("[GnssSync]: Configuring GENCTRL register to route XOSC32K to "
                 "generic clock 4.");
   REG_GCLK_GENCTRL = GCLK_GENCTRL_GENEN |       // Enable clock.
-                     GCLK_GENCTRL_SRC_XOSC32K | // Set to internal 32kHz oszi
+                     GCLK_GENCTRL_SRC_XOSC32K | // Set to internal 32kHz osci
                      GCLK_GENCTRL_ID(4);        // Set clock source to GCLK4
 #endif
   while (GCLK->STATUS.bit.SYNCBUSY) {

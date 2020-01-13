@@ -58,10 +58,23 @@ private:
   // Parameters
   // Timeout to wait for NMEA absolute time.
   uint8_t timeout_nmea_s_ = 30.0;
-  // Measurement noise covariance. [Ticks^2/second^2]
+  // Kalman filter variables to estimate ticks per second x_tps_.
+  // R_tps_: Measurement noise covariance. [Ticks^2/second^2]
+  // Q_tps_: Process noise covariance. [Ticks^2/second^2]
+
+#ifdef USE_GCLKIN_10MHZ
+  double x_tps_ = 10000000.0;
   double R_tps_ = 100.0;
-  // Process noise covariance. [Ticks^2/second^2]
   double Q_tps_ = 1.0;
+#elif defined USE_DFLL48M
+  double x_tps_ = 48000000.0;
+  double R_tps_ = 10000.0;
+  double Q_tps_ = 100.0;
+#else
+  double x_tps_ = 32768.0;
+  double R_tps_ = 100.0;
+  double Q_tps_ = 1.0;
+#endif
 
   // States
   bool reset_time_ = true;
@@ -73,12 +86,6 @@ private:
   uint32_t pps_cnt_prev_ = pps_cnt_;
   uint32_t t_nmea_ = 0;
 
-  // Ticks per second Kalman filter.
-#ifdef USE_GCLKIN_10MHZ
-  double x_tps_ = 10000000.0;
-#else
-  double x_tps_ = 32768.0;
-#endif
   double P_tps_ = R_tps_; // Tick prior covariance. [Ticks^2/second^2]
   double x_nspt_ = 1000000000.0 / x_tps_; // Nanoseconds per tick.
 };
