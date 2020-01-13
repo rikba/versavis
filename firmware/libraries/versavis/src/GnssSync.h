@@ -39,7 +39,13 @@ public:
   void reset();
   void getTimeNow(uint32_t *sec, uint32_t *nsec);
 
-  // static GnssSync* instance;
+  inline void incrementPPS() { pps_cnt_++; }
+  inline void measureTicksPerSecond(const uint32_t tps_meas) {
+    tps_meas_ = tps_meas;
+  }
+
+  uint32_t getPpsCnt();
+  uint32_t getTpsMeas();
 
 private:
   GnssSync() {}
@@ -47,6 +53,7 @@ private:
   void setupSerial(Uart *uart, const uint32_t baud_rate);
   void setupCounter();
   void waitForNmea();
+  void updateTps();
 
   // Parameters
   // Timeout to wait for NMEA absolute time.
@@ -63,7 +70,7 @@ private:
   // PPS update.
   volatile uint32_t pps_cnt_ = 0;
   volatile uint32_t tps_meas_ = 0;
-  uint32_t pps_cnt_prev = pps_cnt_;
+  uint32_t pps_cnt_prev_ = pps_cnt_;
   uint32_t t_nmea_ = 0;
 
   // Ticks per second Kalman filter.

@@ -20,19 +20,49 @@ void GnssSync::setMeasurementNoise(const double R_tps) { R_tps_ = R_tps; }
 void GnssSync::setProcessNoise(const double Q_tps) { Q_tps_ = Q_tps; }
 
 void GnssSync::update() {
+  if (pps_cnt_ < 2)
+    return;
+
+  if (pps_cnt_ != pps_cnt_prev_) {
+    updateTps();
+    pps_cnt_prev_ = pps_cnt_;
+  }
+
   if (reset_time_) {
     waitForNmea();
   }
 }
 
-void GnssSync::reset() { reset_time_ = true; }
+void GnssSync::updateTps() {
+  // Update Kalman filter to estimate ticks per second.
+  // Prediction.
+  P_tps_ = P_tps_ + (pps_cnt_prev_ - pps_cnt_) * Q_tps_;
+  // Measurement.
+  double y = tps_meas_ - x_tps_;
+  double S_inv = 1.0 / (P_tps_ + R_tps_);
+  double K = P_tps_ * S_inv;
+  x_tps_ += K * y;
+  P_tps_ = (1.0 - K) * P_tps_;
+  x_nspt_ = 1000000000.0 / x_tps_;
+
+  DEBUG_PRINTLN("[GnssSync]: Updated ticks per second.");
+  DEBUG_PRINT("x_tps: ");
+  DEBUG_PRINT(x_tps_);
+  DEBUG_PRINT(" P_tps: ");
+  DEBUG_PRINTLN(P_tps_);
+}
+
+void GnssSync::reset() {
+  reset_time_ = true;
+  pps_cnt_ = 0;
+}
 
 void GnssSync::getTimeNow(uint32_t *sec, uint32_t *nsec) {
   if (sec) {
     *sec = t_nmea_ + pps_cnt_;
   }
   if (nsec) {
-    //  *nsec = double(REG_TC4_COUNT32_COUNT) * x_nspt_;
+    *nsec = double(REG_TC4_COUNT32_COUNT) * x_nspt_;
   }
 }
 
@@ -182,16 +212,20 @@ void GnssSync::waitForNmea() {
 #endif
 }
 
+uint32_t GnssSync::getPpsCnt() { return pps_cnt_; }
+uint32_t GnssSync::getTpsMeas() { return tps_meas_; }
+
 // Interrupt Service Routine (ISR) for timer TC4
 void TC4_Handler() {
   if (TC4->COUNT32.INTFLAG.bit.MC0) {
-    //  GnssSync::instance->incrementPPS();
-    //  pps_cnt_++;
-    DEBUG_PRINT("[GnssSync]: Received PPS signal: ");
-    // DEBUG_PRINTLN(pps_cnt)
-    DEBUG_PRINT("Ticks: ");
-    DEBUG_PRINTLN(REG_TC4_COUNT32_CC0);
-    //    tps_meas_ = REG_TC4_COUNT32_CC0;
+    GnssSync::getInstance().measureTicksPerSecond(REG_TC4_COUNT32_CC0);
+    GnssSync::getInstance().incrementPPS();
     REG_TC4_INTFLAG = TC_INTFLAG_MC0; // Clear the MC0 interrupt flag
+
+    DEBUG_PRINT("[GnssSync]: Received PPS signal: ");
+    DEBUG_PRINT(GnssSync::getInstance().getPpsCnt());
+    DEBUG_PRINT(" Ticks: ");
+    DEBUG_PRINTLN(GnssSync::getInstance().getTpsMeas());
   }
+  // TODO(rikba): catch and manage overflow
 }
