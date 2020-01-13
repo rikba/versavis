@@ -85,11 +85,29 @@ void GnssSync::setupCounter() {
   REG_PM_APBCMASK |=
       PM_APBCMASK_TC4; // Enable TC4 Bus clock (Timer counter control clock)
 
+#ifdef USE_GCLKIN_10MHZ
+  DEBUG_PRINTLN("[GnssSync]: Configuring PA10/GCLK_IO[4] as input.");
+  PORT->Group[PORTA].DIRCLR.reg =
+      PORT_DIRCLR_DIRCLR(1 << 10); // Set pin PA10 pin as input
+  PORT->Group[PORTA].PMUX[10 >> 1].reg |=
+      PORT_PMUX_PMUXE_H; // Connect PA10 pin to peripheral H (GCLK_IO[4])
+  PORT->Group[PORTA].PINCFG[10].reg |=
+      PORT_PINCFG_PMUXEN; // Enable pin peripheral multiplexation
+  PORT->Group[PORTA].PINCFG[10].reg |= PORT_PINCFG_INEN; // Enable input
+
+  DEBUG_PRINTLN("[GnssSync]: Configuring GENCTRL register to route GCLKIN to "
+                "generic clock 4.");
+  REG_GCLK_GENCTRL =
+      GCLK_GENCTRL_GENEN |      // Enable clock.
+      GCLK_GENCTRL_SRC_GCLKIN | // Set to external 10MHz oscillator
+      GCLK_GENCTRL_ID(4);       // Set clock source to GCLK4
+#else
   DEBUG_PRINTLN("[GnssSync]: Configuring GENCTRL register to route XOSC32K to "
                 "generic clock 4.");
   REG_GCLK_GENCTRL = GCLK_GENCTRL_GENEN |       // Enable clock.
                      GCLK_GENCTRL_SRC_XOSC32K | // Set to internal 32kHz oszi
                      GCLK_GENCTRL_ID(4);        // Set clock source to GCLK4
+#endif
   while (GCLK->STATUS.bit.SYNCBUSY) {
   } // Wait for synchronization
 
