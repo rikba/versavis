@@ -52,6 +52,7 @@ private:
 
   void setupSerial(Uart *uart, const uint32_t baud_rate);
   void setupCounter();
+  void setupInterruptPa14();
   void waitForNmea();
   void updateTps();
 
