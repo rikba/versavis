@@ -45,7 +45,7 @@ void GnssSync::updateTps() {
   P_tps_ = (1.0 - K) * P_tps_;
   x_nspt_ = 1000000000.0 / x_tps_;
 
-  DEBUG_PRINTLN("[GnssSync]: Updated ticks per second.");
+  DEBUG_PRINT("[GnssSync]: Updated ticks per second ");
   DEBUG_PRINT("x_tps: ");
   DEBUG_PRINT(x_tps_);
   DEBUG_PRINT(" P_tps: ");
@@ -121,7 +121,7 @@ void GnssSync::setupCounter() {
   // Enable event from pin on external interrupt 11 (EXTINT11)
   REG_EIC_EVCTRL |= EIC_EVCTRL_EXTINTEO11;
   // Enable GCLK_EIC for edge detection.
-  // Set event on high edge of signal
+  // Set event on rise edge of signal
   REG_EIC_CONFIG1 |= EIC_CONFIG_SENSE3_RISE;
   REG_EIC_CTRL |= EIC_CTRL_ENABLE; // Enable EIC peripheral
   while (EIC->STATUS.bit.SYNCBUSY) {
@@ -153,6 +153,9 @@ void GnssSync::setupCounter() {
   DEBUG_PRINTLN("[GnssSync]: Enabling TC4 input event.");
   REG_TC4_EVCTRL |= TC_EVCTRL_TCEI |         // Enable the TC4 event input
                     TC_EVCTRL_EVACT_PPW_Val; // Period capture in CC0
+
+  DEBUG_PRINTLN("[GnssSync]: Capturing channel 0 event.");
+  REG_TC4_CTRLC |= TC_CTRLC_CPTEN0; // Capture channel 0 event.
 
   DEBUG_PRINTLN("[GnssSync]: Enabling NVIC.");
   // Set the Nested Vector Interrupt Controller
