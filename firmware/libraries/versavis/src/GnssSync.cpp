@@ -44,8 +44,10 @@ void GnssSync::resetFilterState() {
 
 void GnssSync::setupRos(ros::NodeHandle *nh) {
   nh_ = nh;
+#ifndef DEBUG
   if (nh_)
     nh_->advertise(filter_state_pub_);
+#endif
 }
 
 void GnssSync::setTimeoutNmea(const uint8_t timeout_nmea_s) {
@@ -320,17 +322,31 @@ void GnssSync::waitForNmea() {
   bool time_valid = false;
   uint32_t start_time = millis();
   uint32_t duration_s = 0;
-  uint32_t t_nmea_pps_cnt = filter_state_.pps_cnt; // Assign pps signal to time.
+  uint32_t t_nmea_pps_cnt = pps_cnt_; // Assign pps signal to time.
 
   // Find the unix time that belongs to the last pps pulse.
   DEBUG_PRINTLN("[GnssSync]: Waiting for NMEA absolute time.");
   while (!time_valid && duration_s < timeout_nmea_s_) {
-    t_nmea_pps_cnt = filter_state_.pps_cnt;
+    t_nmea_pps_cnt = pps_cnt_;
+    // Make sure pps_cnt_ is at least 400 ms old. Otherwise NMEA signal may have
+    // not arrived, yet.
+    const double kNmeaOffsetNs = 400.0 * 1.0e6;
+    double duration_ns = double(REG_TC4_COUNT32_COUNT) * filter_state_.x_nspt;
+    if (duration_ns < kNmeaOffsetNs) {
+      DEBUG_PRINT("[GnssSync]: Waiting for PPS count signal to be older than ");
+      DEBUG_PRINT(kNmeaOffsetNs);
+      DEBUG_PRINT(" [ns]. Current age: ");
+      DEBUG_PRINT(duration_ns);
+      DEBUG_PRINTLN(" [ns]");
+      delay(10);
+      continue;
+    }
     while (uart_ && uart_->available()) {
       nmea.process(Serial.read());
+      time_valid = nmea.getYear() != 0 && nmea.getHour() != 99 &&
+                   nmea.getHundredths() == 0;
+      if (time_valid) break;
     }
-    time_valid = nmea.getYear() != 0 && nmea.getHour() != 99 &&
-                 nmea.getHundredths() == 0;
   }
 
   // Save the time when pps counting started.
