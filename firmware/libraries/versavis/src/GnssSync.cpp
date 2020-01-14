@@ -7,27 +7,62 @@
 #include "helper.h"
 #include "versavis_configuration.h"
 
-void GnssSync::setup(Uart *uart, const uint32_t baud_rate /*= 115200*/) {
+GnssSync::GnssSync()
+    : filter_state_pub_("/versavis/gnss_sync/filter_state", &filter_state_) {}
+
+void GnssSync::setup(ros::NodeHandle *nh, Uart *uart,
+                     const uint32_t baud_rate /*= 115200*/) {
+  reset();
+  setupRos(nh);
   setupSerial(uart, baud_rate);
   setupCounter();
+}
+
+void GnssSync::resetFilterState() {
+  // Initialize filter state.
+  filter_state_.stamp.data = ros::Time(0, 0);
+#ifdef USE_GCLKIN_10MHZ
+  filter_state_.x = 10000000.0;
+  filter_state_.R = 100.0;
+  filter_state_.Q = 1.0;
+#elif defined USE_DFLL48M
+  filter_state_.x = 48000000.0;
+  filter_state_.R = 10000.0;
+  filter_state_.Q = 100.0;
+#else
+  filter_state_.x = 32768.0;
+  filter_state_.R = 100.0;
+  filter_state_.Q = 1.0;
+#endif
+  filter_state_.P = filter_state_.R;
+  filter_state_.z = 0;
+  filter_state_.pps_cnt = 0;
+  filter_state_.pps_cnt_prev = 0;
+  filter_state_.t_nmea = 0;
+  filter_state_.x_nspt = 1000000000.0 / filter_state_.x;
+}
+
+void GnssSync::setupRos(ros::NodeHandle *nh) {
+  nh_ = nh;
+  if (nh_)
+    nh_->advertise(filter_state_pub_);
 }
 
 void GnssSync::setTimeoutNmea(const uint8_t timeout_nmea_s) {
   timeout_nmea_s_ = timeout_nmea_s;
 }
 
-void GnssSync::setMeasurementNoise(const double R_tps) { R_tps_ = R_tps; }
+void GnssSync::setMeasurementNoise(const double R_tps) {
+  filter_state_.R = R_tps;
+}
 
-void GnssSync::setProcessNoise(const double Q_tps) { Q_tps_ = Q_tps; }
+void GnssSync::setProcessNoise(const double Q_tps) { filter_state_.Q = Q_tps; }
 
 void GnssSync::update() {
-  if (pps_cnt_ < 2)
+  if (filter_state_.pps_cnt < 2)
     return;
 
-  if (pps_cnt_ != pps_cnt_prev_) {
-    updateTps();
-    pps_cnt_prev_ = pps_cnt_;
-  }
+  updateTps();
 
   if (reset_time_) {
     waitForNmea();
@@ -36,43 +71,60 @@ void GnssSync::update() {
 
 void GnssSync::updateTps() {
   // Update Kalman filter to estimate ticks per second.
+  if (filter_state_.pps_cnt <= filter_state_.pps_cnt_prev)
+    return;
   // Prediction.
-  P_tps_ = P_tps_ + static_cast<double>(pps_cnt_ - pps_cnt_prev_) * Q_tps_;
+  double dt = filter_state_.pps_cnt - filter_state_.pps_cnt_prev;
+  filter_state_.P = filter_state_.P + dt * filter_state_.Q;
   // Measurement.
-  double y = static_cast<double>(tps_meas_) - x_tps_;
-  double S_inv = 1.0 / (P_tps_ + R_tps_);
-  double K = P_tps_ * S_inv;
+  double y = static_cast<double>(filter_state_.z) - filter_state_.x;
+  double S_inv = 1.0 / (filter_state_.P + filter_state_.R);
+  double K = filter_state_.P * S_inv;
 
-  x_tps_ += K * y;
-  P_tps_ = (1.0 - K) * P_tps_;
-  x_nspt_ = 1000000000.0 / x_tps_;
+  filter_state_.x += K * y;
+  filter_state_.P = (1.0 - K) * filter_state_.P;
+  filter_state_.x_nspt = 1000000000.0 / filter_state_.x;
+  computeTime(filter_state_, 0, &filter_state_.stamp.data);
 
   DEBUG_PRINT("[GnssSync]: Updated ticks per second ");
-  DEBUG_PRINT("x_tps: ");
-  DEBUG_PRINT(x_tps_);
-  DEBUG_PRINT(" P_tps: ");
-  DEBUG_PRINTLN(P_tps_);
+  DEBUG_PRINT("x: ");
+  DEBUG_PRINT(filter_state_.x);
+  DEBUG_PRINT(" P: ");
+  DEBUG_PRINTLN(filter_state_.P);
+
+#ifndef DEBUG
+  filter_state_pub_.publish(&filter_state_);
+#endif
+  filter_state_.pps_cnt_prev = filter_state_.pps_cnt;
 }
 
 void GnssSync::reset() {
   reset_time_ = true;
-  pps_cnt_ = 0;
+  resetFilterState();
 }
 
-void GnssSync::computeTime(const uint32_t t_nmea, const uint32_t pps_cnt,
-                           const uint32_t ticks, const double nspt,
-                           uint32_t *sec, uint32_t *nsec) {
+void GnssSync::computeTime(const versavis::ExtClkFilterState &filter_state,
+                           const uint32_t ticks, uint32_t *sec,
+                           uint32_t *nsec) {
   if (sec) {
-    *sec = t_nmea + pps_cnt;
+    *sec = filter_state.t_nmea + filter_state.pps_cnt;
   }
   if (nsec) {
-    *nsec = double(ticks) * nspt;
+    *nsec = double(ticks) * filter_state.x_nspt;
   }
   ros::normalizeSecNSec(*sec, *nsec);
 }
 
+void GnssSync::computeTime(const versavis::ExtClkFilterState &filter_state,
+                           const uint32_t ticks, ros::Time *time) {
+  uint32_t sec, nsec;
+  computeTime(filter_state, ticks, &sec, &nsec);
+  if (time)
+    *time = ros::Time(sec, nsec);
+}
+
 void GnssSync::getTimeNow(uint32_t *sec, uint32_t *nsec) {
-  computeTime(t_nmea_, pps_cnt_, REG_TC4_COUNT32_COUNT, x_nspt_, sec, nsec);
+  computeTime(filter_state_, REG_TC4_COUNT32_COUNT, sec, nsec);
 }
 
 // Return time once. Resets valid flag.
@@ -80,19 +132,17 @@ bool Timestamp::getTime(uint32_t *sec, uint32_t *nsec) {
   if (!hasTime())
     return false;
 
-  GnssSync::computeTime(t_nmea_, pps_cnt_, ticks_, x_nspt_, sec, nsec);
-  valid_ = false;
+  GnssSync::computeTime(filter_state_, ticks_, sec, nsec);
+  has_time_ = false;
 
   return true;
 }
 
-void Timestamp::setTime(const uint32_t t_nmea, const uint32_t pps_cnt,
-                        const uint32_t ticks, const double x_nspt) {
-  t_nmea_ = t_nmea;
-  pps_cnt_ = pps_cnt;
+void Timestamp::setTime(const versavis::ExtClkFilterState &filter_state,
+                        const uint32_t ticks) {
+  filter_state_ = filter_state;
   ticks_ = ticks;
-  x_nspt_ = x_nspt;
-  valid_ = true;
+  has_time_ = true;
 }
 
 void GnssSync::setupSerial(Uart *uart, const uint32_t baud_rate) {
@@ -267,12 +317,12 @@ void GnssSync::waitForNmea() {
   bool time_valid = false;
   uint32_t start_time = millis();
   uint32_t duration_s = 0;
-  uint32_t t_nmea_pps_cnt = pps_cnt_; // Assign pps signal to time.
+  uint32_t t_nmea_pps_cnt = filter_state_.pps_cnt; // Assign pps signal to time.
 
   // Find the unix time that belongs to the last pps pulse.
   DEBUG_PRINTLN("[GnssSync]: Waiting for NMEA absolute time.");
   while (!time_valid && duration_s < timeout_nmea_s_) {
-    t_nmea_pps_cnt = pps_cnt_;
+    t_nmea_pps_cnt = filter_state_.pps_cnt;
     while (uart_ && uart_->available()) {
       nmea.process(Serial.read());
     }
@@ -286,21 +336,16 @@ void GnssSync::waitForNmea() {
     date_time = DateTime(nmea.getYear(), nmea.getMonth(), nmea.getDay(),
                          nmea.getHour(), nmea.getMinute(), nmea.getSecond());
   }
-  t_nmea_ = date_time.unixtime() - t_nmea_pps_cnt;
+  filter_state_.t_nmea = date_time.unixtime() - t_nmea_pps_cnt;
 
 #ifdef DEBUG
   if (time_valid) {
     DEBUG_PRINTLN("[GnssSync]: Received NMEA time.");
   }
   DEBUG_PRINT("[GnssSync]: Unix time at pps_cnt == 0: ");
-  DEBUG_PRINTLN(t_nmea_);
+  DEBUG_PRINTLN(filter_state_.t_nmea);
 #endif
 }
-
-uint32_t GnssSync::getTnmea() { return t_nmea_; }
-uint32_t GnssSync::getPpsCnt() { return pps_cnt_; }
-double GnssSync::getNspt() { return x_nspt_; }
-uint32_t GnssSync::getTpsMeas() { return tps_meas_; }
 
 // Interrupt Service Routine (ISR) for timer TC4
 void TC4_Handler() {
@@ -310,9 +355,9 @@ void TC4_Handler() {
     REG_TC4_INTFLAG = TC_INTFLAG_MC0; // Clear the MC0 interrupt flag
 
     DEBUG_PRINT("[GnssSync]: Received PPS signal: ");
-    DEBUG_PRINT(GnssSync::getInstance().getPpsCnt());
+    DEBUG_PRINT(GnssSync::getInstance().getFilterState().pps_cnt);
     DEBUG_PRINT(" Ticks: ");
-    DEBUG_PRINTLN(GnssSync::getInstance().getTpsMeas());
+    DEBUG_PRINTLN(GnssSync::getInstance().getFilterState().z);
   }
   // TODO(rikba): catch and manage overflow
 }
@@ -329,5 +374,5 @@ bool GnssSync::getTimePa14(uint32_t *sec, uint32_t *nsec) {
 }
 
 void GnssSync::setTimePa14(const uint32_t ticks) {
-  timestamp_pa14_.setTime(t_nmea_, pps_cnt_, ticks, x_nspt_);
+  timestamp_pa14_.setTime(filter_state_, ticks);
 }

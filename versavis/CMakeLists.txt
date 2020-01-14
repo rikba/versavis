@@ -21,6 +21,7 @@ find_package(catkin REQUIRED COMPONENTS
 
 add_message_files(
   FILES
+  ExtClkFilterState.msg
   ImuMicro.msg
   TimeNumbered.msg
 )

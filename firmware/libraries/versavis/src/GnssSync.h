@@ -16,21 +16,22 @@
 
 #include <Uart.h>
 
+#include <ros.h>
+#include <versavis/ExtClkFilterState.h>
+
 #include "versavis_configuration.h"
 
 class Timestamp {
 public:
-  inline bool hasTime() { return valid_; }
+  inline bool hasTime() { return has_time_; }
   bool getTime(uint32_t *sec, uint32_t *nsec);
-  void setTime(const uint32_t t_nmea, const uint32_t pps_cnt,
-               const uint32_t ticks, const double x_nspt);
+  void setTime(const versavis::ExtClkFilterState &filter_state,
+               const uint32_t ticks);
 
 private:
-  uint32_t t_nmea_ = 0;
-  uint32_t pps_cnt_ = 0;
+  versavis::ExtClkFilterState filter_state_;
   uint32_t ticks_ = 0;
-  double x_nspt_ = 0;
-  bool valid_ = false;
+  bool has_time_ = false;
 };
 
 class GnssSync {
@@ -44,7 +45,8 @@ public:
   void operator=(GnssSync const &) = delete;
 
   // pps_pin_samd_io can be 11, 14 or 27 on AUX connector.
-  void setup(Uart *uart, const uint32_t baud_rate = 115200);
+  void setup(ros::NodeHandle *nh, Uart *uart,
+             const uint32_t baud_rate = 115200);
 
   void setTimeoutNmea(const uint8_t timeout_nmea_s);
   void setMeasurementNoise(const double R_tps);
@@ -54,65 +56,43 @@ public:
   void reset();
   void getTimeNow(uint32_t *sec, uint32_t *nsec);
 
-  inline void incrementPPS() { pps_cnt_++; }
-  inline void measureTicksPerSecond(const uint32_t tps_meas) {
-    tps_meas_ = tps_meas;
-  }
+  inline void incrementPPS() { filter_state_.pps_cnt++; }
+  inline void measureTicksPerSecond(const uint32_t z) { filter_state_.z = z; }
 
-  uint32_t getTnmea();
-  uint32_t getPpsCnt();
-  double getNspt();
-  uint32_t getTpsMeas();
+  inline versavis::ExtClkFilterState getFilterState() { return filter_state_; }
 
   bool getTimePa14(uint32_t *sec, uint32_t *nsec);
   void setTimePa14(const uint32_t ticks);
 
-  static void computeTime(const uint32_t t_nmea, const uint32_t pps_cnt,
-                          const uint32_t ticks, const double nspt,
-                          uint32_t *sec, uint32_t *nsec);
+  static void computeTime(const versavis::ExtClkFilterState &filter_state,
+                          const uint32_t ticks, uint32_t *sec, uint32_t *nsec);
+
+  static void computeTime(const versavis::ExtClkFilterState &filter_state,
+                          const uint32_t ticks, ros::Time *time);
 
 private:
-  GnssSync() {}
+  GnssSync();
 
   void setupSerial(Uart *uart, const uint32_t baud_rate);
   void setupCounter();
   void setupInterruptPa14();
+  void setupRos(ros::NodeHandle *nh);
   void waitForNmea();
   void updateTps();
+  void resetFilterState();
 
   // Parameters
   // Timeout to wait for NMEA absolute time.
   uint8_t timeout_nmea_s_ = 30.0;
-  // Kalman filter variables to estimate ticks per second x_tps_.
-  // R_tps_: Measurement noise covariance. [Ticks^2/second^2]
-  // Q_tps_: Process noise covariance. [Ticks^2/second^2]
 
-#ifdef USE_GCLKIN_10MHZ
-  double x_tps_ = 10000000.0;
-  double R_tps_ = 100.0;
-  double Q_tps_ = 1.0;
-#elif defined USE_DFLL48M
-  double x_tps_ = 48000000.0;
-  double R_tps_ = 10000.0;
-  double Q_tps_ = 100.0;
-#else
-  double x_tps_ = 32768.0;
-  double R_tps_ = 100.0;
-  double Q_tps_ = 1.0;
-#endif
+  // ROS
+  ros::NodeHandle *nh_;
+  ros::Publisher filter_state_pub_;
+  versavis::ExtClkFilterState filter_state_;
 
   // States
   bool reset_time_ = true;
   Uart *uart_;
-
-  // PPS update.
-  volatile uint32_t pps_cnt_ = 0;
-  volatile uint32_t tps_meas_ = 0;
-  uint32_t pps_cnt_prev_ = pps_cnt_;
-  uint32_t t_nmea_ = 0;
-
-  double P_tps_ = R_tps_; // Tick prior covariance. [Ticks^2/second^2]
-  double x_nspt_ = 1000000000.0 / x_tps_; // Nanoseconds per tick.
 
   // External events.
   Timestamp timestamp_pa14_;
