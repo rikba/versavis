@@ -52,12 +52,14 @@ public:
   void setMeasurementNoise(const double R_tps);
   void setProcessNoise(const double Q_tps);
 
+  inline bool valid() {return !reset_time_;}
+
   void update();
   void reset();
   void getTimeNow(uint32_t *sec, uint32_t *nsec);
 
-  inline void incrementPPS() { filter_state_.pps_cnt++; }
-  inline void measureTicksPerSecond(const uint32_t z) { filter_state_.z = z; }
+  inline void incrementPPS() { pps_cnt_++; }
+  inline void measureTicksPerSecond(const uint32_t z) { z_ = z; }
 
   inline versavis::ExtClkFilterState getFilterState() { return filter_state_; }
 
@@ -93,6 +95,10 @@ private:
   // States
   bool reset_time_ = true;
   Uart *uart_;
+
+  // Volatile measurements
+  volatile uint32_t pps_cnt_ = 0;
+  volatile uint32_t z_ = 0;
 
   // External events.
   Timestamp timestamp_pa14_;

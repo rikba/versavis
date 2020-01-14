@@ -59,14 +59,18 @@ void GnssSync::setMeasurementNoise(const double R_tps) {
 void GnssSync::setProcessNoise(const double Q_tps) { filter_state_.Q = Q_tps; }
 
 void GnssSync::update() {
+  // Fix volatile variables.
+  filter_state_.pps_cnt = pps_cnt_;
+  filter_state_.z = z_;
+
   if (filter_state_.pps_cnt < 2)
     return;
-
-  updateTps();
 
   if (reset_time_) {
     waitForNmea();
   }
+
+  updateTps();
 }
 
 void GnssSync::updateTps() {
@@ -310,7 +314,6 @@ void GnssSync::setupInterruptPa14() {
 }
 
 void GnssSync::waitForNmea() {
-  reset_time_ = false;
   char nmea_buffer[255];
   MicroNMEA nmea(nmea_buffer, sizeof(nmea_buffer));
 
@@ -345,6 +348,8 @@ void GnssSync::waitForNmea() {
   DEBUG_PRINT("[GnssSync]: Unix time at pps_cnt == 0: ");
   DEBUG_PRINTLN(filter_state_.t_nmea);
 #endif
+
+  reset_time_ = false;
 }
 
 // Interrupt Service Routine (ISR) for timer TC4
@@ -363,6 +368,11 @@ void TC4_Handler() {
 }
 
 void EIC_Handler() {
+  if (!GnssSync::getInstance().valid()) {
+    REG_EIC_INTFLAG |= EIC_INTFLAG_EXTINT14; // Clear flag.
+    return;
+  }
+
   if (REG_EIC_INTFLAG & EIC_INTFLAG_EXTINT14) {
     GnssSync::getInstance().setTimePa14(REG_TC4_COUNT32_COUNT);
     REG_EIC_INTFLAG |= EIC_INTFLAG_EXTINT14; // Clear flag.
