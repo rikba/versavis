@@ -155,8 +155,7 @@ bool NmeaParser::processMsgType() {
 bool NmeaParser::processDataField() {
   bool success = false;
 
-  switch (msg_type_) {
-  }
+  switch (msg_type_) {}
 
   df_idx_++;
   return success;
@@ -169,6 +168,51 @@ bool NmeaParser::processDataField() {
 //}
 
 bool NmeaParser::processCheckSum() { return false; }
+
+bool ZdaMessage::update(const char *data, const uint8_t field) {
+  bool success = false;
+
+  switch (field) {
+  case 0:
+    success = numFromWord<uint8_t>(data, 0, 2, &hour);
+    success &= numFromWord<uint8_t>(data, 2, 2, &minute);
+    success &= numFromWord<uint8_t>(data, 4, 2, &second);
+    success &= updateHundredths(data);
+    break;
+  case 1:
+    success = numFromWord<uint8_t>(data, 0, 2, &day);
+    break;
+  case 2:
+    success = numFromWord<uint8_t>(data, 0, 2, &month);
+    break;
+  case 3:
+    success = numFromWord<uint16_t>(data, 0, 4, &year);
+    break;
+  case 4:
+    success = true; // Ignore time zone field.
+    break;
+  case 5:
+    success = true; // Ignore time zone offset field.
+    break;
+  default:
+    break;
+  }
+
+  if (!success)
+    reset();
+
+  return success;
+}
+
+bool ZdaMessage::updateHundredths(const char *data) {
+  if (sizeof(data) < 7)
+    return true; // No decimal seconds.
+if (*(data + 6) != '.')
+    return false; // No decimal point.
+
+  uint8_t len = sizeof(data) - 7;
+  return numFromWord<uint32_t>(data, 7, len, &hundreth);
+}
 
 // void NmeaParser::clearBuffer() {
 //   memset(buffer_, '\0', kMaxSentenceLength);

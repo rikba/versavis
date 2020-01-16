@@ -17,8 +17,65 @@
 #include <RTClib.h>
 
 struct ZdaMessage {
-//  enum class DataFields {kUtcTime, }
+public:
+  uint8_t hour = 0;
+  uint8_t minute = 0;
+  uint8_t second = 0;
+  uint32_t hundreth = 0;
+  uint8_t day = 0;
+  uint8_t month = 0;
+  uint16_t year = 0;
 
+  bool update(const char *data, const uint8_t field);
+  inline void reset() { *this = ZdaMessage(); }
+
+private:
+  bool updateHundredths(const char *data);
+
+  template <class T>
+  bool numFromWord(const char *data, const uint8_t start_idx, const uint8_t len,
+                   T *result) {
+    *result = 0;
+
+    T numeric_limit = ~T(0); // Bitwise NOT of 0. WARNING: only for unsigned int
+
+    if (!result)
+      return false;
+
+    uint8_t num_digits = len - start_idx;
+
+    if (sizeof(data) < num_digits)
+      return false;
+
+    T power = 1;
+    for (auto i = start_idx + len - 1; i >= start_idx; i--) {
+      auto digit = data + i;
+      if (!isDigit(*digit))
+        return false;
+
+      // Savely multiply by power.
+      uint8_t num = atoi(digit);
+      if (num > numeric_limit / power)
+        return false;
+      T summand = power * num;
+
+      // Savely add summand.
+      if (summand > numeric_limit - *result)
+        return false;
+      *result += power * atoi(digit);
+
+      // Update power.
+      if (i == start_idx) {
+        return true;
+      } else if (power > (numeric_limit / 10)) {
+        return false;
+      } else {
+        power *= 10;
+      }
+    }
+
+    return true;
+  }
 };
 
 class NmeaParser {
