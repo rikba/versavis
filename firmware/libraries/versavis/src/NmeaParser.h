@@ -16,6 +16,7 @@
 #include "versavis_configuration.h"
 #include <Arduino.h>
 #include <RTClib.h>
+#include <Uart.h>
 
 template <class T>
 bool numFromWord(const char *data, const uint8_t data_len,
@@ -71,11 +72,13 @@ public:
   uint8_t day = 0;
   uint8_t month = 0;
   uint16_t year = 0;
+  char str[23]; // TODO(rikba): Add this member only for debugging.
 
   bool update(const char *data, const uint8_t len, const uint8_t field);
   inline void reset() { *this = ZdaMessage(); }
 
 private:
+  void toString();
   bool updateHundredths(const char *data, const uint8_t data_len);
 };
 

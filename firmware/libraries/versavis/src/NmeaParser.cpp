@@ -118,7 +118,6 @@ void NmeaParser::transitionState(const State new_state) {
     resetWord();
     state_ = new_state;
   } else {
-    DEBUG_PRINTLN("Failed transition.");
     resetSentence();
     state_ = State::kUnknown;
   }
@@ -191,36 +190,40 @@ bool NmeaParser::processCheckSum() {
 
 bool ZdaMessage::update(const char *data, const uint8_t len,
                         const uint8_t field) {
-  bool success = false;
+  bool success = true;
 
   switch (field) {
   case 0:
-    success = numFromWord<uint8_t>(data, len, 0, 2, &hour);
+    success &= numFromWord<uint8_t>(data, len, 0, 2, &hour);
     success &= numFromWord<uint8_t>(data, len, 2, 2, &minute);
     success &= numFromWord<uint8_t>(data, len, 4, 2, &second);
     success &= updateHundredths(data, len);
     break;
   case 1:
-    success = numFromWord<uint8_t>(data, len, 0, 2, &day);
+    success &= numFromWord<uint8_t>(data, len, 0, 2, &day);
     break;
   case 2:
-    success = numFromWord<uint8_t>(data, len, 0, 2, &month);
+    success &= numFromWord<uint8_t>(data, len, 0, 2, &month);
     break;
   case 3:
-    success = numFromWord<uint16_t>(data, len, 0, 4, &year);
+    success &= numFromWord<uint16_t>(data, len, 0, 4, &year);
     break;
   case 4:
-    success = true; // Ignore time zone field.
+    success &= true; // Ignore time zone field.
     break;
   case 5:
-    success = true; // Ignore time zone offset field.
+    success &= true; // Ignore time zone offset field.
     break;
   default:
+    success &= false; // This field is not handled.
     break;
   }
 
-  if (!success)
+  if (!success) {
     reset();
+  } else {
+    toString();
+  }
 
   return success;
 }
@@ -237,4 +240,9 @@ bool ZdaMessage::updateHundredths(const char *data, const uint8_t data_len) {
 
   uint8_t len = data_len - 7; // Get tail length.
   return numFromWord<uint32_t>(data, data_len, 7, len, &hundreth);
+}
+
+void ZdaMessage::toString() {
+  sprintf(str, "%02d:%02d:%04d:%02d:%02d:%02d.%02d", day, month, year, hour,
+          minute, second, hundreth);
 }
