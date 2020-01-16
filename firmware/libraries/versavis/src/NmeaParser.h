@@ -102,8 +102,7 @@ private:
   IdType id_type_ = IdType::kUnknown;
   MsgType msg_type_ = MsgType::kUnknown;
   SentenceType sentence_type_ = SentenceType::kUnknown;
-  uint8_t wrd_idx_ = 0; // The index of the letter in the current word.
-  uint8_t df_idx_ = 0;  // The index of the word in the current sentence.
+  uint8_t df_idx_ = 0;  // The index of the data field in the current sentence.
 
   void resetSentence();
   void resetWord();

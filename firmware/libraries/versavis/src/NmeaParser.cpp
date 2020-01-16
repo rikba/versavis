@@ -21,7 +21,7 @@ NmeaParser::SentenceType NmeaParser::parseChar(const char c) {
   case State::kId:
     addToCheckSum(c);
     addCharacter(c, id_, kIdSize);  // Fill ID field.
-    if (wrd_idx_ == kIdSize) {      // ID complete.
+    if (strlen(id_) == kIdSize) {   // ID complete.
       transitionState(State::kMsg); // Transition to MSG field.
     }
     break;
@@ -71,10 +71,7 @@ void NmeaParser::resetSentence() {
   df_idx_ = 0;
 }
 
-void NmeaParser::resetWord() {
-  memset(data_field_, '\0', kDataFieldSize + 1);
-  wrd_idx_ = 0;
-}
+void NmeaParser::resetWord() { memset(data_field_, '\0', kDataFieldSize + 1); }
 
 void NmeaParser::transitionState(const State new_state) {
   // Execute state transitions. If the transition fails the state machine goes
@@ -135,10 +132,9 @@ bool NmeaParser::processSentenceType() {
 }
 
 void NmeaParser::addCharacter(const char c, char *field, const uint8_t len) {
-
-  if ((wrd_idx_ < len) && (c != kDataFieldDelim) && (c != kCheckSumDelim) &&
-      (c != kSentenceEnd1) && (c != kSentenceEnd2)) {
-    *(field + wrd_idx_++) = c;
+  if ((strlen(field) < len) && (c != kDataFieldDelim) &&
+      (c != kCheckSumDelim) && (c != kSentenceEnd1) && (c != kSentenceEnd2)) {
+    strncat(field, &c, 1);
   }
 }
 
