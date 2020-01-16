@@ -14,9 +14,8 @@ NmeaParser::NmeaParser() {
 }
 
 NmeaParser::SentenceType NmeaParser::parseChar(const char c) {
-  DEBUG_PRINT("New char: ");
-  DEBUG_PRINT(c);
-  DEBUG_PRINTLN(" state: ");
+  DEBUG_PRINT("Received char: ");
+  DEBUG_PRINTLN(c);
 
   // Control state transitions.
   if (c == kSentenceStart) {
@@ -155,38 +154,61 @@ bool NmeaParser::processMsgType() {
 bool NmeaParser::processDataField() {
   bool success = false;
 
-  switch (msg_type_) {}
+  switch (msg_type_) {
+  case MsgType::kZda:
+    success = zda_message_.update(data_field_, wrd_idx_, df_idx_);
+    break;
+  default:
+    break;
+  }
 
   df_idx_++;
   return success;
 }
 
-// bool NmeaParser::processZdaMessage() {
-// switch (data_field_) {
-//  case 0:
-//}
-//}
-
 bool NmeaParser::processCheckSum() { return false; }
 
-bool ZdaMessage::update(const char *data, const uint8_t field) {
+bool ZdaMessage::update(const char *data, const uint8_t len,
+                        const uint8_t field) {
   bool success = false;
 
   switch (field) {
   case 0:
-    success = numFromWord<uint8_t>(data, 0, 2, &hour);
-    success &= numFromWord<uint8_t>(data, 2, 2, &minute);
-    success &= numFromWord<uint8_t>(data, 4, 2, &second);
-    success &= updateHundredths(data);
+    success = numFromWord<uint8_t>(data, len, 0, 2, &hour);
+    DEBUG_PRINT(hour);
+    DEBUG_PRINT("(");
+    DEBUG_PRINT(success);
+    DEBUG_PRINT(")");
+    DEBUG_PRINT(":");
+    success &= numFromWord<uint8_t>(data, len, 2, 2, &minute);
+    DEBUG_PRINT(minute);
+    DEBUG_PRINT("(");
+    DEBUG_PRINT(success);
+    DEBUG_PRINT(")");
+    DEBUG_PRINT(":");
+    success &= numFromWord<uint8_t>(data, len, 4, 2, &second);
+    DEBUG_PRINT(second);
+    DEBUG_PRINT("(");
+    DEBUG_PRINT(success);
+    DEBUG_PRINT(")");
+    DEBUG_PRINT(".");
+    success &= updateHundredths(data, len);
+    DEBUG_PRINT(hundreth);
+    DEBUG_PRINT("(");
+    DEBUG_PRINT(success);
+    DEBUG_PRINTLN(")");
     break;
   case 1:
-    success = numFromWord<uint8_t>(data, 0, 2, &day);
+    success = numFromWord<uint8_t>(data, len, 0, 2, &day);
+    DEBUG_PRINTLN(day);
     break;
   case 2:
-    success = numFromWord<uint8_t>(data, 0, 2, &month);
+    success = numFromWord<uint8_t>(data, len, 0, 2, &month);
+    DEBUG_PRINTLN(month);
     break;
   case 3:
-    success = numFromWord<uint16_t>(data, 0, 4, &year);
+    success = numFromWord<uint16_t>(data, len, 0, 4, &year);
+    DEBUG_PRINTLN(year);
     break;
   case 4:
     success = true; // Ignore time zone field.
@@ -204,14 +226,18 @@ bool ZdaMessage::update(const char *data, const uint8_t field) {
   return success;
 }
 
-bool ZdaMessage::updateHundredths(const char *data) {
-  if (sizeof(data) < 7)
-    return true; // No decimal seconds.
-if (*(data + 6) != '.')
-    return false; // No decimal point.
+bool ZdaMessage::updateHundredths(const char *data, const uint8_t data_len) {
+  hundreth = 0;
 
-  uint8_t len = sizeof(data) - 7;
-  return numFromWord<uint32_t>(data, 7, len, &hundreth);
+  if (data_len < 7)
+    return true; // No decimal seconds.
+  else if (*(data + 6) != '.')
+    return false; // Missing decimal point.
+  else if (data_len < 8)
+    return true; // No digits.
+
+  uint8_t len = data_len - 7; // Get tail length.
+  return numFromWord<uint32_t>(data, data_len, 7, len, &hundreth);
 }
 
 // void NmeaParser::clearBuffer() {

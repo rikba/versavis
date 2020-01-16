@@ -12,11 +12,13 @@
 #ifndef NmeaParser_h_
 #define NmeaParser_h_
 
+#include "helper.h"
 #include "versavis_configuration.h"
 #include <Arduino.h>
 #include <RTClib.h>
 
 struct ZdaMessage {
+  // A GPZDA sentence: $GPZDA,173538.00,14,01,2020,,*69[...]\n
 public:
   uint8_t hour = 0;
   uint8_t minute = 0;
@@ -26,15 +28,15 @@ public:
   uint8_t month = 0;
   uint16_t year = 0;
 
-  bool update(const char *data, const uint8_t field);
+  bool update(const char *data, const uint8_t len, const uint8_t field);
   inline void reset() { *this = ZdaMessage(); }
 
 private:
-  bool updateHundredths(const char *data);
+  bool updateHundredths(const char *data, const uint8_t data_len);
 
   template <class T>
-  bool numFromWord(const char *data, const uint8_t start_idx, const uint8_t len,
-                   T *result) {
+  bool numFromWord(const char *data, const uint8_t data_len,
+                   const uint8_t start_idx, const uint8_t len, T *result) {
     *result = 0;
 
     T numeric_limit = ~T(0); // Bitwise NOT of 0. WARNING: only for unsigned int
@@ -42,39 +44,38 @@ private:
     if (!result)
       return false;
 
-    uint8_t num_digits = len - start_idx;
+    uint8_t end_digit = len + start_idx;
 
-    if (sizeof(data) < num_digits)
+    if (data_len < end_digit)
       return false;
 
-    T power = 1;
-    for (auto i = start_idx + len - 1; i >= start_idx; i--) {
-      auto digit = data + i;
-      if (!isDigit(*digit))
+    T factor = 1;
+    for (auto i = end_digit - 1; i >= start_idx; i--) {
+      if (!isDigit(*(data + i)))
         return false;
+      uint8_t digit = *(data + i) - 48; // ASCII to int
 
-      // Savely multiply by power.
-      uint8_t num = atoi(digit);
-      if (num > numeric_limit / power)
+      // Savely multiply by factor.
+      if (digit > numeric_limit / factor)
         return false;
-      T summand = power * num;
+      T summand = factor * digit;
 
       // Savely add summand.
       if (summand > numeric_limit - *result)
         return false;
-      *result += power * atoi(digit);
+      *result += summand;
 
-      // Update power.
+      // Update factor.
       if (i == start_idx) {
-        return true;
-      } else if (power > (numeric_limit / 10)) {
-        return false;
+        return true; // Finished parsing number.
+      } else if (factor > (numeric_limit / 10)) {
+        return false; // Cannot store number in variable.
       } else {
-        power *= 10;
+        factor *= 10;
       }
     }
 
-    return true;
+    return true;  // Loop finished early. Should not happen.
   }
 };
 
@@ -111,8 +112,8 @@ private:
   IdType id_type_ = IdType::kUnknown;
   MsgType msg_type_ = MsgType::kUnknown;
   SentenceType sentence_type_ = SentenceType::kUnknown;
-  uint8_t wrd_idx_ = 0;
-  uint8_t df_idx_ = 0;
+  uint8_t wrd_idx_ = 0; // The index of the letter in the current word.
+  uint8_t df_idx_ = 0;  // The index of the word in the current sentence.
 
   void resetSentence();
   void resetWord();
@@ -130,6 +131,9 @@ private:
   bool processCheckSum();
 
   bool processZdaMessage();
+
+  // Received messages.
+  ZdaMessage zda_message_;
 };
 
 #endif
