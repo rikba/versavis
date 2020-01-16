@@ -19,47 +19,31 @@
 #include <Uart.h>
 
 template <class T>
-bool numFromWord(const char *data, const uint8_t data_len,
-                 const uint8_t start_idx, const uint8_t len, T *result) {
-  *result = 0;
+bool numFromWord(const char *data, const uint8_t start_idx, const uint8_t len,
+                 T *result) {
+  bool success = ((start_idx + len - 1) < strlen(data));
 
-  T numeric_limit = ~T(0); // Bitwise NOT of 0. WARNING: only for unsigned int
+  // Create copy of data range.
+  char cpy[len + 1];
+  memset(cpy, '\0', len + 1);
+  memcpy(cpy, data + start_idx, len);
 
-  if (!result)
-    return false;
-
-  uint8_t end_digit = len + start_idx;
-
-  if (data_len < end_digit)
-    return false;
-
-  T factor = 1;
-  for (auto i = end_digit - 1; i >= start_idx; i--) {
-    if (!isDigit(*(data + i)))
-      return false;
-    uint8_t digit = *(data + i) - 48; // ASCII to int
-
-    // Savely multiply by factor.
-    if (digit > numeric_limit / factor)
-      return false;
-    T summand = factor * digit;
-
-    // Savely add summand.
-    if (summand > numeric_limit - *result)
-      return false;
-    *result += summand;
-
-    // Update factor.
-    if (i == start_idx) {
-      return true; // Finished parsing number.
-    } else if (factor > (numeric_limit / 10)) {
-      return false; // Cannot store number in variable.
-    } else {
-      factor *= 10;
-    }
+  // Check if all digits.
+  for (auto i = 0; i < len; ++i) {
+    success &= isDigit(cpy[i]);
   }
 
-  return false; // Loop finished early. Should not happen.
+  // Convert to unsigned long integer.
+  auto conversion = strtoul(cpy, NULL, 10);
+
+  // Check within data range.
+  T numeric_limit = ~T(0); // Bitwise NOT of 0. WARNING: only for unsigned int
+  success &= (conversion < numeric_limit); // Inside target object range.
+
+  if (result)
+    *result = conversion;
+
+  return success;
 }
 
 struct ZdaMessage {
@@ -74,12 +58,12 @@ public:
   uint16_t year = 0;
   char str[23]; // TODO(rikba): Add this member only for debugging.
 
-  bool update(const char *data, const uint8_t len, const uint8_t field);
+  bool update(const char *data, const uint8_t field);
   inline void reset() { *this = ZdaMessage(); }
 
 private:
   void toString();
-  bool updateHundredths(const char *data, const uint8_t data_len);
+  bool updateHundredths(const char *data);
 };
 
 class NmeaParser {
