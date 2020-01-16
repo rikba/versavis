@@ -4,9 +4,6 @@
 [submodule "dependencies/versavis_hw"]
 	path = dependencies/versavis_hw
 	url = git@github.com:ethz-asl/versavis_hw.git
-[submodule "firmware/libraries/MicroNMEA"]
-	path = firmware/libraries/MicroNMEA
-	url = https://github.com/stevemarple/MicroNMEA
 [submodule "firmware/libraries/RTClib"]
 	path = firmware/libraries/RTClib
 	url = git@github.com:adafruit/RTClib.git

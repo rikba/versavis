@@ -1,10 +1,10 @@
 #include "GnssSync.h"
 
-#include <MicroNMEA.h>
 #include <RTClib.h>
 #include <ros/time.h>
 
 #include "helper.h"
+#include "nmea_parser/NmeaParser.h"
 #include "versavis_configuration.h"
 
 GnssSync::GnssSync()
@@ -50,10 +50,6 @@ void GnssSync::setupRos(ros::NodeHandle *nh) {
 #endif
 }
 
-void GnssSync::setTimeoutNmea(const uint8_t timeout_nmea_s) {
-  timeout_nmea_s_ = timeout_nmea_s;
-}
-
 void GnssSync::setMeasurementNoise(const double R_tps) {
   filter_state_.R = R_tps;
 }
@@ -70,6 +66,7 @@ void GnssSync::update() {
 
   if (reset_time_) {
     waitForNmea();
+    return;
   }
 
   updateTps();
@@ -316,56 +313,38 @@ void GnssSync::setupInterruptPa14() {
 }
 
 void GnssSync::waitForNmea() {
-  char nmea_buffer[255];
-  MicroNMEA nmea(nmea_buffer, sizeof(nmea_buffer));
-
-  bool time_valid = false;
-  uint32_t start_time = millis();
-  uint32_t duration_s = 0;
+  NmeaParser nmea_parser;
   uint32_t t_nmea_pps_cnt = pps_cnt_; // Assign pps signal to time.
-
-  // Find the unix time that belongs to the last pps pulse.
-  DEBUG_PRINTLN("[GnssSync]: Waiting for NMEA absolute time.");
-  while (!time_valid && duration_s < timeout_nmea_s_) {
-    t_nmea_pps_cnt = pps_cnt_;
-    // Make sure pps_cnt_ is at least 400 ms old. Otherwise NMEA signal may have
-    // not arrived, yet.
-    const double kNmeaOffsetNs = 400.0 * 1.0e6;
-    double duration_ns = double(REG_TC4_COUNT32_COUNT) * filter_state_.x_nspt;
-    if (duration_ns < kNmeaOffsetNs) {
-      DEBUG_PRINT("[GnssSync]: Waiting for PPS count signal to be older than ");
-      DEBUG_PRINT(kNmeaOffsetNs);
-      DEBUG_PRINT(" [ns]. Current age: ");
-      DEBUG_PRINT(duration_ns);
-      DEBUG_PRINTLN(" [ns]");
-      delay(10);
-      continue;
-    }
-    while (uart_ && uart_->available()) {
-      nmea.process(Serial.read());
-      time_valid = nmea.getYear() != 0 && nmea.getHour() != 99 &&
-                   nmea.getHundredths() == 0;
-      if (time_valid) break;
+  while (uart_ && uart_->available()) {
+    auto result = nmea_parser.parseChar(uart_->read());
+    if ((result == NmeaParser::SentenceType::kGpZda) &&
+        nmea_parser.getGpZdaMessage().hundreths == 0) {
+      DEBUG_PRINTLN(nmea_parser.getGpZdaMessage().str);
+      reset_time_ = false;
     }
   }
+  DEBUG_PRINT("Serial empty.");
+  if (reset_time_)
+    return; // Was not able to read time from serial port.
 
   // Save the time when pps counting started.
-  DateTime date_time;
-  if (time_valid) {
-    date_time = DateTime(nmea.getYear(), nmea.getMonth(), nmea.getDay(),
-                         nmea.getHour(), nmea.getMinute(), nmea.getSecond());
-  }
+  DateTime date_time(
+      nmea_parser.getGpZdaMessage().year, nmea_parser.getGpZdaMessage().month,
+      nmea_parser.getGpZdaMessage().day, nmea_parser.getGpZdaMessage().hour,
+      nmea_parser.getGpZdaMessage().minute,
+      nmea_parser.getGpZdaMessage().second);
+
+  DEBUG_PRINT("[GnssSync]: Unix time at pps_cnt == ");
+  DEBUG_PRINT(t_nmea_pps_cnt);
+  DEBUG_PRINT(": ");
+  DEBUG_PRINTLN(date_time.unixtime());
   filter_state_.t_nmea = date_time.unixtime() - t_nmea_pps_cnt;
 
 #ifdef DEBUG
-  if (time_valid) {
-    DEBUG_PRINTLN("[GnssSync]: Received NMEA time.");
-  }
+  DEBUG_PRINTLN("[GnssSync]: Received NMEA time.");
   DEBUG_PRINT("[GnssSync]: Unix time at pps_cnt == 0: ");
   DEBUG_PRINTLN(filter_state_.t_nmea);
 #endif
-
-  reset_time_ = false;
 }
 
 // Interrupt Service Routine (ISR) for timer TC4
@@ -376,9 +355,7 @@ void TC4_Handler() {
     REG_TC4_INTFLAG = TC_INTFLAG_MC0; // Clear the MC0 interrupt flag
 
     DEBUG_PRINT("[GnssSync]: Received PPS signal: ");
-    DEBUG_PRINT(GnssSync::getInstance().getFilterState().pps_cnt);
-    DEBUG_PRINT(" Ticks: ");
-    DEBUG_PRINTLN(GnssSync::getInstance().getFilterState().z);
+    DEBUG_PRINTLN(GnssSync::getInstance().getFilterState().pps_cnt + 1);
   }
   // TODO(rikba): catch and manage overflow
 }

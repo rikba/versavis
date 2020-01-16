@@ -12,59 +12,9 @@
 #ifndef NmeaParser_h_
 #define NmeaParser_h_
 
-#include "helper.h"
-#include "versavis_configuration.h"
-#include <Arduino.h>
-#include <RTClib.h>
-#include <Uart.h>
+#include <cstdint>
 
-template <class T>
-bool numFromWord(const char *data, const uint8_t start_idx, const uint8_t len,
-                 T *result) {
-  bool success = ((start_idx + len - 1) < strlen(data));
-
-  // Create copy of data range.
-  char cpy[len + 1];
-  memset(cpy, '\0', len + 1);
-  memcpy(cpy, data + start_idx, len);
-
-  // Check if all digits.
-  for (auto i = 0; i < len; ++i) {
-    success &= isDigit(cpy[i]);
-  }
-
-  // Convert to unsigned long integer.
-  auto conversion = strtoul(cpy, NULL, 10);
-
-  // Check within data range.
-  T numeric_limit = ~T(0); // Bitwise NOT of 0. WARNING: only for unsigned int
-  success &= (conversion < numeric_limit); // Inside target object range.
-
-  if (result)
-    *result = conversion;
-
-  return success;
-}
-
-struct ZdaMessage {
-  // A GPZDA sentence: $GPZDA,173538.00,14,01,2020,,*69[...]\n
-public:
-  uint8_t hour = 0;
-  uint8_t minute = 0;
-  uint8_t second = 0;
-  uint32_t hundreth = 0;
-  uint8_t day = 0;
-  uint8_t month = 0;
-  uint16_t year = 0;
-  char str[23]; // TODO(rikba): Add this member only for debugging.
-
-  bool update(const char *data, const uint8_t field);
-  inline void reset() { *this = ZdaMessage(); }
-
-private:
-  void toString();
-  bool updateHundredths(const char *data);
-};
+#include "nmea_parser/msg/ZdaMessage.h"
 
 class NmeaParser {
 public:
@@ -102,7 +52,7 @@ private:
   IdType id_type_ = IdType::kUnknown;
   MsgType msg_type_ = MsgType::kUnknown;
   SentenceType sentence_type_ = SentenceType::kUnknown;
-  uint8_t df_idx_ = 0;  // The index of the data field in the current sentence.
+  uint8_t df_idx_ = 0; // The index of the data field in the current sentence.
 
   void resetSentence();
   void resetWord();

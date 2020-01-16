@@ -48,7 +48,6 @@ public:
   void setup(ros::NodeHandle *nh, Uart *uart,
              const uint32_t baud_rate = 115200);
 
-  void setTimeoutNmea(const uint8_t timeout_nmea_s);
   void setMeasurementNoise(const double R_tps);
   void setProcessNoise(const double Q_tps);
 
@@ -82,10 +81,6 @@ private:
   void waitForNmea();
   void updateTps();
   void resetFilterState();
-
-  // Parameters
-  // Timeout to wait for NMEA absolute time.
-  uint8_t timeout_nmea_s_ = 30.0;
 
   // ROS
   ros::NodeHandle *nh_;
