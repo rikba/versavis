@@ -81,12 +81,14 @@ private:
 
 class NmeaParser {
 public:
-  enum class SentenceType { kGpzda, kUnknown };
+  enum class SentenceType { kGpZda, kUnknown };
 
   NmeaParser();
   // Parse an individual character from serial buffer. If sentence is finished
   // return the sentence type.
   SentenceType parseChar(const char c);
+
+  inline ZdaMessage getGpZdaMessage() { return gp_zda_message_; }
 
 private:
   // NMEA description https://resources.winsystems.com/software/nmea.pdf
@@ -131,11 +133,12 @@ private:
   bool processMsgType();
   bool processDataField();
   bool processCheckSum();
+  bool processSentenceType();
 
   bool processZdaMessage();
 
   // Received messages.
-  ZdaMessage zda_message_;
+  ZdaMessage gp_zda_message_;
 };
 
 #endif
