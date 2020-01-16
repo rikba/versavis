@@ -7,6 +7,28 @@
 //
 //  Parse NMEA messages received on Serial.
 //
+// Example:
+// 
+// #include <NmeaParser.h>
+//
+// NmeaParser nmea_parser;
+//
+// void setup() {
+//   while(!SerialUSB);
+//   Serial.begin(115200);
+// }
+//
+// void loop() {
+//   while (Serial.available()) {
+//     auto sentence_type = nmea_parser.parseChar(Serial.read());
+//     if (sentence_type == NmeaParser::SentenceType::kGpZda) {
+//       SerialUSB.println(nmea_parser.getGpZdaMessage().str);
+//     }
+//   }
+//
+//   delay(100);
+// }
+//
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef NmeaParser_h_
