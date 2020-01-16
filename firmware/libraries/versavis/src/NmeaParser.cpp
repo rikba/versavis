@@ -8,100 +8,108 @@ const char kDataFieldDelim = ',';
 const char kSentenceEnd1 = '\r';
 const char kSentenceEnd2 = '\n';
 
-NmeaParser::NmeaParser() {
-  resetSentence();
-  resetWord();
-}
+NmeaParser::NmeaParser() { resetSentence(); }
 
 NmeaParser::SentenceType NmeaParser::parseChar(const char c) {
   DEBUG_PRINT("Received char: ");
   DEBUG_PRINTLN(c);
 
   // Control state transitions.
-  if (c == kSentenceStart) {
-    transitionState(State::kId);
-  } else if (state_ == State::kId) {
-    // Fill ID field.
-    addCharacter(c, id_, kIdSize);
-    if (wrd_idx_ == kIdSize) {
-      transitionState(State::kMsg);
+  switch (state_) {
+  case State::kUnknown:
+    if (c == kSentenceStart) { // Start sentence.
+      transitionState(State::kId);
     }
-  } else if (state_ == State::kMsg) {
-    // Fill MSG field.
-    addCharacter(c, msg_, kMsgSize);
-    if (c == kDataFieldDelim) {
-      transitionState(State::kDataField);
+    break;
+  case State::kId:
+    addToCheckSum(c);
+    addCharacter(c, id_, kIdSize);  // Fill ID field.
+    if (wrd_idx_ == kIdSize) {      // ID complete.
+      transitionState(State::kMsg); // Transition to MSG field.
     }
-  } else if (state_ == State::kDataField) {
-    // Fill data field.
-    addCharacter(c, data_field_, kDataFieldSize);
-    if (c == kDataFieldDelim) {
+    break;
+  case State::kMsg:
+    addToCheckSum(c);
+    addCharacter(c, msg_, kMsgSize);      // Fill MSG field.
+    if (c == kDataFieldDelim) {           // MSG type complete
+      transitionState(State::kDataField); // Transition to first data field.
+    }
+    break;
+  case State::kDataField:
+    addToCheckSum(c);
+    addCharacter(c, data_field_, kDataFieldSize); // Fill data field.
+    if (c == kDataFieldDelim) { // Data field complete and next data field.
       transitionState(State::kDataField);
-    } else if (c == kCheckSumDelim) {
+    } else if (c == kCheckSumDelim) { // Data field complete followed by cs.
       transitionState(State::kCheckSum);
     }
-  } else if (state_ == State::kCheckSum) {
-    // Fill check sum.
-    addCharacter(c, cs_, kCsSize);
-    if ((c == kSentenceEnd1) || (c == kSentenceEnd2)) {
+    break;
+  case State::kCheckSum:
+    addCharacter(c, cs_, kCsSize);                      // Fill check sum.
+    if ((c == kSentenceEnd1) || (c == kSentenceEnd2)) { // Done!
       transitionState(State::kSuccess);
     }
-  } else if (state_ == State::kSuccess) {
+    break;
+  default:
     transitionState(State::kUnknown);
-  } else {
-    DEBUG_PRINTLN("Failure state.");
   }
 
   return sentence_type_;
 }
 
 void NmeaParser::resetSentence() {
-  memset(id_, '\0', kIdSize);
-  memset(msg_, '\0', kMsgSize);
-  memset(cs_, '\0', kCsSize);
-  memset(data_field_, '\0', kDataFieldSize);
-  calculated_cs_ = 0x00;
+  memset(id_, '\0', kIdSize + 1);
+  memset(msg_, '\0', kMsgSize + 1);
+  memset(cs_, '\0', kCsSize + 1);
+  memset(data_field_, '\0', kDataFieldSize + 1);
+  cs_calculated_ = 0x00;
 
   id_type_ = IdType::kUnknown;
   msg_type_ = MsgType::kUnknown;
   sentence_type_ = SentenceType::kUnknown;
   df_idx_ = 0;
+  resetWord();
 }
 
 void NmeaParser::resetWord() { wrd_idx_ = 0; }
 
 void NmeaParser::transitionState(const State new_state) {
-  // Execute state transitions.
-  bool success = false;
+  // Execute state transitions. If the transition fails the state machine goes
+  // into state Unknown.
+  bool success = true;
+
   switch (new_state) {
-  case State::kId:
-    // Initial state, can always be reached.
+  case State::kUnknown: // Can be reached from any state. Starting point.
     resetSentence();
-    success = true;
+    success &= true;
+    break;
+  case State::kId:
+    if (state_ == State::kUnknown) { // Transition from kUnknown.
+      success &= true;               // Do nothing.
+    }
     break;
   case State::kMsg:
-    // Transition from ID
-    success = processIdType();
+    if (state_ == State::kId) {   // Transition from kId.
+      success &= processIdType(); // Check valid ID.
+    }
     break;
   case State::kDataField:
-    // Transition from kMsg to first kDataField.
-    if (state_ == State::kMsg) {
-      success = processMsgType();
-    }
-    // Transition from one data field to next data field.
-    else {
-      success = processDataField();
+    if (state_ == State::kMsg) {              // Transition from kMsg.
+      success &= processMsgType();            // Check valid message.
+    } else if (state_ == State::kDataField) { // Transition from kDataField.
+      success &= processDataField();          // Check valid data.
     }
     break;
   case State::kCheckSum:
-    // Transition from data field.
-    success = processDataField();
+    if (state_ == State::kDataField) { // Transition from kDataField.
+      success &= processDataField();   // Check valid data.
+    }
     break;
   case State::kSuccess:
-    // Transition from check sum.
-    success = processCheckSum();
+    if (state_ == State::kCheckSum) { // Transition from kCheckSum.
+      success &= processCheckSum();   // Check valid check sum.
+    }
   default:
-    state_ = State::kUnknown;
     break;
   }
 
@@ -109,16 +117,25 @@ void NmeaParser::transitionState(const State new_state) {
     resetWord();
     state_ = new_state;
   } else {
+    DEBUG_PRINTLN("Failed transition.");
     resetSentence();
     state_ = State::kUnknown;
   }
 }
 
 void NmeaParser::addCharacter(const char c, char *field, const uint8_t len) {
+
   if ((wrd_idx_ < len) && (c != kDataFieldDelim) && (c != kCheckSumDelim) &&
       (c != kSentenceEnd1) && (c != kSentenceEnd2)) {
+    DEBUG_PRINT("Adding letter: ");
+    DEBUG_PRINTLN(c);
     *(field + wrd_idx_++) = c;
   }
+}
+
+void NmeaParser::addToCheckSum(const char c) {
+  if (c != kCheckSumDelim)
+    cs_calculated_ ^= c;
 }
 
 bool NmeaParser::processIdType() {
@@ -162,11 +179,14 @@ bool NmeaParser::processDataField() {
     break;
   }
 
-  df_idx_++;
+  df_idx_++; // Increment data field number.
   return success;
 }
 
-bool NmeaParser::processCheckSum() { return false; }
+bool NmeaParser::processCheckSum() {
+  uint8_t cs_received = strtol(cs_, NULL, 16);
+  return cs_received == cs_calculated_;
+}
 
 bool ZdaMessage::update(const char *data, const uint8_t len,
                         const uint8_t field) {
@@ -243,7 +263,7 @@ bool ZdaMessage::updateHundredths(const char *data, const uint8_t data_len) {
 // void NmeaParser::clearBuffer() {
 //   memset(buffer_, '\0', kMaxSentenceLength);
 //   idx = 0;
-//   calculated_cs_ = 0x00;
+//   cs_calculated_ = 0x00;
 // }
 //
 // SentenceType NmeaParser::parseSentence() {
@@ -290,7 +310,7 @@ bool ZdaMessage::updateHundredths(const char *data, const uint8_t data_len) {
 //
 //   const char kTokenDelimiter = '\0';
 //   while (*word != kTokenDelimiter)
-//     calculated_cs_ ^= *word++; // XOR all bytes.
+//     cs_calculated_ ^= *word++; // XOR all bytes.
 // }
 //
 // bool NmeaParser::checkSum(const char *word) {
@@ -301,9 +321,9 @@ bool ZdaMessage::updateHundredths(const char *data, const uint8_t data_len) {
 //   DEBUG_PRINTLN("Checksums");
 //   DEBUG_PRINTLN(word);
 //   DEBUG_PRINTLN(cs);
-//   DEBUG_PRINTLN(calculated_cs_);
+//   DEBUG_PRINTLN(cs_calculated_);
 //
-//   return cs == calculated_cs_;
+//   return cs == cs_calculated_;
 // }
 //
 // bool NmeaParser::parseGpzda() {
