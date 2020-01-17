@@ -313,6 +313,23 @@ void GnssSync::setupInterruptPa14() {
 }
 
 void GnssSync::waitForNmea() {
+  // Make sure pps_cnt_ is at least 200 ms old and at most 800 ms old. Otherwise
+  // NMEA signal may have not arrived, yet or is going to be updated already.
+  const double kNmeaOffsetNs = 200.0 * 1.0e6;
+  const double kLowerLimit = kNmeaOffsetNs;
+  const double kUpperLimit = 1e9 - kNmeaOffsetNs;
+  double duration_ns = double(REG_TC4_COUNT32_COUNT) * filter_state_.x_nspt;
+  if (duration_ns < kLowerLimit || duration_ns > kUpperLimit) {
+    DEBUG_PRINT("[GnssSync]: Waiting for PPS count signal to be between ");
+    DEBUG_PRINT(kLowerLimit);
+    DEBUG_PRINT(" [ns] and ");
+    DEBUG_PRINT(kUpperLimit);
+    DEBUG_PRINT(" [ns]. Current age: ");
+    DEBUG_PRINT(duration_ns);
+    DEBUG_PRINTLN(" [ns]");
+    return;
+  }
+
   NmeaParser nmea_parser;
   uint32_t t_nmea_pps_cnt = pps_cnt_; // Assign pps signal to time.
   while (uart_ && uart_->available()) {
@@ -323,7 +340,6 @@ void GnssSync::waitForNmea() {
       reset_time_ = false;
     }
   }
-  DEBUG_PRINT("Serial empty.");
   if (reset_time_)
     return; // Was not able to read time from serial port.
 
@@ -333,11 +349,6 @@ void GnssSync::waitForNmea() {
       nmea_parser.getGpZdaMessage().day, nmea_parser.getGpZdaMessage().hour,
       nmea_parser.getGpZdaMessage().minute,
       nmea_parser.getGpZdaMessage().second);
-
-  DEBUG_PRINT("[GnssSync]: Unix time at pps_cnt == ");
-  DEBUG_PRINT(t_nmea_pps_cnt);
-  DEBUG_PRINT(": ");
-  DEBUG_PRINTLN(date_time.unixtime());
   filter_state_.t_nmea = date_time.unixtime() - t_nmea_pps_cnt;
 
 #ifdef DEBUG
