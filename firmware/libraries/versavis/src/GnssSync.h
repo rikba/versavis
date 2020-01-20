@@ -23,6 +23,8 @@
 
 class Timestamp {
 public:
+  Timestamp(ros::NodeHandle *nh) : nh_(nh) {}
+
   inline bool hasTime() { return has_time_; }
   bool getTime(uint32_t *sec, uint32_t *nsec);
   void setTime(const versavis::ExtClkFilterState &filter_state,
@@ -32,6 +34,7 @@ private:
   versavis::ExtClkFilterState filter_state_;
   uint32_t ticks_ = 0;
   bool has_time_ = false;
+  ros::NodeHandle *nh_;
 };
 
 class GnssSync {
@@ -51,7 +54,7 @@ public:
   void setMeasurementNoise(const double R_tps);
   void setProcessNoise(const double Q_tps);
 
-  inline bool valid() {return !reset_time_;}
+  inline bool valid() { return !reset_time_; }
 
   void update();
   void reset();
@@ -78,7 +81,7 @@ private:
   void setupCounter();
   void setupInterruptPa14();
   void setupRos(ros::NodeHandle *nh);
-  void waitForNmea();
+  bool waitForNmea();
   void updateTps();
   void resetFilterState();
 
@@ -89,6 +92,7 @@ private:
 
   // States
   bool reset_time_ = true;
+  bool clear_uart_ = true;
   Uart *uart_;
 
   // Volatile measurements
@@ -96,7 +100,7 @@ private:
   volatile uint32_t z_ = 0;
 
   // External events.
-  Timestamp timestamp_pa14_;
+  Timestamp timestamp_pa14_ = Timestamp(nh_);
 };
 
 #endif

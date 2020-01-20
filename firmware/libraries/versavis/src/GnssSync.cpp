@@ -14,6 +14,7 @@ void GnssSync::setup(ros::NodeHandle *nh, Uart *uart,
                      const uint32_t baud_rate /*= 115200*/) {
   reset();
   setupRos(nh);
+  timestamp_pa14_ = Timestamp(nh);
   setupSerial(uart, baud_rate);
   setupCounter();
 }
@@ -31,10 +32,10 @@ void GnssSync::resetFilterState() {
   filter_state_.Q = 100.0;
 #else
   filter_state_.x = 32768.0;
-  filter_state_.R = 100.0;
-  filter_state_.Q = 1.0;
+  filter_state_.R = 1.0;    // 1 Tick standard deviation.
+  filter_state_.Q = 0.0001; // 0.01 Tick / second standard deviation.
 #endif
-  filter_state_.P = filter_state_.R;
+  filter_state_.P = filter_state_.R * filter_state_.R;
   filter_state_.z = 0;
   filter_state_.pps_cnt = 0;
   filter_state_.pps_cnt_prev = 0;
@@ -61,21 +62,20 @@ void GnssSync::update() {
   filter_state_.pps_cnt = pps_cnt_;
   filter_state_.z = z_;
 
-  if (filter_state_.pps_cnt < 2)
-    return;
-
-  if (reset_time_) {
-    waitForNmea();
-    return;
+  if (filter_state_.pps_cnt < 2) {
+    // Do nothing.
+  } else if (reset_time_) {
+    reset_time_ = !waitForNmea(); // Get absolute time.
+  } else {
+    updateTps(); // Update Kalman filter.
   }
-
-  updateTps();
 }
 
 void GnssSync::updateTps() {
   // Update Kalman filter to estimate ticks per second.
   if (filter_state_.pps_cnt <= filter_state_.pps_cnt_prev)
     return;
+
   // Prediction.
   double dt = filter_state_.pps_cnt - filter_state_.pps_cnt_prev;
   filter_state_.P = filter_state_.P + dt * filter_state_.Q;
@@ -103,6 +103,7 @@ void GnssSync::updateTps() {
 
 void GnssSync::reset() {
   reset_time_ = true;
+  clear_uart_ = true;
   resetFilterState();
 }
 
@@ -146,6 +147,13 @@ void Timestamp::setTime(const versavis::ExtClkFilterState &filter_state,
   filter_state_ = filter_state;
   ticks_ = ticks;
   has_time_ = true;
+
+  // Fake ROS::TIME::NOW()
+  // auto time = nh_->now();
+  // ticks_ = 1;
+  // filter_state_.pps_cnt = 0;
+  // filter_state_.t_nmea = time.sec;
+  // filter_state_.x_nspt = time.nsec;
 }
 
 void GnssSync::setupSerial(Uart *uart, const uint32_t baud_rate) {
@@ -312,14 +320,24 @@ void GnssSync::setupInterruptPa14() {
   NVIC_EnableIRQ(EIC_IRQn);
 }
 
-void GnssSync::waitForNmea() {
+bool GnssSync::waitForNmea() {
+  // State variables.
+  NmeaParser nmea_parser;
+  filter_state_.x = filter_state_.z;
+  filter_state_.pps_cnt = pps_cnt_;
+  filter_state_.pps_cnt_prev = filter_state_.pps_cnt;
+
   // Make sure pps_cnt_ is at least 200 ms old and at most 800 ms old. Otherwise
-  // NMEA signal may have not arrived, yet or is going to be updated already.
+  // NMEA signal may have not arrived, yet or is going to be updated.
   const double kNmeaOffsetNs = 200.0 * 1.0e6;
   const double kLowerLimit = kNmeaOffsetNs;
   const double kUpperLimit = 1e9 - kNmeaOffsetNs;
   double duration_ns = double(REG_TC4_COUNT32_COUNT) * filter_state_.x_nspt;
-  if (duration_ns < kLowerLimit || duration_ns > kUpperLimit) {
+  bool uart_arrived = (duration_ns > kLowerLimit);
+  uart_arrived &= (duration_ns < kUpperLimit);
+
+#ifdef DEBUG
+  if (!uart_arrived) {
     DEBUG_PRINT("[GnssSync]: Waiting for PPS count signal to be between ");
     DEBUG_PRINT(kLowerLimit);
     DEBUG_PRINT(" [ns] and ");
@@ -327,35 +345,54 @@ void GnssSync::waitForNmea() {
     DEBUG_PRINT(" [ns]. Current age: ");
     DEBUG_PRINT(duration_ns);
     DEBUG_PRINTLN(" [ns]");
-    return;
   }
+#endif
 
-  NmeaParser nmea_parser;
-  uint32_t t_nmea_pps_cnt = pps_cnt_; // Assign pps signal to time.
-  while (uart_ && uart_->available()) {
-    auto result = nmea_parser.parseChar(uart_->read());
-    if ((result == NmeaParser::SentenceType::kGpZda) &&
-        nmea_parser.getGpZdaMessage().hundreths == 0) {
-      DEBUG_PRINTLN(nmea_parser.getGpZdaMessage().str);
-      reset_time_ = false;
+  // Read UART.
+  bool received_time = false;
+  // Clear UART buffer on first call. There may still be old data in the
+  if (clear_uart_ && uart_arrived && uart_) {
+    while (uart_->available()) {
+      uart_->read();
+      clear_uart_ = false;
     }
   }
-  if (reset_time_)
-    return; // Was not able to read time from serial port.
+  // Read most current NMEA absolute time.
+  else if (uart_arrived && uart_) {
+    while (uart_->available()) {
+      auto result = nmea_parser.parseChar(uart_->read());
+      if (!clear_uart_ && (result == NmeaParser::SentenceType::kGpZda) &&
+          (nmea_parser.getGpZdaMessage().hundreths == 0)) {
+        DEBUG_PRINTLN(nmea_parser.getGpZdaMessage().str);
+        received_time = true;
+      }
+    }
+  }
 
-  // Save the time when pps counting started.
-  DateTime date_time(
-      nmea_parser.getGpZdaMessage().year, nmea_parser.getGpZdaMessage().month,
-      nmea_parser.getGpZdaMessage().day, nmea_parser.getGpZdaMessage().hour,
-      nmea_parser.getGpZdaMessage().minute,
-      nmea_parser.getGpZdaMessage().second);
-  filter_state_.t_nmea = date_time.unixtime() - t_nmea_pps_cnt;
+  // Update filter absolute time with time when pps counting started.
+  if (received_time) {
+    DateTime date_time(
+        nmea_parser.getGpZdaMessage().year, nmea_parser.getGpZdaMessage().month,
+        nmea_parser.getGpZdaMessage().day, nmea_parser.getGpZdaMessage().hour,
+        nmea_parser.getGpZdaMessage().minute,
+        nmea_parser.getGpZdaMessage().second);
+    filter_state_.t_nmea = date_time.unixtime() - filter_state_.pps_cnt;
+    computeTime(filter_state_, 0, &filter_state_.stamp.data);
 
-#ifdef DEBUG
-  DEBUG_PRINTLN("[GnssSync]: Received NMEA time.");
-  DEBUG_PRINT("[GnssSync]: Unix time at pps_cnt == 0: ");
-  DEBUG_PRINTLN(filter_state_.t_nmea);
+#ifndef DEBUG
+    filter_state_pub_.publish(&filter_state_); // Publish initial filter state.
 #endif
+
+    DEBUG_PRINTLN("[GnssSync]: Received NMEA time.");
+    DEBUG_PRINT("[GnssSync]: Unix time at pps_cnt == 0: ");
+    DEBUG_PRINTLN(filter_state_.t_nmea);
+    DEBUG_PRINT("[GnssSync]: Unix time at pps_cnt == ");
+    DEBUG_PRINT(filter_state_.pps_cnt);
+    DEBUG_PRINT(": ");
+    DEBUG_PRINTLN(date_time.unixtime());
+  }
+
+  return received_time;
 }
 
 // Interrupt Service Routine (ISR) for timer TC4
