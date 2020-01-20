@@ -7,8 +7,20 @@
 #include "nmea_parser/NmeaParser.h"
 #include "versavis_configuration.h"
 
+#ifdef USE_GCLKIN_10MHZ
+const uint32_t kClkFreqHz = 10e6;
+#elif defined USE_DFLL48M
+const uint32_t kClkFreqHz = 48e6;
+#else
+const uint32_t kClkFreqHz = 32768;
+#endif
+
+const float kH = kClkFreqHz * 1.0e-6; // Converts ppm to ticks per second.
+const double kTicksToSeconds = 1.0 / kClkFreqHz;
+
 GnssSync::GnssSync()
-    : filter_state_pub_("/versavis/gnss_sync/filter_state", &filter_state_) {}
+    : filter_state_pub_("/versavis/gnss_sync/filter_state", &filter_state_),
+      ticks_to_nanoseconds_(1.0e9 / kClkFreqHz) {}
 
 void GnssSync::setup(ros::NodeHandle *nh, Uart *uart,
                      const uint32_t baud_rate /*= 115200*/) {
@@ -23,44 +35,34 @@ void GnssSync::resetFilterState() {
   // Initialize filter state.
   filter_state_.stamp.data = ros::Time(0, 0);
 #ifdef USE_GCLKIN_10MHZ
-  filter_state_.nominal_freq = 10000000;
-  filter_state_.R = 9.0; // 1 Tick standard deviation.
+  filter_state_.R = 9.0; // 3 Ticks standard deviation.
   const uint8_t ppm = 5;
   const uint16_t jitter = 1.0;        // Ticks jitter per second.
   const float freq_stability = 0.014; // PPM / delta deg C
 #elif defined USE_DFLL48M
-  filter_state_.nominal_freq = 48000000;
   filter_state_.R = 10000.0;
   filter_state_.Q = 100.0;
   const uint16_t jitter = 4000.0;
   const uint8_t ppm = 20;
 #else
-  filter_state_.nominal_freq = 32768;
   filter_state_.R = 9.0;       // 3 Tick standard deviation.
   const uint16_t jitter = 1.0; // Jitter per second.
   const uint8_t ppm = 20;
   const float freq_stability = 0.04; // PPM / delta deg C
 #endif
-  // Assume temperature changes 1 deg / minute is 3 sigma.
-  filter_state_.Q =
-      pow(freq_stability / 60.0 / 1000000.0 * filter_state_.nominal_freq / 3.0,
-          2.0);
-  // Assume jitter + discretization error + interrupt kInterruptCycles is 3
-  // sigma.
-  const float interrupt_cycles =
-      20.0 / CPU_FREQ_HZ * filter_state_.nominal_freq;
-  const float pps_accuracy = 60.0 * 1.0e-9 * filter_state_.nominal_freq;
-  filter_state_.R =
-      pow((jitter + interrupt_cycles + pps_accuracy + 1.0) / 3.0, 2.0);
-  // Assume ppm + discretization is initial 3 sigma.
-  const float kSigma = (ppm / 1000000.0 * filter_state_.nominal_freq + 1) / 3.0;
-  filter_state_.P = pow(kSigma, 2.0);
+#
+  // Assume temperature changes 1 deg / minute is sigma.
+  filter_state_.Q = pow(freq_stability / 60.0, 2.0);
+  // Assume jitter + discretization error + interrupt cycles is sigma.
+  const float interrupt_cycles = 20.0 * (kClkFreqHz / CPU_FREQ_HZ);
+  const float pps_accuracy = 60.0 * 1.0e-9 * kClkFreqHz;
+  filter_state_.R = pow((jitter + interrupt_cycles + pps_accuracy + 1.0), 2.0);
+  filter_state_.P = filter_state_.R / kH / kH;
   filter_state_.x = 0;
   filter_state_.z = 0;
   filter_state_.pps_cnt = 0;
   filter_state_.pps_cnt_prev = 0;
   filter_state_.t_nmea = 0;
-  filter_state_.x_nspt = 1000000000.0 / filter_state_.nominal_freq;
 }
 
 void GnssSync::setupRos(ros::NodeHandle *nh) {
@@ -80,7 +82,7 @@ void GnssSync::setProcessNoise(const float Q_tps) { filter_state_.Q = Q_tps; }
 void GnssSync::update() {
   // Fix volatile variables.
   filter_state_.pps_cnt = pps_cnt_;
-  filter_state_.z = z_ - filter_state_.nominal_freq;
+  filter_state_.z = z_ - kClkFreqHz;
 
   if (filter_state_.pps_cnt < 2) {
     // Do nothing.
@@ -100,17 +102,19 @@ void GnssSync::updateTps() {
   float dt = filter_state_.pps_cnt - filter_state_.pps_cnt_prev;
   filter_state_.P = filter_state_.P + dt * filter_state_.Q;
   // Measurement.
-  float y = filter_state_.z - filter_state_.x;
-  float S_inv = 1.0 / (filter_state_.P + filter_state_.R);
-  float K = filter_state_.P * S_inv;
+  float y = filter_state_.z - kH * filter_state_.x;
+  float S_inv = 1.0 / (kH * filter_state_.P * kH + filter_state_.R);
+  float K = filter_state_.P * kH * S_inv;
 
   filter_state_.x += K * y;
-  filter_state_.P = (1.0 - K) * filter_state_.P;
-  filter_state_.x_nspt =
-      1000000000.0 / (filter_state_.x + filter_state_.nominal_freq);
-  computeTime(filter_state_, 0, &filter_state_.stamp.data);
+  filter_state_.P = (1.0 - K * kH) * filter_state_.P;
+  ticks_to_nanoseconds_ =
+      1.0e9 / (static_cast<double>(kH) * static_cast<double>(filter_state_.x) +
+               static_cast<double>(kClkFreqHz));
+  computeTime(filter_state_, ticks_to_nanoseconds_, 0,
+              &filter_state_.stamp.data);
 
-  DEBUG_PRINT("[GnssSync]: Updated ticks per second ");
+  DEBUG_PRINT("[GnssSync]: Updated ppm ");
   DEBUG_PRINT("x: ");
   DEBUG_PRINT(filter_state_.x);
   DEBUG_PRINT(" P: ");
@@ -129,27 +133,30 @@ void GnssSync::reset() {
 }
 
 void GnssSync::computeTime(const versavis::ExtClkFilterState &filter_state,
+                           const double ticks_to_nanoseconds,
                            const uint32_t ticks, uint32_t *sec,
                            uint32_t *nsec) {
   if (sec) {
     *sec = filter_state.t_nmea + filter_state.pps_cnt;
   }
   if (nsec) {
-    *nsec = float(ticks) * filter_state.x_nspt;
+    *nsec = ticks_to_nanoseconds * static_cast<double>(ticks);
   }
   ros::normalizeSecNSec(*sec, *nsec);
 }
 
 void GnssSync::computeTime(const versavis::ExtClkFilterState &filter_state,
+                           const double ticks_to_nanoseconds,
                            const uint32_t ticks, ros::Time *time) {
   uint32_t sec, nsec;
-  computeTime(filter_state, ticks, &sec, &nsec);
+  computeTime(filter_state, ticks_to_nanoseconds, ticks, &sec, &nsec);
   if (time)
     *time = ros::Time(sec, nsec);
 }
 
 void GnssSync::getTimeNow(uint32_t *sec, uint32_t *nsec) {
-  computeTime(filter_state_, REG_TC4_COUNT32_COUNT, sec, nsec);
+  computeTime(filter_state_, ticks_to_nanoseconds_, REG_TC4_COUNT32_COUNT, sec,
+              nsec);
 }
 
 // Return time once. Resets valid flag.
@@ -157,15 +164,18 @@ bool Timestamp::getTime(uint32_t *sec, uint32_t *nsec) {
   if (!hasTime())
     return false;
 
-  GnssSync::computeTime(filter_state_, ticks_, sec, nsec);
+  GnssSync::computeTime(filter_state_, ticks_to_nanoseconds_, ticks_, sec,
+                        nsec);
   has_time_ = false;
 
   return true;
 }
 
 void Timestamp::setTime(const versavis::ExtClkFilterState &filter_state,
+                        const double ticks_to_nanoseconds,
                         const uint32_t ticks) {
   filter_state_ = filter_state;
+  ticks_to_nanoseconds_ = ticks_to_nanoseconds;
   ticks_ = ticks;
   has_time_ = true;
 
@@ -344,7 +354,7 @@ void GnssSync::setupInterruptPa14() {
 bool GnssSync::waitForNmea() {
   // State variables.
   NmeaParser nmea_parser;
-  filter_state_.x = filter_state_.z;
+  filter_state_.x = filter_state_.z / kH;
   filter_state_.pps_cnt = pps_cnt_;
   filter_state_.pps_cnt_prev = filter_state_.pps_cnt;
 
@@ -353,7 +363,7 @@ bool GnssSync::waitForNmea() {
   const float kNmeaOffsetNs = 200.0 * 1.0e6;
   const float kLowerLimit = kNmeaOffsetNs;
   const float kUpperLimit = 1e9 - kNmeaOffsetNs;
-  float duration_ns = float(REG_TC4_COUNT32_COUNT) * filter_state_.x_nspt;
+  float duration_ns = float(REG_TC4_COUNT32_COUNT) * ticks_to_nanoseconds_;
   bool uart_arrived = (duration_ns > kLowerLimit);
   uart_arrived &= (duration_ns < kUpperLimit);
 
@@ -398,7 +408,8 @@ bool GnssSync::waitForNmea() {
         nmea_parser.getGpZdaMessage().minute,
         nmea_parser.getGpZdaMessage().second);
     filter_state_.t_nmea = date_time.unixtime() - filter_state_.pps_cnt;
-    computeTime(filter_state_, 0, &filter_state_.stamp.data);
+    computeTime(filter_state_, ticks_to_nanoseconds_, 0,
+                &filter_state_.stamp.data);
 
 #ifndef DEBUG
     filter_state_pub_.publish(&filter_state_); // Publish initial filter state.
@@ -446,5 +457,5 @@ bool GnssSync::getTimePa14(uint32_t *sec, uint32_t *nsec) {
 }
 
 void GnssSync::setTimePa14(const uint32_t ticks) {
-  timestamp_pa14_.setTime(filter_state_, ticks);
+  timestamp_pa14_.setTime(filter_state_, ticks_to_nanoseconds_, ticks);
 }

@@ -28,10 +28,11 @@ public:
   inline bool hasTime() { return has_time_; }
   bool getTime(uint32_t *sec, uint32_t *nsec);
   void setTime(const versavis::ExtClkFilterState &filter_state,
-               const uint32_t ticks);
+               const double ticks_to_nanoseconds, const uint32_t ticks);
 
 private:
   versavis::ExtClkFilterState filter_state_;
+  double ticks_to_nanoseconds_ = 0;
   uint32_t ticks_ = 0;
   bool has_time_ = false;
   ros::NodeHandle *nh_;
@@ -69,9 +70,11 @@ public:
   void setTimePa14(const uint32_t ticks);
 
   static void computeTime(const versavis::ExtClkFilterState &filter_state,
+                          const double ticks_to_nanoseconds,
                           const uint32_t ticks, uint32_t *sec, uint32_t *nsec);
 
   static void computeTime(const versavis::ExtClkFilterState &filter_state,
+                          const double ticks_to_nanoseconds,
                           const uint32_t ticks, ros::Time *time);
 
 private:
@@ -94,6 +97,7 @@ private:
   bool reset_time_ = true;
   bool clear_uart_ = true;
   Uart *uart_;
+  double ticks_to_nanoseconds_;
 
   // Volatile measurements
   volatile uint32_t pps_cnt_ = 0;
