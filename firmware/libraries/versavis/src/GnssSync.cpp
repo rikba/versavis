@@ -23,24 +23,44 @@ void GnssSync::resetFilterState() {
   // Initialize filter state.
   filter_state_.stamp.data = ros::Time(0, 0);
 #ifdef USE_GCLKIN_10MHZ
-  filter_state_.x = 10000000.0;
-  filter_state_.R = 100.0;
-  filter_state_.Q = 1.0;
+  filter_state_.nominal_freq = 10000000;
+  filter_state_.R = 9.0; // 1 Tick standard deviation.
+  const uint8_t ppm = 5;
+  const uint16_t jitter = 1.0;        // Ticks jitter per second.
+  const float freq_stability = 0.014; // PPM / delta deg C
 #elif defined USE_DFLL48M
-  filter_state_.x = 48000000.0;
+  filter_state_.nominal_freq = 48000000;
   filter_state_.R = 10000.0;
   filter_state_.Q = 100.0;
+  const uint16_t jitter = 4000.0;
+  const uint8_t ppm = 20;
 #else
-  filter_state_.x = 32768.0;
-  filter_state_.R = 1.0;    // 1 Tick standard deviation.
-  filter_state_.Q = 0.0001; // 0.01 Tick / second standard deviation.
+  filter_state_.nominal_freq = 32768;
+  filter_state_.R = 9.0;       // 3 Tick standard deviation.
+  const uint16_t jitter = 1.0; // Jitter per second.
+  const uint8_t ppm = 20;
+  const float freq_stability = 0.04; // PPM / delta deg C
 #endif
-  filter_state_.P = filter_state_.R * filter_state_.R;
+  // Assume temperature changes 1 deg / minute is 3 sigma.
+  filter_state_.Q =
+      pow(freq_stability / 60.0 / 1000000.0 * filter_state_.nominal_freq / 3.0,
+          2.0);
+  // Assume jitter + discretization error + interrupt kInterruptCycles is 3
+  // sigma.
+  const float interrupt_cycles =
+      20.0 / CPU_FREQ_HZ * filter_state_.nominal_freq;
+  const float pps_accuracy = 60.0 * 1.0e-9 * filter_state_.nominal_freq;
+  filter_state_.R =
+      pow((jitter + interrupt_cycles + pps_accuracy + 1.0) / 3.0, 2.0);
+  // Assume ppm + discretization is initial 3 sigma.
+  const float kSigma = (ppm / 1000000.0 * filter_state_.nominal_freq + 1) / 3.0;
+  filter_state_.P = pow(kSigma, 2.0);
+  filter_state_.x = 0;
   filter_state_.z = 0;
   filter_state_.pps_cnt = 0;
   filter_state_.pps_cnt_prev = 0;
   filter_state_.t_nmea = 0;
-  filter_state_.x_nspt = 1000000000.0 / filter_state_.x;
+  filter_state_.x_nspt = 1000000000.0 / filter_state_.nominal_freq;
 }
 
 void GnssSync::setupRos(ros::NodeHandle *nh) {
@@ -51,16 +71,16 @@ void GnssSync::setupRos(ros::NodeHandle *nh) {
 #endif
 }
 
-void GnssSync::setMeasurementNoise(const double R_tps) {
+void GnssSync::setMeasurementNoise(const float R_tps) {
   filter_state_.R = R_tps;
 }
 
-void GnssSync::setProcessNoise(const double Q_tps) { filter_state_.Q = Q_tps; }
+void GnssSync::setProcessNoise(const float Q_tps) { filter_state_.Q = Q_tps; }
 
 void GnssSync::update() {
   // Fix volatile variables.
   filter_state_.pps_cnt = pps_cnt_;
-  filter_state_.z = z_;
+  filter_state_.z = z_ - filter_state_.nominal_freq;
 
   if (filter_state_.pps_cnt < 2) {
     // Do nothing.
@@ -77,16 +97,17 @@ void GnssSync::updateTps() {
     return;
 
   // Prediction.
-  double dt = filter_state_.pps_cnt - filter_state_.pps_cnt_prev;
+  float dt = filter_state_.pps_cnt - filter_state_.pps_cnt_prev;
   filter_state_.P = filter_state_.P + dt * filter_state_.Q;
   // Measurement.
-  double y = static_cast<double>(filter_state_.z) - filter_state_.x;
-  double S_inv = 1.0 / (filter_state_.P + filter_state_.R);
-  double K = filter_state_.P * S_inv;
+  float y = filter_state_.z - filter_state_.x;
+  float S_inv = 1.0 / (filter_state_.P + filter_state_.R);
+  float K = filter_state_.P * S_inv;
 
   filter_state_.x += K * y;
   filter_state_.P = (1.0 - K) * filter_state_.P;
-  filter_state_.x_nspt = 1000000000.0 / filter_state_.x;
+  filter_state_.x_nspt =
+      1000000000.0 / (filter_state_.x + filter_state_.nominal_freq);
   computeTime(filter_state_, 0, &filter_state_.stamp.data);
 
   DEBUG_PRINT("[GnssSync]: Updated ticks per second ");
@@ -114,7 +135,7 @@ void GnssSync::computeTime(const versavis::ExtClkFilterState &filter_state,
     *sec = filter_state.t_nmea + filter_state.pps_cnt;
   }
   if (nsec) {
-    *nsec = double(ticks) * filter_state.x_nspt;
+    *nsec = float(ticks) * filter_state.x_nspt;
   }
   ros::normalizeSecNSec(*sec, *nsec);
 }
@@ -329,10 +350,10 @@ bool GnssSync::waitForNmea() {
 
   // Make sure pps_cnt_ is at least 200 ms old and at most 800 ms old. Otherwise
   // NMEA signal may have not arrived, yet or is going to be updated.
-  const double kNmeaOffsetNs = 200.0 * 1.0e6;
-  const double kLowerLimit = kNmeaOffsetNs;
-  const double kUpperLimit = 1e9 - kNmeaOffsetNs;
-  double duration_ns = double(REG_TC4_COUNT32_COUNT) * filter_state_.x_nspt;
+  const float kNmeaOffsetNs = 200.0 * 1.0e6;
+  const float kLowerLimit = kNmeaOffsetNs;
+  const float kUpperLimit = 1e9 - kNmeaOffsetNs;
+  float duration_ns = float(REG_TC4_COUNT32_COUNT) * filter_state_.x_nspt;
   bool uart_arrived = (duration_ns > kLowerLimit);
   uart_arrived &= (duration_ns < kUpperLimit);
 

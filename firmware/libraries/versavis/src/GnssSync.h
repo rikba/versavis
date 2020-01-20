@@ -51,8 +51,8 @@ public:
   void setup(ros::NodeHandle *nh, Uart *uart,
              const uint32_t baud_rate = 115200);
 
-  void setMeasurementNoise(const double R_tps);
-  void setProcessNoise(const double Q_tps);
+  void setMeasurementNoise(const float R_tps);
+  void setProcessNoise(const float Q_tps);
 
   inline bool valid() { return !reset_time_; }
 
