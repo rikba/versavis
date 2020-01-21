@@ -35,19 +35,13 @@ void GnssSync::resetFilterState() {
   // Initialize filter state.
   filter_state_.stamp.data = ros::Time(0, 0);
 #ifdef USE_GCLKIN_10MHZ
-  filter_state_.R = 9.0; // 3 Ticks standard deviation.
-  const uint8_t ppm = 5;
   const uint16_t jitter = 1.0;        // Ticks jitter per second.
   const float freq_stability = 0.014; // PPM / delta deg C
 #elif defined USE_DFLL48M
-  filter_state_.R = 10000.0;
-  filter_state_.Q = 100.0;
   const uint16_t jitter = 4000.0;
-  const uint8_t ppm = 20;
+  const float freq_stability = 0.04; // PPM / delta deg C
 #else
-  filter_state_.R = 9.0;       // 3 Tick standard deviation.
-  const uint16_t jitter = 1.0; // Jitter per second.
-  const uint8_t ppm = 20;
+  const uint16_t jitter = 1.0;       // Jitter per second.
   const float freq_stability = 0.04; // PPM / delta deg C
 #endif
 #
@@ -159,32 +153,10 @@ void GnssSync::getTimeNow(uint32_t *sec, uint32_t *nsec) {
               nsec);
 }
 
-// Return time once. Resets valid flag.
-bool Timestamp::getTime(uint32_t *sec, uint32_t *nsec) {
-  if (!hasTime())
-    return false;
-
-  GnssSync::computeTime(filter_state_, ticks_to_nanoseconds_, ticks_, sec,
-                        nsec);
-  has_time_ = false;
-
-  return true;
-}
-
-void Timestamp::setTime(const versavis::ExtClkFilterState &filter_state,
-                        const double ticks_to_nanoseconds,
-                        const uint32_t ticks) {
-  filter_state_ = filter_state;
-  ticks_to_nanoseconds_ = ticks_to_nanoseconds;
-  ticks_ = ticks;
-  has_time_ = true;
-
-  // Fake ROS::TIME::NOW()
-  // auto time = nh_->now();
-  // ticks_ = 1;
-  // filter_state_.pps_cnt = 0;
-  // filter_state_.t_nmea = time.sec;
-  // filter_state_.x_nspt = time.nsec;
+ros::Time GnssSync::getTimeNow() {
+  ros::Time t;
+  computeTime(filter_state_, ticks_to_nanoseconds_, REG_TC4_COUNT32_COUNT, &t);
+  return t;
 }
 
 void GnssSync::setupSerial(Uart *uart, const uint32_t baud_rate) {

@@ -2,7 +2,7 @@
 //  January 2020
 //  Author: Rik Bähnemann <brik@ethz.ch>
 ////////////////////////////////////////////////////////////////////////////////
-//  PpsSync.h
+//  GnssSync.h
 ////////////////////////////////////////////////////////////////////////////////
 //
 //  Implementation to synchronize the VersaVIS against a GNSS receiver time.
@@ -14,29 +14,12 @@
 #ifndef GnssSync_h
 #define GnssSync_h
 
+#include <cstdint>
+
 #include <Uart.h>
 
 #include <ros.h>
 #include <versavis/ExtClkFilterState.h>
-
-#include "versavis_configuration.h"
-
-class Timestamp {
-public:
-  Timestamp(ros::NodeHandle *nh) : nh_(nh) {}
-
-  inline bool hasTime() { return has_time_; }
-  bool getTime(uint32_t *sec, uint32_t *nsec);
-  void setTime(const versavis::ExtClkFilterState &filter_state,
-               const double ticks_to_nanoseconds, const uint32_t ticks);
-
-private:
-  versavis::ExtClkFilterState filter_state_;
-  double ticks_to_nanoseconds_ = 0;
-  uint32_t ticks_ = 0;
-  bool has_time_ = false;
-  ros::NodeHandle *nh_;
-};
 
 class GnssSync {
 public:
@@ -60,6 +43,7 @@ public:
   void update();
   void reset();
   void getTimeNow(uint32_t *sec, uint32_t *nsec);
+  ros::Time getTimeNow();
 
   inline void incrementPPS() { pps_cnt_++; }
   inline void measureTicksPerSecond(const uint32_t z) { z_ = z; }
@@ -96,8 +80,8 @@ private:
   // States
   bool reset_time_ = true;
   bool clear_uart_ = true;
-  Uart *uart_;
-  double ticks_to_nanoseconds_;
+  Uart *uart_ = NULL;
+  double ticks_to_nanoseconds_ = 0;
 
   // Volatile measurements
   volatile uint32_t pps_cnt_ = 0;

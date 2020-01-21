@@ -29,6 +29,9 @@ public:
   Sensor(ros::NodeHandle *nh, const String &topic, const int rate_hz,
          Timer &timer, versavis::ImuMicro &imu_msg,
          const trigger_type type = trigger_type::NON_INVERTED);
+  Sensor(ros::NodeHandle *nh, const String &topic, const int rate_hz,
+         Timer &timer, std_msgs::Time &time_msg,
+         const trigger_type type = trigger_type::NON_INVERTED);
   inline virtual void setup(){/* do nothing */};
   inline virtual void begin(){/* do nothing */};
   inline virtual void triggerMeasurement() = 0;
