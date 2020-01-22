@@ -2,7 +2,7 @@
 //  January 2020
 //  Author: Rik Bähnemann <brik@ethz.ch>
 ////////////////////////////////////////////////////////////////////////////////
-//  GnssSync.h
+//  ExternalEvent.h
 ////////////////////////////////////////////////////////////////////////////////
 //
 //  This sensor timestamps external events on the one of the AUX pins.
@@ -19,22 +19,25 @@
 
 class ExternalEvent : public Sensor {
 public:
-  ExternalEvent(ros::NodeHandle *nh, const String &topic, const int rate_hz,
-                Timer &timer);
-  void setup() override;
-  void begin() override;
-  void triggerMeasurement() override;
-  void publish() override;
-  void setupPublisher() override;
+  ExternalEvent(ros::NodeHandle *nh, const String &topic);
+  void setup();
+  void begin();
+  void triggerMeasurement();
+  void publish();
+  void setupPublisher();
+
+protected:
+  // ------------ROS members-----------
+  ros::NodeHandle *nh_;
+  String topic_;
+  ros::Publisher publisher_;
 
 private:
   // Disable copy / assignment constructors.
   ExternalEvent(const ExternalEvent &) = delete;
   ExternalEvent &operator=(const ExternalEvent &) = delete;
 
-  const uint8_t kId = 0;
-
-  std_msgs::Time range_msg_;
+  std_msgs::Time time_msg_;
 };
 
 #endif
