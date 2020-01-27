@@ -3,6 +3,10 @@
 #include "helper.h"
 #include "versavis_configuration.h"
 
+#ifdef GNSS_SYNC
+#include "clock_sync/GnssSync.h"
+#endif
+
 // Image time message version.
 Sensor::Sensor(ros::NodeHandle *nh, const String &topic,
                versavis::TimeNumbered &img_time_msg,

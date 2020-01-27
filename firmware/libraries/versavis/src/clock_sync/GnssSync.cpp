@@ -26,7 +26,6 @@ void GnssSync::setup(ros::NodeHandle *nh, Uart *uart,
                      const uint32_t baud_rate /*= 115200*/) {
   reset();
   setupRos(nh);
-  timestamp_pa14_ = Timestamp(nh);
   setupSerial(uart, baud_rate);
   setupCounter();
 }
@@ -292,35 +291,6 @@ void GnssSync::setupCounter() {
       TC_CTRLA_ENABLE;          // Enable TC4
   while (TC4->COUNT32.STATUS.bit.SYNCBUSY) {
   } // Wait for synchronization
-
-  setupInterruptPa14();
-}
-
-void GnssSync::setupInterruptPa14() {
-
-  DEBUG_PRINTLN("[GnssSync]: Configuring input on SAMD PA 14");
-  PORT->Group[PORTA].DIRCLR.reg =
-      PORT_DIRCLR_DIRCLR(1 << 14); // Set pin PA14 pin as input
-  PORT->Group[PORTA].PMUX[14 >> 1].reg |=
-      PORT_PMUX_PMUXE_A; // Connect PA pin to peripheral A (EXTINT[14])
-  PORT->Group[PORTA].PINCFG[14].reg |=
-      PORT_PINCFG_PMUXEN; // Enable pin peripheral multiplexation
-  PORT->Group[PORTA].PINCFG[14].reg |= PORT_PINCFG_INEN; // Enable input
-
-  DEBUG_PRINTLN("[GnssSync]: Configuring EIC on EXTINT14.");
-  // Enable interrupt
-  REG_EIC_INTENCLR |= EIC_INTENCLR_EXTINT14;
-  REG_EIC_INTENSET |= EIC_INTENSET_EXTINT14;
-  REG_EIC_INTFLAG |= EIC_INTFLAG_EXTINT14;   // Clear flag
-  REG_EIC_CONFIG1 |= EIC_CONFIG_SENSE6_RISE; // Rising edge.
-  REG_EIC_CTRL |= EIC_CTRL_ENABLE;           // Enable EIC peripheral
-  while (EIC->STATUS.bit.SYNCBUSY) {
-  } // Wait for synchronization
-
-  NVIC_DisableIRQ(EIC_IRQn);
-  NVIC_ClearPendingIRQ(EIC_IRQn);
-  NVIC_SetPriority(EIC_IRQn, 1);
-  NVIC_EnableIRQ(EIC_IRQn);
 }
 
 bool GnssSync::waitForNmea() {
@@ -410,24 +380,4 @@ void TC4_Handler() {
     DEBUG_PRINTLN(GnssSync::getInstance().getFilterState().pps_cnt + 1);
   }
   // TODO(rikba): catch and manage overflow
-}
-
-void EIC_Handler() {
-  if (!GnssSync::getInstance().valid()) {
-    REG_EIC_INTFLAG |= EIC_INTFLAG_EXTINT14; // Clear flag.
-    return;
-  }
-
-  if (REG_EIC_INTFLAG & EIC_INTFLAG_EXTINT14) {
-    GnssSync::getInstance().setTimePa14(REG_TC4_COUNT32_COUNT);
-    REG_EIC_INTFLAG |= EIC_INTFLAG_EXTINT14; // Clear flag.
-  }
-}
-
-bool GnssSync::getTimePa14(uint32_t *sec, uint32_t *nsec) {
-  return timestamp_pa14_.getTime(sec, nsec);
-}
-
-void GnssSync::setTimePa14(const uint32_t ticks) {
-  timestamp_pa14_.setTime(filter_state_, ticks_to_nanoseconds_, ticks);
 }

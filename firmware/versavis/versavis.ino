@@ -43,14 +43,13 @@ ros::Subscriber<std_msgs::UInt8> pwm_sub("/versavis/illumination_pwm", &pwmCb);
 #endif
 
 /* ----- Timers ----- */
-// In the current setup: TC5 -> IMU, TCC0 -> cam0, TCC1 -> cam1, TC3 -> cam2
-// (TCC2 is used for pwm on pin 11).
+// In the current setup: TCC2 -> IMU, TCC0 -> cam0, TCC1 -> cam1, TC3 -> cam2
 // Be careful, there is NO bookkeeping whether the timer is already used or
 // not. Only use a timer once, otherwise there will be unexpected behavior.
 Timer timer_cam0 = Timer((Tcc *)TCC0);
 Timer timer_cam1 = Timer((Tcc *)TCC1);
 Timer timer_cam2 = Timer((TcCount16 *)TC3);
-Timer timer_imu = Timer((TcCount16 *)TC5);
+Timer timer_imu = Timer((TcCount16 *)TCC2);
 
 /* ----- IMU ----- */
 #ifdef USE_ADIS16445
@@ -118,10 +117,6 @@ void setup() {
   ext_event0.setup();
 #endif
 
-#ifdef GNSS_SYNC
-  GnssSync::getInstance().setup(&nh, &GNSS_SYNC_UART, GNSS_SYNC_BAUD);
-#endif
-
   /* ----- Initialize all connected cameras. ----- */
   while (!cam0.isInitialized() || !cam1.isInitialized() ||
          !cam2.isInitialized()) {
@@ -143,16 +138,9 @@ void setup() {
   while (GCLK->STATUS.bit.SYNCBUSY == 1) {
     ; // wait for sync
   }
-  // Enable TCC2 (not used) and TC3 timers.
+  // Enable TCC2 and TC3 timers.
   REG_GCLK_CLKCTRL = static_cast<uint16_t>(
       GCLK_CLKCTRL_CLKEN | GCLK_CLKCTRL_GEN_GCLK0 | GCLK_CLKCTRL_ID_TCC2_TC3);
-  while (GCLK->STATUS.bit.SYNCBUSY == 1) {
-    ; // wait for sync
-  }
-
-  // Enable TC4 (not used) and TC5 timers.
-  REG_GCLK_CLKCTRL = static_cast<uint16_t>(
-      GCLK_CLKCTRL_CLKEN | GCLK_CLKCTRL_GEN_GCLK0 | GCLK_CLKCTRL_ID_TC4_TC5);
   while (GCLK->STATUS.bit.SYNCBUSY == 1) {
     ; // wait for sync
   }
@@ -160,8 +148,8 @@ void setup() {
   // enable InterruptVector.
   NVIC_EnableIRQ(TCC0_IRQn);
   NVIC_EnableIRQ(TCC1_IRQn);
+  NVIC_EnableIRQ(TCC2_IRQn);
   NVIC_EnableIRQ(TC3_IRQn);
-  NVIC_EnableIRQ(TC5_IRQn);
 
   imu.begin();
   cam0.begin();
@@ -184,6 +172,12 @@ void setup() {
 #endif
 
   interrupts();
+
+#ifdef GNSS_SYNC
+  GnssSync::getInstance().setup(&nh, &GNSS_SYNC_UART, GNSS_SYNC_BAUD);
+  while (!nh.connected())
+    nh.spinOnce();
+#endif
 
   DEBUG_PRINTLN(F("Main: Setup done."));
 }
@@ -218,7 +212,7 @@ void TC3_Handler() { // Called by cam2_timer for camera 2 trigger.
   cam2.triggerMeasurement();
 }
 
-void TC5_Handler() { // Called by imu_timer for imu trigger.
+void TCC2_Handler() { // Called by imu_timer for imu trigger.
   imu.triggerMeasurement();
 }
 

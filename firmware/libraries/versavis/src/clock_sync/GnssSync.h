@@ -8,6 +8,7 @@
 //  Implementation to synchronize the VersaVIS against a GNSS receiver time.
 //  This implementation assumes that the GNSS receiver is connected via PPS
 //  signal and NMEA absolute time.
+//  The PPS input signal is assumed to be received on SAMD pin PA11.
 //
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -50,9 +51,6 @@ public:
 
   inline versavis::ExtClkFilterState getFilterState() { return filter_state_; }
 
-  bool getTimePa14(uint32_t *sec, uint32_t *nsec);
-  void setTimePa14(const uint32_t ticks);
-
   static void computeTime(const versavis::ExtClkFilterState &filter_state,
                           const double ticks_to_nanoseconds,
                           const uint32_t ticks, uint32_t *sec, uint32_t *nsec);
@@ -86,9 +84,6 @@ private:
   // Volatile measurements
   volatile uint32_t pps_cnt_ = 0;
   volatile uint32_t z_ = 0;
-
-  // External events.
-  Timestamp timestamp_pa14_ = Timestamp(nh_);
 };
 
 #endif
