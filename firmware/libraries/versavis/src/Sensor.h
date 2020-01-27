@@ -31,9 +31,6 @@ public:
          const trigger_type type = trigger_type::NON_INVERTED);
   Sensor(ros::NodeHandle *nh, const String &topic, std_msgs::Time &time_msg,
          const trigger_type type = trigger_type::NON_INVERTED);
-  Sensor(ros::NodeHandle *nh, const String &topic, const int rate_hz,
-         Timer &timer, std_msgs::Time &time_msg,
-         const trigger_type type = trigger_type::NON_INVERTED);
   inline virtual void setup(){/* do nothing */};
   inline virtual void begin(){/* do nothing */};
   inline virtual void triggerMeasurement() = 0;
@@ -53,7 +50,7 @@ protected:
   // Trigger type. Non-inverted: The logic level is at 0 and goes to 1 for
   // triggering. Inverted: The logic level is at 1 and goes to 0 for triggering.
   const trigger_type type_;
-  
+
   // ------------ROS members-----------
   ros::NodeHandle *nh_;
   String topic_;
