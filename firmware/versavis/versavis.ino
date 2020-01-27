@@ -17,6 +17,9 @@
 #include <ADIS16460.h>
 #endif
 #include <Camera.h>
+#ifdef EXT_EVENT
+#include <ExternalEvent.h>
+#endif
 #include <Timer.h>
 #include <helper.h>
 
@@ -68,6 +71,11 @@ Camera cam1(&nh, CAM1_TOPIC, CAM1_RATE, timer_cam1, CAM1_TYPE, CAM1_TRIGGER_PIN,
 Camera cam2(&nh, CAM2_TOPIC, CAM2_RATE, timer_cam2, CAM2_TYPE, CAM2_TRIGGER_PIN,
             CAM2_EXPOSURE_PIN, true);
 
+/* External events */
+#ifdef EXT_EVENT
+ExternalEvent ext_event0(&nh, EXT_EVENT_TOPIC, EXT_EVENT_PIN);
+#endif
+
 void setup() {
   DEBUG_INIT(115200);
 
@@ -106,6 +114,9 @@ void setup() {
   cam0.setup();
   cam1.setup();
   cam2.setup();
+#ifdef EXT_EVENT
+  ext_event0.setup();
+#endif
 
 #ifdef GNSS_SYNC
   GnssSync::getInstance().setup(&nh, &GNSS_SYNC_UART, GNSS_SYNC_BAUD);
@@ -168,6 +179,10 @@ void setup() {
                   FALLING);
   attachInterrupt(digitalPinToInterrupt(cam2.exposurePin()), exposureEnd2,
                   FALLING);
+#ifdef EXT_EVENT
+  attachInterrupt(ext_event0.eventPin(), extEvent0, EXT_EVENT_LOGIC);
+#endif
+
   interrupts();
 
   DEBUG_PRINTLN(F("Main: Setup done."));
@@ -182,6 +197,9 @@ void loop() {
   cam1.publish();
   cam2.publish();
   imu.publish();
+#ifdef EXT_EVENT
+  ext_event0.publish();
+#endif
 
 #ifndef DEBUG
   nh.spinOnce();
@@ -233,3 +251,7 @@ void exposureEnd2() {
   }
 #endif
 }
+
+#ifdef EXT_EVENT
+void extEvent0() { ext_event0.triggerMeasurement(); }
+#endif
