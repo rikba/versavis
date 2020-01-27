@@ -164,15 +164,15 @@ void setup() {
   // currently not working!
 
   DEBUG_PRINTLN(F("Main: Attach interrupts."));
+#ifdef EXT_EVENT
+  attachInterrupt(ext_event0.eventPin(), extEvent0, EXT_EVENT_LOGIC);
+#endif
   attachInterrupt(digitalPinToInterrupt(cam0.exposurePin()), exposureEnd0,
                   FALLING);
   attachInterrupt(digitalPinToInterrupt(cam1.exposurePin()), exposureEnd1,
                   FALLING);
   attachInterrupt(digitalPinToInterrupt(cam2.exposurePin()), exposureEnd2,
                   FALLING);
-#ifdef EXT_EVENT
-  attachInterrupt(ext_event0.eventPin(), extEvent0, EXT_EVENT_LOGIC);
-#endif
 
   interrupts();
 

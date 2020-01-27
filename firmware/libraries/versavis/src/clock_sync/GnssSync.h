@@ -52,12 +52,12 @@ public:
   inline versavis::ExtClkFilterState getFilterState() { return filter_state_; }
 
   static void computeTime(const versavis::ExtClkFilterState &filter_state,
-                          const double ticks_to_nanoseconds,
-                          const uint32_t ticks, uint32_t *sec, uint32_t *nsec);
+                          const double ticks_to_nanoseconds, int32_t ticks,
+                          uint32_t *sec, uint32_t *nsec);
 
   static void computeTime(const versavis::ExtClkFilterState &filter_state,
-                          const double ticks_to_nanoseconds,
-                          const uint32_t ticks, ros::Time *time);
+                          const double ticks_to_nanoseconds, int32_t ticks,
+                          ros::Time *time);
 
 private:
   GnssSync();

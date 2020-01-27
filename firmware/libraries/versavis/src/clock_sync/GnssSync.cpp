@@ -127,11 +127,15 @@ void GnssSync::reset() {
 }
 
 void GnssSync::computeTime(const versavis::ExtClkFilterState &filter_state,
-                           const double ticks_to_nanoseconds,
-                           const uint32_t ticks, uint32_t *sec,
-                           uint32_t *nsec) {
+                           const double ticks_to_nanoseconds, int32_t ticks,
+                           uint32_t *sec, uint32_t *nsec) {
+
   if (sec) {
     *sec = filter_state.t_nmea + filter_state.pps_cnt;
+    if (ticks < 0) {
+      *sec -= 1;
+      ticks = kClkFreqHz + ticks;
+    }
   }
   if (nsec) {
     *nsec = ticks_to_nanoseconds * static_cast<double>(ticks);
@@ -140,8 +144,8 @@ void GnssSync::computeTime(const versavis::ExtClkFilterState &filter_state,
 }
 
 void GnssSync::computeTime(const versavis::ExtClkFilterState &filter_state,
-                           const double ticks_to_nanoseconds,
-                           const uint32_t ticks, ros::Time *time) {
+                           const double ticks_to_nanoseconds, int32_t ticks,
+                           ros::Time *time) {
   uint32_t sec, nsec;
   computeTime(filter_state, ticks_to_nanoseconds, ticks, &sec, &nsec);
   if (time)
@@ -149,8 +153,17 @@ void GnssSync::computeTime(const versavis::ExtClkFilterState &filter_state,
 }
 
 ros::Time GnssSync::getTimeNow() {
-  ros::Time t;
-  computeTime(filter_state_, ticks_to_nanoseconds_, REG_TC4_COUNT32_COUNT, &t);
+  // TODO(rikba): Better timing accuracy could be archieved by configuring an
+  // event capture.
+  int32_t count = REG_TC4_COUNT32_COUNT;
+#ifdef GNSS_SYNC_GCLKIN_10MHZ
+  // Compensate for interrupt function call delay.
+  count -= 19;
+#endif
+  ros::Time t(0, 0);
+  if (!reset_time_) { // Only set time once absolute time is set.
+    computeTime(filter_state_, ticks_to_nanoseconds_, count, &t);
+  }
   return t;
 }
 
