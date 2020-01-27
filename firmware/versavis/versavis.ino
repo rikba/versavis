@@ -116,6 +116,9 @@ void setup() {
 #ifdef EXT_EVENT
   ext_event0.setup();
 #endif
+#ifdef GNSS_SYNC
+  GnssSync::getInstance().setup(&nh, &GNSS_SYNC_UART, GNSS_SYNC_BAUD);
+#endif
 
   /* ----- Initialize all connected cameras. ----- */
   while (!cam0.isInitialized() || !cam1.isInitialized() ||
@@ -174,9 +177,7 @@ void setup() {
   interrupts();
 
 #ifdef GNSS_SYNC
-  GnssSync::getInstance().setup(&nh, &GNSS_SYNC_UART, GNSS_SYNC_BAUD);
-  while (!nh.connected())
-    nh.spinOnce();
+  GnssSync::getInstance().setupCounter();
 #endif
 
   DEBUG_PRINTLN(F("Main: Setup done."));

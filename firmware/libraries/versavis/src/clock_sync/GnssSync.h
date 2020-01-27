@@ -32,9 +32,10 @@ public:
   GnssSync(GnssSync const &) = delete;
   void operator=(GnssSync const &) = delete;
 
-  // pps_pin_samd_io can be 11, 14 or 27 on AUX connector.
   void setup(ros::NodeHandle *nh, Uart *uart,
              const uint32_t baud_rate = 115200);
+  // Setup the PPS period counter on TC4/5.
+  void setupCounter();
 
   void setMeasurementNoise(const float R_tps);
   void setProcessNoise(const float Q_tps);
@@ -43,7 +44,6 @@ public:
 
   void update();
   void reset();
-  void getTimeNow(uint32_t *sec, uint32_t *nsec);
   ros::Time getTimeNow();
 
   inline void incrementPPS() { pps_cnt_++; }
@@ -63,7 +63,6 @@ private:
   GnssSync();
 
   void setupSerial(Uart *uart, const uint32_t baud_rate);
-  void setupCounter();
   void setupInterruptPa14();
   void setupRos(ros::NodeHandle *nh);
   bool waitForNmea();

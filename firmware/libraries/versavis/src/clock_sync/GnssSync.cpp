@@ -7,9 +7,9 @@
 #include "nmea_parser/NmeaParser.h"
 #include "versavis_configuration.h"
 
-#ifdef USE_GCLKIN_10MHZ
+#ifdef GNSS_SYNC_GCLKIN_10MHZ
 const uint32_t kClkFreqHz = 10e6;
-#elif defined USE_DFLL48M
+#elif defined GNSS_SYNC_DFLL48M
 const uint32_t kClkFreqHz = 48e6;
 #else
 const uint32_t kClkFreqHz = 32768;
@@ -27,16 +27,15 @@ void GnssSync::setup(ros::NodeHandle *nh, Uart *uart,
   reset();
   setupRos(nh);
   setupSerial(uart, baud_rate);
-  setupCounter();
 }
 
 void GnssSync::resetFilterState() {
   // Initialize filter state.
   filter_state_.stamp.data = ros::Time(0, 0);
-#ifdef USE_GCLKIN_10MHZ
+#ifdef GNSS_SYNC_GCLKIN_10MHZ
   const uint16_t jitter = 1.0;        // Ticks jitter per second.
   const float freq_stability = 0.014; // PPM / delta deg C
-#elif defined USE_DFLL48M
+#elif defined GNSS_SYNC_DFLL48M
   const uint16_t jitter = 4000.0;
   const float freq_stability = 0.04; // PPM / delta deg C
 #else
@@ -61,8 +60,10 @@ void GnssSync::resetFilterState() {
 void GnssSync::setupRos(ros::NodeHandle *nh) {
   nh_ = nh;
 #ifndef DEBUG
-  if (nh_)
+  if (nh_) {
     nh_->advertise(filter_state_pub_);
+    nh_->spinOnce();
+  }
 #endif
 }
 
@@ -147,11 +148,6 @@ void GnssSync::computeTime(const versavis::ExtClkFilterState &filter_state,
     *time = ros::Time(sec, nsec);
 }
 
-void GnssSync::getTimeNow(uint32_t *sec, uint32_t *nsec) {
-  computeTime(filter_state_, ticks_to_nanoseconds_, REG_TC4_COUNT32_COUNT, sec,
-              nsec);
-}
-
 ros::Time GnssSync::getTimeNow() {
   ros::Time t;
   computeTime(filter_state_, ticks_to_nanoseconds_, REG_TC4_COUNT32_COUNT, &t);
@@ -177,7 +173,7 @@ void GnssSync::setupCounter() {
   REG_PM_APBCMASK |= PM_APBCMASK_TC4;   // Enable TC4 Bus clock
   REG_PM_APBAMASK |= PM_APBAMASK_EIC;   // EIC enable.
 
-#ifdef USE_GCLKIN_10MHZ
+#ifdef GNSS_SYNC_GCLKIN_10MHZ
   DEBUG_PRINTLN("[GnssSync]: Configuring PA10/GCLK_IO[4] as input.");
   PORT->Group[PORTA].DIRCLR.reg =
       PORT_DIRCLR_DIRCLR(1 << 10); // Set pin PA10 pin as input
@@ -193,7 +189,7 @@ void GnssSync::setupCounter() {
       GCLK_GENCTRL_GENEN |      // Enable clock.
       GCLK_GENCTRL_SRC_GCLKIN | // Set to external 10MHz oscillator
       GCLK_GENCTRL_ID(4);       // Set clock source to GCLK4
-#elif defined USE_DFLL48M
+#elif defined GNSS_SYNC_DFLL48M
   DEBUG_PRINTLN("[GnssSync]: Configuring GENCTRL register to route DFLL48M to "
                 "generic clock 4.");
   REG_GCLK_GENCTRL =

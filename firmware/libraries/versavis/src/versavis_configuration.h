@@ -41,7 +41,7 @@
 #define IMU_RATE 200
 
 /* ----- ExternalEvent -----*/
-// #define EXT_EVENT
+#define EXT_EVENT
 #ifdef EXT_EVENT
 #define EXT_EVENT_TOPIC "/versavis/ext_event"
 #define EXT_EVENT_PIN 2
@@ -69,8 +69,8 @@
 #ifdef GNSS_SYNC
 #define GNSS_SYNC_UART Serial
 #define GNSS_SYNC_BAUD 115200
-//#define USE_GCLKIN_10MHZ
-//#define USE_DFLL48M
+#define GNSS_SYNC_GCLKIN_10MHZ
+//#define GNSS_SYNC_DFLL48M
 #endif
 
 /* ----- Debug prints. ----- */
