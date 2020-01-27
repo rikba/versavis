@@ -14,7 +14,9 @@ void ExternalEvent::setup() { setupPublisher(); }
 void ExternalEvent::triggerMeasurement() {
   DEBUG_PRINTLN((topic_ + " (ExternalEvent.cpp): Received event.").c_str());
   Sensor::setTimestampNow();
-  Sensor::newMeasurementIsAvailable();
+  if (Sensor::getTimestamp().sec != 0 && Sensor::getTimestamp().nsec != 0) {
+    Sensor::newMeasurementIsAvailable();
+  }
 }
 
 void ExternalEvent::publish() {
@@ -33,10 +35,10 @@ void ExternalEvent::setupPublisher() {
   // already decleared in Sensor::Sensor constructor. If I don't declare
   // publisher_ again here, it gets a random topic (/versavis/cam0)
   publisher_ = ros::Publisher(topic_.c_str(), &time_msg_);
-DEBUG_PRINT(
-    (topic_ + " (ExternalEvent.cpp): Setup publisher with topic ").c_str());
-DEBUG_PRINTLN(publisher_.topic_);
+  DEBUG_PRINT(
+      (topic_ + " (ExternalEvent.cpp): Setup publisher with topic ").c_str());
+  DEBUG_PRINTLN(publisher_.topic_);
 #ifndef DEBUG
-nh_->advertise(publisher_);
+  nh_->advertise(publisher_);
 #endif
 }
