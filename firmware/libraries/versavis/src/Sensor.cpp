@@ -44,7 +44,7 @@ Sensor::Sensor(ros::NodeHandle *nh, const String &topic, const int rate_hz,
 }
 
 void Sensor::setTimestampNow() {
-#ifdef USE_GNSS_TIME
+#ifdef GNSS_SYNC
   timestamp_ = GnssSync::getInstance().getTimeNow();
 #else
   timestamp_ = nh_->now();

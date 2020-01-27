@@ -55,6 +55,16 @@
 #define ILLUMINATION_PIN 26
 #endif
 
+/* ----- GNSS time synchronization ----- */
+// Activation of GNSS time synchronization.
+#define GNSS_SYNC
+#ifdef GNSS_SYNC
+#define GNSS_SYNC_UART Serial
+#define GNSS_SYNC_BAUD 115200
+//#define USE_GCLKIN_10MHZ
+//#define USE_DFLL48M
+#endif
+
 /* ----- Debug prints. ----- */
 // Define whether debug mode should be used. This provides output on the
 // standard console but invalidates ROS communication.

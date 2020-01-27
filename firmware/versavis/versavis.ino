@@ -20,6 +20,10 @@
 #include <Timer.h>
 #include <helper.h>
 
+#ifdef GNSS_SYNC
+#include "clock_sync/GnssSync.h"
+#endif
+
 static void resetCb(const std_msgs::Bool & /*msg*/) { NVIC_SystemReset(); }
 
 #ifdef ILLUMINATION_MODULE
@@ -103,6 +107,10 @@ void setup() {
   cam1.setup();
   cam2.setup();
 
+#ifdef GNSS_SYNC
+  GnssSync::getInstance().setup(&nh, &GNSS_SYNC_UART, GNSS_SYNC_BAUD);
+#endif
+
   /* ----- Initialize all connected cameras. ----- */
   while (!cam0.isInitialized() || !cam1.isInitialized() ||
          !cam2.isInitialized()) {
@@ -166,6 +174,10 @@ void setup() {
 }
 
 void loop() {
+#ifdef GNSS_SYNC
+  GnssSync::getInstance().update();
+#endif
+
   cam0.publish();
   cam1.publish();
   cam2.publish();
