@@ -49,7 +49,7 @@ ros::Subscriber<std_msgs::UInt8> pwm_sub("/versavis/illumination_pwm", &pwmCb);
 Timer timer_cam0 = Timer((Tcc *)TCC0);
 Timer timer_cam1 = Timer((Tcc *)TCC1);
 Timer timer_cam2 = Timer((TcCount16 *)TC3);
-Timer timer_imu = Timer((TcCount16 *)TCC2);
+Timer timer_imu = Timer((Tcc *)TCC2);
 
 /* ----- IMU ----- */
 #ifdef USE_ADIS16445
