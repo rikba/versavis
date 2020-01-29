@@ -43,13 +43,19 @@ ros::Subscriber<std_msgs::UInt8> pwm_sub("/versavis/illumination_pwm", &pwmCb);
 #endif
 
 /* ----- Timers ----- */
-// In the current setup: TCC2 -> IMU, TCC0 -> cam0, TCC1 -> cam1, TC3 -> cam2
+// In the current setup:
+// TCC0: GNSS sync
+// TCC1: Unused
+// TCC2: IMU
+// TC3: cam0
+// TC4: cam1
+// TC5: cam2
 // Be careful, there is NO bookkeeping whether the timer is already used or
 // not. Only use a timer once, otherwise there will be unexpected behavior.
-Timer timer_cam0 = Timer((Tcc *)TCC0);
-Timer timer_cam1 = Timer((Tcc *)TCC1);
-Timer timer_cam2 = Timer((TcCount16 *)TC3);
 Timer timer_imu = Timer((Tcc *)TCC2);
+Timer timer_cam0 = Timer((TcCount16 *)TC3);
+Timer timer_cam1 = Timer((TcCount16 *)TC4);
+Timer timer_cam2 = Timer((TcCount16 *)TC5);
 
 /* ----- IMU ----- */
 #ifdef USE_ADIS16445
@@ -135,24 +141,24 @@ void setup() {
   }
 
   /* -----  Declare timers ----- */
-  // Enable TCC1 and TCC2 timers.
-  REG_GCLK_CLKCTRL = static_cast<uint16_t>(
-      GCLK_CLKCTRL_CLKEN | GCLK_CLKCTRL_GEN_GCLK0 | GCLK_CLKCTRL_ID_TCC0_TCC1);
-  while (GCLK->STATUS.bit.SYNCBUSY == 1) {
-    ; // wait for sync
-  }
   // Enable TCC2 and TC3 timers.
   REG_GCLK_CLKCTRL = static_cast<uint16_t>(
       GCLK_CLKCTRL_CLKEN | GCLK_CLKCTRL_GEN_GCLK0 | GCLK_CLKCTRL_ID_TCC2_TC3);
   while (GCLK->STATUS.bit.SYNCBUSY == 1) {
     ; // wait for sync
   }
+  // Enable TC4 and TC5 timers.
+  REG_GCLK_CLKCTRL = static_cast<uint16_t>(
+      GCLK_CLKCTRL_CLKEN | GCLK_CLKCTRL_GEN_GCLK0 | GCLK_CLKCTRL_ID_TC4_TC5);
+  while (GCLK->STATUS.bit.SYNCBUSY == 1) {
+    ; // wait for sync
+  }
 
   // enable InterruptVector.
-  NVIC_EnableIRQ(TCC0_IRQn);
-  NVIC_EnableIRQ(TCC1_IRQn);
   NVIC_EnableIRQ(TCC2_IRQn);
   NVIC_EnableIRQ(TC3_IRQn);
+  NVIC_EnableIRQ(TC4_IRQn);
+  NVIC_EnableIRQ(TC5_IRQn);
 
   imu.begin();
   cam0.begin();
@@ -201,20 +207,20 @@ void loop() {
 #endif
 }
 
-void TCC0_Handler() { // Called by cam0_timer for camera 0 trigger.
+void TCC2_Handler() { // Called by imu_timer for imu trigger.
+  imu.triggerMeasurement();
+}
+
+void TC3_Handler() { // Called by cam0_timer for camera 0 trigger.
   cam0.triggerMeasurement();
 }
 
-void TCC1_Handler() { // Called by cam1_timer for camera 1 trigger.
+void TC4_Handler() { // Called by cam1_timer for camera 1 trigger.
   cam1.triggerMeasurement();
 }
 
-void TC3_Handler() { // Called by cam2_timer for camera 2 trigger.
+void TC5_Handler() { // Called by cam2_timer for camera 2 trigger.
   cam2.triggerMeasurement();
-}
-
-void TCC2_Handler() { // Called by imu_timer for imu trigger.
-  imu.triggerMeasurement();
 }
 
 void exposureEnd0() {

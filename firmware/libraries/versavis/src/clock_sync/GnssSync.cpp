@@ -378,15 +378,15 @@ bool GnssSync::waitForNmea() {
   return received_time;
 }
 
-// Interrupt Service Routine (ISR) for timer TC4
-void TC4_Handler() {
-  if (TC4->COUNT32.INTFLAG.bit.MC0) {
-    GnssSync::getInstance().measureTicksPerSecond(REG_TC4_COUNT32_CC0);
-    GnssSync::getInstance().incrementPPS();
-    REG_TC4_INTFLAG = TC_INTFLAG_MC0; // Clear the MC0 interrupt flag
-
-    DEBUG_PRINT("[GnssSync]: Received PPS signal: ");
-    DEBUG_PRINTLN(GnssSync::getInstance().getFilterState().pps_cnt + 1);
-  }
-  // TODO(rikba): catch and manage overflow
-}
+// // Interrupt Service Routine (ISR) for timer TC4
+// void TC4_Handler() {
+//   if (TC4->COUNT32.INTFLAG.bit.MC0) {
+//     GnssSync::getInstance().measureTicksPerSecond(REG_TC4_COUNT32_CC0);
+//     GnssSync::getInstance().incrementPPS();
+//     REG_TC4_INTFLAG = TC_INTFLAG_MC0; // Clear the MC0 interrupt flag
+//
+//     DEBUG_PRINT("[GnssSync]: Received PPS signal: ");
+//     DEBUG_PRINTLN(GnssSync::getInstance().getFilterState().pps_cnt + 1);
+//   }
+//   // TODO(rikba): catch and manage overflow
+// }
