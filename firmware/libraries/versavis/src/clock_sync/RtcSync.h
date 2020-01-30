@@ -33,6 +33,9 @@ public:
   void setup(ros::NodeHandle *nh, Uart *uart,
              const uint32_t baud_rate = 115200);
 
+  // Read UART to synchronize RTC clock against NMEA.
+  bool syncGnss();
+
 private:
   RtcSync();
 
@@ -41,6 +44,7 @@ private:
   void setupCounter() const;
   void setupPort() const;
   void setupGenericClock5() const;
+  void setupEic() const;
   void setupRTC() const;
 
   // ROS
