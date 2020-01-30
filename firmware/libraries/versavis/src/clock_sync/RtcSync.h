@@ -19,6 +19,8 @@
 #include <ros.h>
 #include <std_msgs/Time.h>
 
+#include "nmea_parser/NmeaParser.h"
+
 class RtcSync {
 public:
   // Singleton implementation.
@@ -29,9 +31,10 @@ public:
   RtcSync(RtcSync const &) = delete;
   void operator=(RtcSync const &) = delete;
 
-  // Setup the serial connection, ROS publishers, and RTC counter.
-  void setup(ros::NodeHandle *nh, Uart *uart,
-             const uint32_t baud_rate = 115200);
+  // Setup the ROS publishers, and RTC counter.
+  void setup(ros::NodeHandle *nh);
+  // Setup serial connection to read NMEA sentences.
+  void setupNmeaSerial(Uart *uart, const uint32_t baud_rate = 115200);
 
   // Read UART to synchronize RTC clock against NMEA.
   bool syncGnss();
@@ -39,12 +42,9 @@ public:
 private:
   RtcSync();
 
-  void setupSerial(Uart *uart, const uint32_t baud_rate);
   void setupRos(ros::NodeHandle *nh);
   void setupCounter() const;
-  void setupPort() const;
   void setupGenericClock5() const;
-  void setupEic() const;
   void setupRTC() const;
 
   // ROS
@@ -53,6 +53,7 @@ private:
   std_msgs::Time rtc_msg_;
 
   // NMEA reading
+  NmeaParser nmea_parser_;
   bool clear_uart_ = true;
   Uart *uart_ = NULL;
 };

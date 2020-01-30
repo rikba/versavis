@@ -1,16 +1,14 @@
 #include "RtcSync.h"
 
-//#include <RTClib.h>
+#include <RTClib.h>
 
 #include "helper.h"
 #include "versavis_configuration.h"
 
 RtcSync::RtcSync() : rtc_pub_("/versavis/gnss_sync/rtc", &rtc_msg_) {}
 
-void RtcSync::setup(ros::NodeHandle *nh, Uart *uart,
-                    const uint32_t baud_rate /*= 115200*/) {
+void RtcSync::setup(ros::NodeHandle *nh) {
   setupRos(nh);
-  setupSerial(uart, baud_rate);
   setupCounter();
 }
 
@@ -24,7 +22,8 @@ void RtcSync::setupRos(ros::NodeHandle *nh) {
 #endif
 }
 
-void RtcSync::setupSerial(Uart *uart, const uint32_t baud_rate) {
+void RtcSync::setupNmeaSerial(Uart *uart,
+                              const uint32_t baud_rate /*= 115200*/) {
   DEBUG_PRINT("[RtcSync]: Setup serial connection with baud rate ");
   DEBUG_PRINTLN(baud_rate);
   uart_ = uart;
@@ -35,23 +34,8 @@ void RtcSync::setupSerial(Uart *uart, const uint32_t baud_rate) {
 
 void RtcSync::setupCounter() const {
   DEBUG_PRINT("[RtcSync]: Setup PPS periodic counter.");
-  setupPort();
   setupGenericClock5();
-  setupEic();
   setupRTC();
-}
-
-void RtcSync::setupPort() const {
-  REG_PM_APBBMASK |= PM_APBBMASK_PORT; // Enable PORTs.
-
-  DEBUG_PRINTLN("[RtcSync]: Configuring PPS as PA11/EXTINT[11]");
-  PORT->Group[PORTA].DIRCLR.reg =
-      PORT_DIRCLR_DIRCLR(1 << 11); // Set pin PA11 pin as input
-  PORT->Group[PORTA].PMUX[11 >> 1].reg |=
-      PORT_PMUX_PMUXO_A; // Connect PA pin to peripheral A (EXTINT[11])
-  PORT->Group[PORTA].PINCFG[11].reg |=
-      PORT_PINCFG_PMUXEN; // Enable pin peripheral multiplexation
-  PORT->Group[PORTA].PINCFG[11].reg |= PORT_PINCFG_INEN; // Enable input
 }
 
 void RtcSync::setupGenericClock5() const {
@@ -69,25 +53,11 @@ void RtcSync::setupGenericClock5() const {
   while (GCLK->STATUS.bit.SYNCBUSY) {
   } // Wait for synchronization
 
-  DEBUG_PRINTLN(
-      "[RtcSync]: Enabling generic clock 5 for RTC and edge detection.");
+  DEBUG_PRINTLN("[RtcSync]: Enabling generic clock 5 for RTC.");
   GCLK->CLKCTRL.reg =
       GCLK_CLKCTRL_CLKEN | GCLK_CLKCTRL_GEN_GCLK5 | GCLK_CLKCTRL_ID_RTC;
   while (GCLK->STATUS.bit.SYNCBUSY) {
   } // Wait for synchronization
-}
-
-void RtcSync::setupEic() const {
-  // REG_PM_APBAMASK |= PM_APBAMASK_EIC; // EIC enable.
-  //
-  // DEBUG_PRINTLN("[RtcSync]: Configuring EIC on EXTINT11.");
-  // // Enable event from pin on external interrupt 11 (EXTINT11)
-  // EIC->EVCTRL.reg |= EIC_EVCTRL_EXTINTEO11;
-  // // Set event on rise edge of signal
-  // EIC->CONFIG[1].reg |= EIC_CONFIG_SENSE3_RISE;
-  // EIC->CTRL.reg |= EIC_CTRL_ENABLE; // Enable EIC peripheral
-  // while (EIC->STATUS.bit.SYNCBUSY) {
-  // } // Wait for synchronization
 }
 
 void RtcSync::setupRTC() const {
@@ -131,4 +101,47 @@ void RtcSync::setupRTC() const {
       RTC_READREQ_RREQ | RTC_READREQ_RCONT | 0x0010; // Continuous reading
   while (RTC->MODE0.STATUS.bit.SYNCBUSY) {
   }
+}
+
+bool RtcSync::syncGnss() {
+  bool received_time = false;
+  // Clear UART buffer on first call. There may still be old data.
+  if (clear_uart_) {
+    while (uart_ && uart_->available()) {
+      uart_->read();
+    }
+    clear_uart_ = false;
+  } else { // Read most current NMEA absolute time.
+    while (uart_ && uart_->available()) {
+      auto result = nmea_parser_.parseChar(uart_->read());
+      if (result != NmeaParser::SentenceType::kGpZda)
+        continue;
+      received_time = (nmea_parser_.getGpZdaMessage().hundreths == 0);
+    }
+  }
+
+  // Update RTC time.
+  if (received_time) {
+    DEBUG_PRINTLN(nmea_parser_.getGpZdaMessage().str);
+    DateTime date_time(nmea_parser_.getGpZdaMessage().year,
+                       nmea_parser_.getGpZdaMessage().month,
+                       nmea_parser_.getGpZdaMessage().day,
+                       nmea_parser_.getGpZdaMessage().hour,
+                       nmea_parser_.getGpZdaMessage().minute,
+                       nmea_parser_.getGpZdaMessage().second);
+
+    // See about synchronization.
+    // https://community.atmel.com/forum/samd21-rtc-mode0-count-value-freezes-rcont-rreq-set?skey=rtc_readreq_rcont
+    while (RTC->MODE0.STATUS.bit.SYNCBUSY) {
+    }
+    RTC->MODE0.COUNT.reg = date_time.unixtime();
+    while (RTC->MODE0.STATUS.bit.SYNCBUSY) {
+    }
+    RTC->MODE0.READREQ.reg |=
+        RTC_READREQ_RREQ | RTC_READREQ_RCONT | 0x0010; // Continuous reading
+    while (RTC->MODE0.STATUS.bit.SYNCBUSY) {
+    }
+  }
+
+  return received_time;
 }
