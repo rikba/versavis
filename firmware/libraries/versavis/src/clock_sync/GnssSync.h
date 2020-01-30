@@ -69,6 +69,12 @@ private:
   void updateTps();
   void resetFilterState();
 
+  void setupPort();
+  void setupGenericClock4();
+  void setupEic();
+  void setupEvsys();
+  void setupTCC0();
+
   // ROS
   ros::NodeHandle *nh_;
   ros::Publisher filter_state_pub_;
