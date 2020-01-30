@@ -261,13 +261,11 @@ void GnssSync::setupEic() {
 void GnssSync::setupEvsys() {
   REG_PM_APBCMASK |= PM_APBCMASK_EVSYS; // Switch on the event system peripheral
 
-  // Attach the event user (receiver) to channel n=1 (n + 1)
+  // Attach the event user (receiver) to channel n=0 (n + 1) (arbitrary)
   // Set the event user (receiver) to timer TCC0, Event 1
   DEBUG_PRINTLN("[GnssSync]: Configuring EVSYS such that TCC0 is event user.");
   REG_EVSYS_USER =
-      EVSYS_USER_CHANNEL(2) | EVSYS_USER_USER(EVSYS_ID_USER_TCC0_EV_1);
-  while (!EVSYS->CHSTATUS.bit.USRRDY1) {
-  }
+      EVSYS_USER_CHANNEL(1) | EVSYS_USER_USER(EVSYS_ID_USER_TCC0_EV_1);
 
   DEBUG_PRINTLN("[GnssSync]: Configuring Event Channel.");
   REG_EVSYS_CHANNEL =
@@ -276,8 +274,8 @@ void GnssSync::setupEvsys() {
       EVSYS_CHANNEL_EVGEN(
           EVSYS_ID_GEN_EIC_EXTINT_11) | // Set event generator (sender) as
                                         // external interrupt 11
-      EVSYS_CHANNEL_CHANNEL(1); // Attach the generator (sender) to channel 1
-  while (EVSYS->CHSTATUS.bit.CHBUSY1) {
+      EVSYS_CHANNEL_CHANNEL(0); // Attach the generator (sender) to channel 1
+  while (EVSYS->CHSTATUS.bit.CHBUSY0) {
   }
 }
 
