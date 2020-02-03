@@ -63,6 +63,14 @@
 #define ILLUMINATION_PIN 26
 #endif
 
+/* ----- RTC controle ----- */
+#define RTC_GCLKIN_10MHZ
+#ifdef RTC_GCLKIN_10MHZ
+#define RTC_FREQ 10e6
+#else
+#define RTC_FREQ 32768
+#endif
+
 /* ----- GNSS time synchronization ----- */
 // Activation of GNSS time synchronization.
 #define GNSS_SYNC
