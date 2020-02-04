@@ -158,7 +158,8 @@ ros::Time GnssSync::getTimeNow() {
 
   // In order to read the COUNT we need to sync first.
   // https://forum.arduino.cc/index.php?topic=396804.30
-  int32_t count = TCC0->COUNT.bit.COUNT;
+  // int32_t count = TCC0->COUNT.bit.COUNT;
+  int32_t count = 0;
 #ifdef GNSS_SYNC_GCLKIN_10MHZ
   // Compensate for interrupt function call delay.
   count -= 19;
@@ -226,20 +227,31 @@ void GnssSync::setupGenericClock4() {
   while (GCLK->STATUS.bit.SYNCBUSY) {
   } // Wait for synchronization
 
-  // Route clock to TCC0.
+  // Route clock to all timers.
   DEBUG_PRINTLN("[GnssSync]: Enabling generic clock for TCC0/TCC1");
   REG_GCLK_CLKCTRL =
-      GCLK_CLKCTRL_CLKEN |       // Enable the generic clock...
-      GCLK_CLKCTRL_GEN_GCLK4 |   // ....on GCLK4...
-      GCLK_CLKCTRL_ID_TCC0_TCC1; // ... to feed the GCLK4 to TCC0 and TCC1
+      GCLK_CLKCTRL_CLKEN | GCLK_CLKCTRL_GEN_GCLK4 | GCLK_CLKCTRL_ID_TCC0_TCC1;
+  while (GCLK->STATUS.bit.SYNCBUSY) {
+  } // Wait for synchronization
+
+  // Route clock to all timers.
+  DEBUG_PRINTLN("[GnssSync]: Enabling generic clock for TCC2/TC3");
+  REG_GCLK_CLKCTRL =
+      GCLK_CLKCTRL_CLKEN | GCLK_CLKCTRL_GEN_GCLK4 | GCLK_CLKCTRL_ID_TCC2_TC3;
+  while (GCLK->STATUS.bit.SYNCBUSY) {
+  } // Wait for synchronization
+
+  // Route clock to all timers.
+  DEBUG_PRINTLN("[GnssSync]: Enabling generic clock for TC4/TC5");
+  REG_GCLK_CLKCTRL =
+      GCLK_CLKCTRL_CLKEN | GCLK_CLKCTRL_GEN_GCLK4 | GCLK_CLKCTRL_ID_TC4_TC5;
   while (GCLK->STATUS.bit.SYNCBUSY) {
   } // Wait for synchronization
 
   // Activate edge detection.
   DEBUG_PRINTLN("[GnssSync]: Enabling generic clock 4 for edge detection.");
-  REG_GCLK_CLKCTRL = GCLK_CLKCTRL_CLKEN |     // Enable the generic clock...
-                     GCLK_CLKCTRL_GEN_GCLK4 | // ....on GCLK4...
-                     GCLK_CLKCTRL_ID_EIC;     // ... to detect edges
+  REG_GCLK_CLKCTRL =
+      GCLK_CLKCTRL_CLKEN | GCLK_CLKCTRL_GEN_GCLK4 | GCLK_CLKCTRL_ID_EIC;
   while (GCLK->STATUS.bit.SYNCBUSY) {
   } // Wait for synchronization
 }
@@ -283,6 +295,8 @@ void GnssSync::setupTCC0() {
   REG_PM_APBCMASK |= PM_APBCMASK_TCC0; // Enable TCC0 Bus clock
 
   DEBUG_PRINTLN("[GnssSync]: Disabling TCC0.");
+  while (TCC0->SYNCBUSY.bit.ENABLE) {
+  }
   TCC0->CTRLA.bit.ENABLE = 0; // Disable TCC0
   while (TCC0->SYNCBUSY.bit.ENABLE) {
   }
@@ -291,7 +305,9 @@ void GnssSync::setupTCC0() {
   TCC0->CTRLA.reg |=
       TCC_CTRLA_PRESCALER_DIV1 | // Set prescaler to 1, 10MHz/1 = 10MHz
       TCC_CTRLA_CPTEN0;          // Capture channel 0 event (period).
-  TCC0->PER.reg = 0xFFFFFF;      // 24 Bit period.
+  while (TCC0->SYNCBUSY.bit.PER) {
+  }
+  TCC0->PER.reg = 0xFFFFFF; // 24 Bit period.
   while (TCC0->SYNCBUSY.bit.PER) {
   }
 
@@ -312,6 +328,8 @@ void GnssSync::setupTCC0() {
   NVIC_EnableIRQ(TCC0_IRQn);
 
   DEBUG_PRINTLN("[GnssSync]: Enable TCC0.");
+  while (TCC0->SYNCBUSY.bit.ENABLE) {
+  }
   TCC0->CTRLA.bit.ENABLE = 1; // Enable TCC0
   while (TCC0->SYNCBUSY.bit.ENABLE) {
   }
@@ -349,6 +367,8 @@ bool GnssSync::waitForNmea() {
   while (TCC0->SYNCBUSY.bit.COUNT) {
   }
   float duration_ns = float(TCC0->COUNT.bit.COUNT) * ticks_to_nanoseconds_;
+  while (TCC0->SYNCBUSY.bit.COUNT) {
+  }
   bool uart_arrived = (duration_ns > kLowerLimit);
   uart_arrived &= (duration_ns < kUpperLimit);
 
@@ -412,15 +432,19 @@ bool GnssSync::waitForNmea() {
   return received_time;
 }
 
-// Interrupt Service Routine (ISR) for timer TCC0
-void TCC0_Handler() {
-  if (TCC0->INTFLAG.bit.MC0) {
-    // Read period length. Interrupt flag is cleared automatically.
-    GnssSync::getInstance().measureTicksPerSecond(TCC0->CC[0].bit.CC);
-    GnssSync::getInstance().incrementPPS();
-
-    DEBUG_PRINT("[GnssSync]: Received PPS signal: ");
-    DEBUG_PRINTLN(GnssSync::getInstance().getFilterState().pps_cnt + 1);
-  }
-  // TODO(rikba): catch and manage overflow
-}
+// // Interrupt Service Routine (ISR) for timer TCC0
+// void TCC0_Handler() {
+//   if (TCC0->INTFLAG.bit.MC0) {
+//     // Read period length. Interrupt flag is cleared automatically.
+//     while (TCC0->SYNCBUSY.bit.CC0) {
+//     }
+//     GnssSync::getInstance().measureTicksPerSecond(TCC0->CC[0].bit.CC);
+//     while (TCC0->SYNCBUSY.bit.CC0) {
+//     }
+//     GnssSync::getInstance().incrementPPS();
+//
+//     DEBUG_PRINT("[GnssSync]: Received PPS signal: ");
+//     DEBUG_PRINTLN(GnssSync::getInstance().getFilterState().pps_cnt + 1);
+//   }
+//   // TODO(rikba): catch and manage overflow
+// }

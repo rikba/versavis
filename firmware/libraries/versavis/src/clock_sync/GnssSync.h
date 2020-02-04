@@ -5,10 +5,17 @@
 //  GnssSync.h
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  Implementation to synchronize the VersaVIS against a GNSS receiver time.
-//  This implementation assumes that the GNSS receiver is connected via PPS
-//  signal and NMEA absolute time.
-//  The PPS input signal is assumed to be received on SAMD pin PA11.
+//  Implementation to synchronize the VersaVIS against a GNSS receiver time
+//  using TCC1.
+//
+//  - Timer start on receiving PPS pulse
+//  - Hard reset RTC total time on first PPS pulse
+//  - Capture PPS on CC0
+//  - Capture RTC OvF on MC0
+//  - Read NMEA on UART
+//  - Kalman filter to estimate RTC offset and skew
+//  - Control RTC offset and skew by modifying RTC COMP0 register.
+//  - Optional: Control clock skew by sending out analog signal.
 //
 ////////////////////////////////////////////////////////////////////////////////
 

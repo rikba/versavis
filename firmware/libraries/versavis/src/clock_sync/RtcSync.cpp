@@ -1,16 +1,13 @@
 #include "RtcSync.h"
 
-#include <RTClib.h>
+#include <ros/time.h>
 
 #include "helper.h"
 #include "versavis_configuration.h"
 
-RtcSync::RtcSync() : rtc_pub_("/versavis/gnss_sync/rtc", &rtc_msg_) {}
-
-void RtcSync::setup(ros::NodeHandle *nh) {
-  setupRos(nh);
+RtcSync::RtcSync() : rtc_pub_("/versavis/gnss_sync/rtc", &rtc_msg_) {
   setupPort();
-  setupGenericClock5();
+  setupGenericClock4();
   setupEvsys();
   setupRtc();
 }
@@ -40,7 +37,7 @@ void RtcSync::setupPort() const {
 #endif
 }
 
-void RtcSync::setupGenericClock5() const {
+void RtcSync::setupGenericClock4() const {
   REG_PM_APBAMASK |= PM_APBAMASK_GCLK; // GCLK APB Clock Enable
 
   DEBUG_PRINTLN("[RtcSync]: Configuring GENCTRL register.");
@@ -67,6 +64,23 @@ void RtcSync::setupGenericClock5() const {
       GCLK_CLKCTRL_CLKEN | GCLK_CLKCTRL_GEN_GCLK4 | GCLK_CLKCTRL_ID_EVSYS_0;
   while (GCLK->STATUS.bit.SYNCBUSY) {
   } // Wait for synchronization
+
+  // Setup all other timer with the same clock.
+  DEBUG_PRINTLN("[RtcSync]: Enabling generic clock 4 for TCC0/TCC1.");
+  GCLK->CLKCTRL.reg =
+      GCLK_CLKCTRL_CLKEN | GCLK_CLKCTRL_GEN_GCLK4 | GCLK_CLKCTRL_ID_TCC0_TCC1;
+  while (GCLK->STATUS.bit.SYNCBUSY) {
+  } // Wait for synchronization
+  DEBUG_PRINTLN("[RtcSync]: Enabling generic clock 4 for TCC2/TC3.");
+  GCLK->CLKCTRL.reg =
+      GCLK_CLKCTRL_CLKEN | GCLK_CLKCTRL_GEN_GCLK4 | GCLK_CLKCTRL_ID_TCC2_TC3;
+  while (GCLK->STATUS.bit.SYNCBUSY) {
+  } // Wait for synchronization
+  DEBUG_PRINTLN("[RtcSync]: Enabling generic clock 4 for TC4/TC5.");
+  GCLK->CLKCTRL.reg =
+      GCLK_CLKCTRL_CLKEN | GCLK_CLKCTRL_GEN_GCLK4 | GCLK_CLKCTRL_ID_TC4_TC5;
+  while (GCLK->STATUS.bit.SYNCBUSY) {
+  } // Wait for synchronization
 }
 
 void RtcSync::setupEvsys() const {
@@ -74,30 +88,28 @@ void RtcSync::setupEvsys() const {
 
   DEBUG_PRINTLN("[RtcSync]: Connect all timers to this event on channel 0.");
   // TCC0
-  EVSYS->USER.reg =
-      EVSYS_USER_CHANNEL(1) | EVSYS_USER_USER(EVSYS_ID_USER_TCC0_EV_0); // Start
+  EVSYS->USER.reg = EVSYS_USER_CHANNEL(1) |
+                    EVSYS_USER_USER(EVSYS_ID_USER_TCC0_EV_0); // Retrigger
 
   // TCC1
-  EVSYS->USER.reg =
-      EVSYS_USER_CHANNEL(1) | EVSYS_USER_USER(EVSYS_ID_USER_TCC1_EV_0); // Start
-  EVSYS->USER.reg =
-      EVSYS_USER_CHANNEL(1) | EVSYS_USER_USER(EVSYS_ID_USER_TCC1_MC_1); // Capt
+  EVSYS->USER.reg = EVSYS_USER_CHANNEL(1) |
+                    EVSYS_USER_USER(EVSYS_ID_USER_TCC1_MC_0); // Capture
 
   // TCC2
-  EVSYS->USER.reg =
-      EVSYS_USER_CHANNEL(1) | EVSYS_USER_USER(EVSYS_ID_USER_TCC2_EV_0); // Start
+  EVSYS->USER.reg = EVSYS_USER_CHANNEL(1) |
+                    EVSYS_USER_USER(EVSYS_ID_USER_TCC2_EV_0); // Retrigger
 
   // TC3
-  EVSYS->USER.reg =
-      EVSYS_USER_CHANNEL(1) | EVSYS_USER_USER(EVSYS_ID_USER_TC3_EVU); // Start
+  EVSYS->USER.reg = EVSYS_USER_CHANNEL(1) |
+                    EVSYS_USER_USER(EVSYS_ID_USER_TC3_EVU); // Retrigger
 
   // TC4
-  EVSYS->USER.reg =
-      EVSYS_USER_CHANNEL(1) | EVSYS_USER_USER(EVSYS_ID_USER_TC4_EVU); // Start
+  EVSYS->USER.reg = EVSYS_USER_CHANNEL(1) |
+                    EVSYS_USER_USER(EVSYS_ID_USER_TC4_EVU); // Retrigger
 
   // TC5
-  EVSYS->USER.reg =
-      EVSYS_USER_CHANNEL(1) | EVSYS_USER_USER(EVSYS_ID_USER_TC5_EVU); // Start
+  EVSYS->USER.reg = EVSYS_USER_CHANNEL(1) |
+                    EVSYS_USER_USER(EVSYS_ID_USER_TC5_EVU); // Retrigger
 
   DEBUG_PRINTLN("[RtcSync]: Configuring EVSYS channel.");
   EVSYS->CHANNEL.reg =
@@ -168,18 +180,6 @@ void RtcSync::setupRtc() const {
   }
 }
 
-void RTC_Handler() {
-  DEBUG_PRINTLN("[RtcSync]: RTC_Handler.");
-  if (RTC->MODE0.INTFLAG.bit.CMP0 && RTC->MODE0.INTFLAG.bit.OVF) {
-    DEBUG_PRINTLN("[RtcSync]: Increment seconds.");
-    RtcSync::getInstance().incrementSecs();
-    DEBUG_PRINTLN(RtcSync::getInstance().getSecs());
-    // Clear flags.
-    RTC->MODE0.INTFLAG.bit.CMP0 = 1;
-    RTC->MODE0.INTFLAG.bit.OVF = 1;
-  }
-}
-
 void RtcSync::setComp0(const uint32_t comp_0) const {
   while (RTC->MODE0.STATUS.bit.SYNCBUSY) {
   }
@@ -189,5 +189,28 @@ void RtcSync::setComp0(const uint32_t comp_0) const {
   RTC->MODE0.READREQ.reg |=
       RTC_READREQ_RREQ | RTC_READREQ_RCONT | 0x0010; // Continuous reading
   while (RTC->MODE0.STATUS.bit.SYNCBUSY) {
+  }
+}
+
+ros::Duration RtcSync::getDuration(const uint32_t ticks) {
+  uint32_t secs = 0;
+  uint32_t nsecs = ticks * ns_per_tick_;
+  ros::normalizeSecNSec(secs, nsecs);
+  return ros::Duration(secs, nsecs);
+}
+
+ros::Duration RtcSync::getDuration(const uint32_t ticks, uint8_t prescaler) {
+  return getDuration(ticks * prescaler);
+}
+
+void RTC_Handler() {
+  DEBUG_PRINTLN("[RtcSync]: RTC_Handler.");
+  if (RTC->MODE0.INTFLAG.bit.CMP0 && RTC->MODE0.INTFLAG.bit.OVF) {
+    DEBUG_PRINTLN("[RtcSync]: Increment seconds.");
+    RtcSync::getInstance().incrementSecs();
+    DEBUG_PRINTLN(RtcSync::getInstance().getSecs());
+    // Clear flags.
+    RTC->MODE0.INTFLAG.bit.CMP0 = 1;
+    RTC->MODE0.INTFLAG.bit.OVF = 1;
   }
 }
