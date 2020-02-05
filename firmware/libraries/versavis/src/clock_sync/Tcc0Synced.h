@@ -8,7 +8,7 @@
 #ifndef Tcc0Synced_h
 #define Tcc0Synced_h
 
-#include "sensors/TccSynced.h"
+#include "clock_sync/TccSynced.h"
 
 class Tcc0Synced : public TccSynced {
 public:

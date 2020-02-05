@@ -1,4 +1,4 @@
-#include "sensors/TcSynced.h"
+#include "clock_sync/TcSynced.h"
 
 #include "helper.h"
 #include "versavis_configuration.h"

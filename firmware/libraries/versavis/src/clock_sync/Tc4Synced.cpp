@@ -1,4 +1,4 @@
-#include "sensors/Tc4Synced.h"
+#include "clock_sync/Tc4Synced.h"
 
 Tc4Synced::Tc4Synced() : TcSynced((TcCount16 *)TC4) {
   // Enable interrupts. Not as high priority as the RTC interrupt.

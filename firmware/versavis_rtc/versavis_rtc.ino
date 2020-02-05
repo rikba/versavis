@@ -2,11 +2,11 @@
 #include "versavis_configuration.h"
 
 #include "clock_sync/RtcSync.h"
-#include "sensors/Tc3Synced.h"
-#include "sensors/Tc4Synced.h"
-#include "sensors/Tc5Synced.h"
-#include "sensors/Tcc0Synced.h"
-#include "sensors/Tcc2Synced.h"
+#include "clock_sync/Tc3Synced.h"
+#include "clock_sync/Tc4Synced.h"
+#include "clock_sync/Tc5Synced.h"
+#include "clock_sync/Tcc0Synced.h"
+#include "clock_sync/Tcc2Synced.h"
 
 #include <Arduino.h>
 

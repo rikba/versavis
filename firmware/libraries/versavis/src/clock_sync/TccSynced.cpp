@@ -1,4 +1,4 @@
-#include "sensors/TccSynced.h"
+#include "clock_sync/TccSynced.h"
 
 #include "helper.h"
 

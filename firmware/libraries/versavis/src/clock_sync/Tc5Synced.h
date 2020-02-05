@@ -2,26 +2,26 @@
 //  January 2020
 //  Author: Rik Bähnemann <brik@ethz.ch>
 ////////////////////////////////////////////////////////////////////////////////
-//  Tcc2Synced.h
+//  Tc5Synced.h
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef Tcc2Synced_h
-#define Tcc2Synced_h
+#ifndef Tc5Synced_h
+#define Tc5Synced_h
 
-#include "sensors/TccSynced.h"
+#include "clock_sync/TcSynced.h"
 
-class Tcc2Synced : public TccSynced {
+class Tc5Synced : public TcSynced {
 public:
   // Singleton implementation.
-  inline static Tcc2Synced &getInstance() {
-    static Tcc2Synced instance;
+  inline static Tc5Synced &getInstance() {
+    static Tc5Synced instance;
     return instance;
   }
-  Tcc2Synced(Tcc2Synced const &) = delete;
-  void operator=(Tcc2Synced const &) = delete;
+  Tc5Synced(Tc5Synced const &) = delete;
+  void operator=(Tc5Synced const &) = delete;
 
 private:
-  Tcc2Synced();
+  Tc5Synced();
 };
 
 #endif

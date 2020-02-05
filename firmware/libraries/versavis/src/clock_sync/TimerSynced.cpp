@@ -1,4 +1,4 @@
-#include "sensors/TimerSynced.h"
+#include "clock_sync/TimerSynced.h"
 
 #include "clock_sync/RtcSync.h"
 

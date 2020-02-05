@@ -10,7 +10,7 @@
 
 #include <Arduino.h>
 
-#include "sensors/TimerSynced.h"
+#include "clock_sync/TimerSynced.h"
 
 class TcSynced : public TimerSynced {
 public:
