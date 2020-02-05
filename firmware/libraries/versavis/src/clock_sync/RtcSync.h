@@ -44,8 +44,8 @@ public:
   // Accessors
   inline uint32_t getSecs() const { return secs_; }
   inline uint32_t getComp0() const { return RTC->MODE0.COMP[0].reg; }
-  ros::Duration getDuration(const uint32_t ticks);
-  ros::Duration getDuration(const uint32_t ticks, uint8_t prescaler);
+  ros::Time computeTime(const uint32_t ticks, uint8_t prescaler) const;
+  inline ros::Time getTimeSecs() const { return ros::Time(secs_, 0); }
 
   // Setters
   inline uint32_t setSecs(const uint32_t secs) { secs_ = secs; }
@@ -68,7 +68,7 @@ private:
 
   // State
   uint32_t secs_ = 0;
-  double ns_per_tick_ = 10e9 / RTC_FREQ;
+  double ns_per_tick_ = 1.0e9 / RTC_FREQ;
 };
 
 #endif

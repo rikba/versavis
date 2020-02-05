@@ -30,16 +30,26 @@ public:
 
   // Setup the timer.
   virtual void setup() const = 0;
+  void handleInterrupt();
 
-  virtual void handleInterrupt() = 0;
+  inline bool isTriggered() const { return is_triggered_; }
+  ros::Time computeTimeLastTrigger(); // resets is_triggered_ flag.
 
-  // Synchronize timer against RTC clock. To be called in main loop.
-  void sync();
+protected:
+  virtual void handleRetrigger() = 0;
+  virtual void handleOverflow() = 0;
+  void retrigger();
+  void overflow();
+
+  const uint16_t kPrescalers[8] = {1, 2, 4, 8, 16, 64, 256, 1024};
+  uint8_t prescaler_ = 0;
+  uint32_t top_ = 0xFFFF; // Default 16 bit counter.
+  // Flag to store whether trigger stamp has been requested.
+  bool is_triggered_ = false;
 
 private:
   // State
-  ros::Time stamp_ = ros::Time(0, 0); // Absolute time at cycle start.
-  bool sync_rtc_stamp_ = false;
+  uint32_t ovf_ticks_since_sync_ = 0;
 };
 
 #endif

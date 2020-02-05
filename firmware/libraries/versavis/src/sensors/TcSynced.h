@@ -18,7 +18,8 @@ public:
 
   void setup() const override;
 
-  void handleInterrupt() override;
+  void handleRetrigger() override;
+  void handleOverflow() override;
 
 private:
   // Pointer to the actual timer.

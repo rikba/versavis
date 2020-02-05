@@ -192,15 +192,11 @@ void RtcSync::setComp0(const uint32_t comp_0) const {
   }
 }
 
-ros::Duration RtcSync::getDuration(const uint32_t ticks) {
-  uint32_t secs = 0;
-  uint32_t nsecs = ticks * ns_per_tick_;
+ros::Time RtcSync::computeTime(const uint32_t ticks, uint8_t prescaler) const {
+  uint32_t secs = secs_;
+  uint32_t nsecs = ticks * prescaler * ns_per_tick_;
   ros::normalizeSecNSec(secs, nsecs);
-  return ros::Duration(secs, nsecs);
-}
-
-ros::Duration RtcSync::getDuration(const uint32_t ticks, uint8_t prescaler) {
-  return getDuration(ticks * prescaler);
+  return ros::Time(secs, nsecs);
 }
 
 void RTC_Handler() {

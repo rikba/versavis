@@ -30,4 +30,5 @@ void TccSynced::setup() const {
   }
 }
 
-void TccSynced::handleInterrupt() { DEBUG_PRINTLN("[TccSynced]: IMPLEMENT!!"); }
+void TccSynced::handleRetrigger() { DEBUG_PRINTLN("[TccSynced]: IMPLEMENT!!"); }
+void TccSynced::handleOverflow() { DEBUG_PRINTLN("[TccSynced]: IMPLEMENT!!"); }

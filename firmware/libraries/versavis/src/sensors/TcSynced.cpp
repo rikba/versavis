@@ -39,16 +39,16 @@ void TcSynced::setup() const {
   }
 }
 
-void TcSynced::handleInterrupt() {
+void TcSynced::handleRetrigger() {
   if (tc_->INTFLAG.bit.MC0) {
-    DEBUG_PRINTLN("[TcSynced]: MC0 interrupt.");
-    while (tc_->STATUS.bit.SYNCBUSY) {
-    }
-    DEBUG_PRINTLN(tc_->CC[0].reg);
-    while (tc_->STATUS.bit.SYNCBUSY) {
-    }
-  } else if (tc_->INTFLAG.bit.OVF) {
-    DEBUG_PRINTLN("[TcSynced]: OVF interrupt.");
+    retrigger();
+    tc_->INTFLAG.reg |= TC_INTFLAG_MC0;
   }
-  tc_->INTFLAG.reg |= TC_INTFLAG_MC0 | TC_INTFLAG_OVF;
+}
+
+void TcSynced::handleOverflow() {
+  if (tc_->INTFLAG.bit.OVF) {
+    overflow();
+    tc_->INTFLAG.reg |= TC_INTFLAG_OVF;
+  }
 }
