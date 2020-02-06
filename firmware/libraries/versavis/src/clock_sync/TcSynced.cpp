@@ -23,15 +23,28 @@ void TcSynced::setup() const {
   DEBUG_PRINTLN("[TcSynced]: Setup EVCTRL to retrigger on RTC overflow.");
   tc_->EVCTRL.reg |= TC_EVCTRL_TCEI | TC_EVCTRL_EVACT_RETRIGGER;
 
+  DEBUG_PRINTLN("[TcSynced]: Capture channel 1.");
+  tc_->CTRLC.reg |= TC_CTRLC_CPTEN1;
+  while (tc_->STATUS.bit.SYNCBUSY) {
+  }
+
   DEBUG_PRINTLN("[TcSynced]: Enabling event interrupts.");
-  tc_->INTENSET.reg |= TC_INTENSET_MC0 | TC_INTENSET_OVF | TC_INTENSET_ERR;
+  tc_->INTENSET.reg |= TC_INTENSET_MC1 | TC_INTENSET_OVF;
   DEBUG_PRINTLN("[TcSynced]: Clearing interrupt flags.");
-  tc_->INTFLAG.reg |= TC_INTENSET_MC0 | TC_INTFLAG_OVF | TC_INTENSET_ERR;
+  tc_->INTFLAG.reg |= TC_INTENSET_MC1 | TC_INTFLAG_OVF;
+
+  DEBUG_PRINTLN("[TcSynced]: Enable timer.");
+  while (tc_->STATUS.bit.SYNCBUSY) {
+  }
+  tc_->CTRLA.reg |= TC_CTRLA_ENABLE;
+  while (tc_->STATUS.bit.SYNCBUSY) {
+  }
 }
 
-void TcSynced::setupPwm(uint16_t rate_hz, uint32_t pulse_us, bool invert) {
+void TcSynced::setupMfrq(uint16_t rate_hz, bool invert) {
+  invert_trigger_ = invert;
   // Compute prescaler
-  prescaler_ = findMinPrescaler(rate_hz, RTC_FREQ, top_);
+  prescaler_ = findMinPrescalerFrq(rate_hz, RTC_FREQ, top_);
   DEBUG_PRINT("[TcSynced]: Prescaling timer by ");
   DEBUG_PRINTLN(kPrescalers[prescaler_]);
 
@@ -48,54 +61,49 @@ void TcSynced::setupPwm(uint16_t rate_hz, uint32_t pulse_us, bool invert) {
   while (tc_->STATUS.bit.SYNCBUSY) {
   }
 
-  DEBUG_PRINTLN("[TcSynced]: Activate match PWM.");
-  tc_->CTRLA.reg |= TC_CTRLA_WAVEGEN_MPWM;
+  DEBUG_PRINTLN("[TcSynced]: Activate MFRQ.");
+  tc_->CTRLA.reg |= TC_CTRLA_WAVEGEN_MFRQ;
   while (tc_->STATUS.bit.SYNCBUSY) {
   }
 
-  DEBUG_PRINTLN("[TcSynced]: Make channel 0 and 1 compare register.");
+  DEBUG_PRINTLN("[TcSynced]: Make channel 0 compare register.");
   tc_->CTRLC.reg &= ~TC_CTRLC_CPTEN0;
   while (tc_->STATUS.bit.SYNCBUSY) {
   }
-  tc_->CTRLC.reg &= ~TC_CTRLC_CPTEN1;
-  while (tc_->STATUS.bit.SYNCBUSY) {
-  }
 
-  if (invert) {
-    DEBUG_PRINTLN("[TcSynced]: Invert PWM.");
-    tc_->CTRLC.reg &= ~TC_CTRLC_INVEN1;
+  // Invert the inversion to start with a high pin at t = 0.
+  if (!invert) {
+    tc_->CTRLC.reg |= TC_CTRLC_INVEN0;
     while (tc_->STATUS.bit.SYNCBUSY) {
     }
   }
 
-  uint32_t duty_cycle = 0;
-  RtcSync::getInstance().computePwm(rate_hz, pulse_us, kPrescalers[prescaler_],
-                                    &top_, &duty_cycle);
-  DEBUG_PRINT("[TcSynced]: Setup pwm top: ");
-  DEBUG_PRINT(top_);
-  DEBUG_PRINT(" duty cycle: ");
-  DEBUG_PRINTLN(duty_cycle);
+  RtcSync::getInstance().computeFrq(rate_hz, kPrescalers[prescaler_], &top_);
+  DEBUG_PRINT("[TcSynced]: Set FRQ top: ");
+  DEBUG_PRINTLN(top_);
   tc_->CC[0].reg = top_;
   while (tc_->STATUS.bit.SYNCBUSY) {
   }
-  tc_->CC[1].reg = duty_cycle;
-  while (tc_->STATUS.bit.SYNCBUSY) {
-  }
 
-  // Setup output pin.
-  REG_PM_APBBMASK |= PM_APBBMASK_PORT; // Port ABP Clock Enable.
-  DEBUG_PRINTLN("[TcSynced]: Configuring port PA19 TC3/WO[1] PWM pin.");
-  PORT->Group[PORTA].PMUX[19 >> 1].reg |= PORT_PMUX_PMUXO_E; // TC3/WO[1]
-  PORT->Group[PORTA].PINCFG[19].reg |= PORT_PINCFG_PMUXEN;   // Multiplexation
-}
+  // DEBUG_PRINTLN("[TcSynced]: Set counter top to trigger immediately on
+  // start."); tc_->COUNT.reg = TC_COUNT16_COUNT_COUNT(top_);
 
-void TcSynced::begin() const {
+  DEBUG_PRINTLN("[TcSynced]: Enabling MFRQ interrupts.");
+  tc_->INTENSET.reg |= TC_INTENSET_MC0;
+  tc_->INTFLAG.reg |= TC_INTENSET_MC0;
+
   DEBUG_PRINTLN("[TcSynced]: Enable timer.");
   while (tc_->STATUS.bit.SYNCBUSY) {
   }
   tc_->CTRLA.reg |= TC_CTRLA_ENABLE;
   while (tc_->STATUS.bit.SYNCBUSY) {
   }
+
+  // Setup output pin.
+  REG_PM_APBBMASK |= PM_APBBMASK_PORT; // Port ABP Clock Enable.
+  DEBUG_PRINTLN("[TcSynced]: Configuring port PA14 TC3/WO[0] PWM pin.");
+  PORT->Group[PORTA].PMUX[14 >> 1].reg |= PORT_PMUX_PMUXE_E; // TC3/WO[0]
+  PORT->Group[PORTA].PINCFG[14].reg |= PORT_PINCFG_PMUXEN;   // Multiplexation
 }
 
 void TcSynced::handleInterrupt() {
@@ -103,19 +111,25 @@ void TcSynced::handleInterrupt() {
   DEBUG_PRINTLN(tc_->INTFLAG.bit.MC0);
   DEBUG_PRINTLN(tc_->INTFLAG.bit.MC1);
   DEBUG_PRINTLN(tc_->INTFLAG.bit.OVF);
-  syncRtc();
-
-  if (tc_->INTFLAG.bit.MC0 && tc_->INTFLAG.bit.OVF) {
-    DEBUG_PRINTLN("[TcSynced]: pwmPulse.");
-    pwmPulse();
-  } else if (tc_->INTFLAG.bit.OVF) {
-    DEBUG_PRINTLN("[TcSynced]: overflow.");
-    overflow();
+  if (PORT->Group[PORTA].IN.reg & (1 << 14)) {
+    DEBUG_PRINTLN("HIGH");
+  } else {
+    DEBUG_PRINTLN("LOW");
   }
 
-  if (tc_->INTFLAG.bit.ERR) {
-    error("INTFLAG_ERR (TcSynced.cpp): match or capture value already set",
-          201);
+  bool pin = PORT->Group[PORTA].IN.reg & (1 << 14);
+
+  if (tc_->INTFLAG.bit.MC0 && (pin ^ invert_trigger_)) {
+    DEBUG_PRINTLN("trigger");
+    trigger();
+  }
+
+  if (tc_->INTFLAG.bit.MC1) {
+    DEBUG_PRINTLN("syncRtc");
+    syncRtc();
+  } else if (tc_->INTFLAG.bit.OVF) {
+    DEBUG_PRINTLN("overflow");
+    overflow();
   }
 
   // Clear flags.

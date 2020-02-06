@@ -41,12 +41,12 @@ void RtcSync::setupGenericClock4() const {
   DEBUG_PRINTLN("[RtcSync]: Configuring GENCTRL register.");
 #ifdef RTC_GCLKIN_10MHZ
   DEBUG_PRINTLN("[RtcSync]: Using external clock.");
-  GCLK->GENCTRL.reg = GCLK_GENCTRL_GENEN | GCLK_GENCTRL_SRC_GCLKIN |
-                      GCLK_GENCTRL_ID(4) | GCLK_GENCTRL_RUNSTDBY;
+  GCLK->GENCTRL.reg =
+      GCLK_GENCTRL_GENEN | GCLK_GENCTRL_SRC_GCLKIN | GCLK_GENCTRL_ID(4);
 #else
   DEBUG_PRINTLN("[RtcSync]: Using XOSC32K.");
-  GCLK->GENCTRL.reg = GCLK_GENCTRL_GENEN | GCLK_GENCTRL_SRC_XOSC32K |
-                      GCLK_GENCTRL_ID(4) | GCLK_GENCTRL_RUNSTDBY;
+  GCLK->GENCTRL.reg =
+      GCLK_GENCTRL_GENEN | GCLK_GENCTRL_SRC_XOSC32K | GCLK_GENCTRL_ID(4);
 #endif
   while (GCLK->STATUS.bit.SYNCBUSY) {
   } // Wait for synchronization
@@ -208,6 +208,12 @@ void RtcSync::computePwm(const uint16_t rate_hz, const uint32_t pulse_us,
     uint32_t mega_pulses = pulse_us * clock_freq_;
     *duty_cycle = mega_pulses / 1e6 +
                   (mega_pulses % static_cast<uint32_t>(1e6) != 0); // Ceil.
+  }
+}
+void RtcSync::computeFrq(const uint16_t rate_hz, const uint16_t prescaler,
+                         uint32_t *top) const {
+  if (top) {
+    *top = (clock_freq_ / prescaler / rate_hz) / 2 - 2;
   }
 }
 

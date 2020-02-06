@@ -48,6 +48,8 @@ public:
   void computePwm(const uint16_t rate_hz, const uint32_t pulse_us,
                   const uint16_t prescaler, uint32_t *top,
                   uint32_t *duty_cycle) const;
+  void computeFrq(const uint16_t rate_hz, const uint16_t prescaler,
+                  uint32_t *top) const;
   inline ros::Time getTimeSecs() const { return ros::Time(secs_, 0); }
 
   // Setters

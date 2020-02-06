@@ -32,31 +32,34 @@ public:
 
   // Setup the timer.
   virtual void setup() const = 0;
-  virtual void setupPwm(uint16_t rate_hz, uint32_t pulse_us, bool invert) = 0;
 
   virtual void handleInterrupt() = 0;
 
   inline bool isTriggered() const { return is_triggered_; }
   ros::Time computeTimeLastTrigger(); // resets is_triggered_ flag.
 
-  static uint8_t findMinPrescaler(const uint16_t rate_hz,
-                                  const uint32_t clock_freq,
-                                  const uint32_t counter_max);
+  static uint8_t findMinPrescalerPwm(const uint16_t rate_hz,
+                                     const uint32_t clock_freq,
+                                     const uint32_t counter_max);
+
+  static uint8_t findMinPrescalerFrq(const uint16_t rate_hz,
+                                     const uint32_t clock_freq,
+                                     const uint32_t counter_max);
 
 protected:
   void syncRtc();
   void overflow();
-  void pwmPulse();
+  void trigger();
 
   uint8_t prescaler_ = 0;
   uint32_t top_ = 0xFFFF; // Default 16 bit counter.
   // Flag to store whether trigger stamp has been requested.
+  bool invert_trigger_ = false;
   bool is_triggered_ = false;
 
 private:
   // State
   uint32_t ovf_ticks_since_sync_ = 0;
-  uint32_t rtc_secs_ = 0xFFFFFFFF;
 };
 
 #endif

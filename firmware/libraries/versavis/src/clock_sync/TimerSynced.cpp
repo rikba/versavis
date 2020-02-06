@@ -9,30 +9,22 @@ TimerSynced::TimerSynced() {
 
 ros::Time TimerSynced::computeTimeLastTrigger() {
   is_triggered_ = false;
-  return RtcSync::getInstance().computeTime(ovf_ticks_since_sync_ - top_ - 1,
+  return RtcSync::getInstance().computeTime(ovf_ticks_since_sync_,
                                             kPrescalers[prescaler_]);
 }
 
-void TimerSynced::syncRtc() {
-  if (RtcSync::getInstance().getSecs() != rtc_secs_) {
-    rtc_secs_ = RtcSync::getInstance().getSecs();
-    ovf_ticks_since_sync_ = 0;
-  }
-}
+void TimerSynced::syncRtc() { ovf_ticks_since_sync_ = 0; }
 
-void TimerSynced::pwmPulse() {
-  is_triggered_ = true;
-  overflow();
-}
+void TimerSynced::trigger() { is_triggered_ = true; }
 
 void TimerSynced::overflow() {
   // +1 to account for setting counter from TOP to ZERO cycle.
   ovf_ticks_since_sync_ += top_ + 1;
 }
 
-uint8_t TimerSynced::findMinPrescaler(const uint16_t rate_hz,
-                                      const uint32_t clock_freq,
-                                      const uint32_t counter_max) {
+uint8_t TimerSynced::findMinPrescalerPwm(const uint16_t rate_hz,
+                                         const uint32_t clock_freq,
+                                         const uint32_t counter_max) {
   bool found_prescaler = false;
   uint8_t prescaler = 0;
   for (; prescaler < sizeof(kPrescalers) / sizeof(kPrescalers[0]);
@@ -51,4 +43,10 @@ uint8_t TimerSynced::findMinPrescaler(const uint16_t rate_hz,
   }
 
   return prescaler;
+}
+
+uint8_t TimerSynced::findMinPrescalerFrq(const uint16_t rate_hz,
+                                         const uint32_t clock_freq,
+                                         const uint32_t counter_max) {
+  return findMinPrescalerPwm(rate_hz, clock_freq / 2, counter_max);
 }

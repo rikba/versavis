@@ -17,8 +17,8 @@ public:
   TcSynced(TcCount16 *tc);
 
   void setup() const override;
-  void setupPwm(uint16_t rate_hz, uint32_t pulse_us, bool invert) override;
-  
+  void setupMfrq(uint16_t rate_hz, bool invert);
+
   void handleInterrupt() override;
 
 private:

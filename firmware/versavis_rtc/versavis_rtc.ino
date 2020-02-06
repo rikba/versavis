@@ -30,8 +30,9 @@ void setup() {
 
   /* ----- Timers ----- */
   Tc3Synced::getInstance().setup();
-  Tc4Synced::getInstance().setup();
-  Tc5Synced::getInstance().setup();
+  Tc3Synced::getInstance().setupMfrq(3, false);
+//  Tc4Synced::getInstance().setup();
+//  Tc5Synced::getInstance().setup();
   Tcc0Synced::getInstance().setup();
   Tcc2Synced::getInstance().setup();
 }
@@ -46,22 +47,22 @@ void loop() {
     DEBUG_PRINT(".");
     DEBUG_PRINTDECLN(t3.nsec);
   }
-  if (Tc4Synced::getInstance().isTriggered()) {
-    auto t4 = Tc4Synced::getInstance().computeTimeLastTrigger();
-
-    DEBUG_PRINT("t4: ");
-    DEBUG_PRINT(t4.sec);
-    DEBUG_PRINT(".");
-    DEBUG_PRINTDECLN(t4.nsec);
-  }
-  if (Tc5Synced::getInstance().isTriggered()) {
-    auto t5 = Tc5Synced::getInstance().computeTimeLastTrigger();
-
-    DEBUG_PRINT("t5: ");
-    DEBUG_PRINT(t5.sec);
-    DEBUG_PRINT(".");
-    DEBUG_PRINTDECLN(t5.nsec);
-  }
+//  if (Tc4Synced::getInstance().isTriggered()) {
+//    auto t4 = Tc4Synced::getInstance().computeTimeLastTrigger();
+//
+//    DEBUG_PRINT("t4: ");
+//    DEBUG_PRINT(t4.sec);
+//    DEBUG_PRINT(".");
+//    DEBUG_PRINTDECLN(t4.nsec);
+//  }
+//  if (Tc5Synced::getInstance().isTriggered()) {
+//    auto t5 = Tc5Synced::getInstance().computeTimeLastTrigger();
+//
+//    DEBUG_PRINT("t5: ");
+//    DEBUG_PRINT(t5.sec);
+//    DEBUG_PRINT(".");
+//    DEBUG_PRINTDECLN(t5.nsec);
+//  }
   if (Tcc0Synced::getInstance().isTriggered()) {
     auto tcc0 = Tcc0Synced::getInstance().computeTimeLastTrigger();
 
