@@ -53,8 +53,12 @@ protected:
 
   uint8_t prescaler_ = 0;
   uint32_t top_ = 0xFFFF; // Default 16 bit counter.
-  // Flag to store whether trigger stamp has been requested.
+
+  // Trigger state.
+  uint16_t rate_hz_ = 0;
   bool invert_trigger_ = false;
+  uint32_t trigger_secs_ = 0xFFFFFFFF;
+  uint32_t trigger_num_ = 0xFFFFFFFF;
   bool is_triggered_ = false;
 
 private:

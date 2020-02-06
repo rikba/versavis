@@ -9,13 +9,21 @@ TimerSynced::TimerSynced() {
 
 ros::Time TimerSynced::computeTimeLastTrigger() {
   is_triggered_ = false;
-  return RtcSync::getInstance().computeTime(ovf_ticks_since_sync_,
+  const uint16_t trigger_in_second = trigger_num_ % rate_hz_;
+  const uint32_t ticks = (trigger_in_second * 2 + 1) * (top_ + 1);
+  return RtcSync::getInstance().computeTime(trigger_secs_, ticks,
                                             kPrescalers[prescaler_]);
 }
 
 void TimerSynced::syncRtc() { ovf_ticks_since_sync_ = 0; }
 
-void TimerSynced::trigger() { is_triggered_ = true; }
+void TimerSynced::trigger() {
+  // TODO(rikba): If the trigger happens just before the RTC seconds update the
+  // seconds could already be updated here and the triggering is screwed.
+  trigger_secs_ = RtcSync::getInstance().getSecs();
+  trigger_num_++;
+  is_triggered_ = true;
+}
 
 void TimerSynced::overflow() {
   // +1 to account for setting counter from TOP to ZERO cycle.

@@ -190,11 +190,16 @@ void RtcSync::setComp0(const uint32_t comp_0) const {
   }
 }
 
+ros::Time RtcSync::computeTime(const uint32_t secs, const uint32_t ticks,
+                               uint16_t prescaler) const {
+  uint32_t sec = secs;
+  uint32_t nsec = ticks * prescaler * ns_per_tick_;
+  ros::normalizeSecNSec(sec, nsec);
+  return ros::Time(sec, nsec);
+}
+
 ros::Time RtcSync::computeTime(const uint32_t ticks, uint16_t prescaler) const {
-  uint32_t secs = secs_;
-  uint32_t nsecs = ticks * prescaler * ns_per_tick_;
-  ros::normalizeSecNSec(secs, nsecs);
-  return ros::Time(secs, nsecs);
+  return computeTime(secs_, ticks, prescaler);
 }
 
 void RtcSync::computePwm(const uint16_t rate_hz, const uint32_t pulse_us,
@@ -213,16 +218,13 @@ void RtcSync::computePwm(const uint16_t rate_hz, const uint32_t pulse_us,
 void RtcSync::computeFrq(const uint16_t rate_hz, const uint16_t prescaler,
                          uint32_t *top) const {
   if (top) {
-    *top = (clock_freq_ / prescaler / rate_hz) / 2 - 2;
+    *top = (clock_freq_ / prescaler / rate_hz) / 2 - 1;
   }
 }
 
 void RTC_Handler() {
-  DEBUG_PRINTLN("[RtcSync]: RTC_Handler.");
   if (RTC->MODE0.INTFLAG.bit.CMP0 && RTC->MODE0.INTFLAG.bit.OVF) {
-    DEBUG_PRINTLN("[RtcSync]: Increment seconds.");
     RtcSync::getInstance().incrementSecs();
-    DEBUG_PRINTLN(RtcSync::getInstance().getSecs());
     // Clear flags.
     RTC->MODE0.INTFLAG.bit.CMP0 = 1;
     RTC->MODE0.INTFLAG.bit.OVF = 1;

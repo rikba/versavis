@@ -44,6 +44,8 @@ public:
   // Accessors
   inline uint32_t getSecs() const { return secs_; }
   inline uint32_t getComp0() const { return RTC->MODE0.COMP[0].reg; }
+  ros::Time computeTime(const uint32_t secs, const uint32_t ticks,
+                        uint16_t prescaler) const;
   ros::Time computeTime(const uint32_t ticks, uint16_t prescaler) const;
   void computePwm(const uint16_t rate_hz, const uint32_t pulse_us,
                   const uint16_t prescaler, uint32_t *top,

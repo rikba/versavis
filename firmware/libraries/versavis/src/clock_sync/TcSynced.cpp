@@ -42,6 +42,7 @@ void TcSynced::setup() const {
 }
 
 void TcSynced::setupMfrq(uint16_t rate_hz, bool invert) {
+  rate_hz_ = rate_hz;
   invert_trigger_ = invert;
   // Compute prescaler
   prescaler_ = findMinPrescalerFrq(rate_hz, RTC_FREQ, top_);
@@ -72,7 +73,7 @@ void TcSynced::setupMfrq(uint16_t rate_hz, bool invert) {
   }
 
   // Invert the inversion to start with a high pin at t = 0.
-  if (!invert) {
+  if (invert) {
     tc_->CTRLC.reg |= TC_CTRLC_INVEN0;
     while (tc_->STATUS.bit.SYNCBUSY) {
     }
@@ -107,28 +108,14 @@ void TcSynced::setupMfrq(uint16_t rate_hz, bool invert) {
 }
 
 void TcSynced::handleInterrupt() {
-  DEBUG_PRINTLN("handleInterrupt");
-  DEBUG_PRINTLN(tc_->INTFLAG.bit.MC0);
-  DEBUG_PRINTLN(tc_->INTFLAG.bit.MC1);
-  DEBUG_PRINTLN(tc_->INTFLAG.bit.OVF);
-  if (PORT->Group[PORTA].IN.reg & (1 << 14)) {
-    DEBUG_PRINTLN("HIGH");
-  } else {
-    DEBUG_PRINTLN("LOW");
-  }
 
-  bool pin = PORT->Group[PORTA].IN.reg & (1 << 14);
-
-  if (tc_->INTFLAG.bit.MC0 && (pin ^ invert_trigger_)) {
-    DEBUG_PRINTLN("trigger");
+  if (tc_->INTFLAG.bit.MC0 &&
+      (PORT->Group[PORTA].IN.reg & (1 << 14) ^ invert_trigger_)) {
     trigger();
   }
-
   if (tc_->INTFLAG.bit.MC1) {
-    DEBUG_PRINTLN("syncRtc");
     syncRtc();
   } else if (tc_->INTFLAG.bit.OVF) {
-    DEBUG_PRINTLN("overflow");
     overflow();
   }
 
