@@ -39,10 +39,14 @@ public:
 
   // Setup the timer.
   virtual void setup() const = 0;
+  virtual void setupDataReady(const uint8_t port_group, const uint8_t pin,
+                              const InterruptLogic &logic) = 0;
 
   virtual void handleInterrupt() = 0;
+  void handleEic();
 
   inline bool isTriggered() const { return is_triggered_; }
+  inline bool hasDataReady() const { return data_ready_; }
   ros::Time computeTimeLastTrigger(); // resets is_triggered_ flag.
 
 protected:
@@ -63,6 +67,11 @@ protected:
   uint32_t trigger_secs_ = 0xFFFFFFFF;
   uint32_t trigger_num_ = 0xFFFFFFFF;
   bool is_triggered_ = false;
+
+  // Data ready state.
+  bool data_ready_ = false;
+  uint8_t dr_port_group_ = 0;
+  uint8_t dr_pin_ = 0;
 
   // Free running state.
   uint32_t ovf_ticks_since_sync_ = 0;

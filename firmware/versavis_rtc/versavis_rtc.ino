@@ -30,6 +30,7 @@ void setup() {
 
   /* ----- Timers ----- */
   Tc3Synced::getInstance().setupMfrq(10, false);
+  Tc3Synced::getInstance().setupDataReady(PORTA, 13, InterruptLogic::kRise);
 }
 
 void loop() {
@@ -37,11 +38,16 @@ void loop() {
   if (Tc3Synced::getInstance().isTriggered()) {
     auto t3 = Tc3Synced::getInstance().computeTimeLastTrigger();
 
-    DEBUG_PRINT("t3: ");
+    DEBUG_PRINT("triggered t3: ");
     DEBUG_PRINT(t3.sec);
     DEBUG_PRINT(".");
     DEBUG_PRINTDECLN(t3.nsec);
   }
+
+  if (Tc3Synced::getInstance().hasDataReady()) {
+    DEBUG_PRINT("t3 data ready.");
+  }
+
   //  if (Tc4Synced::getInstance().isTriggered()) {
   //    auto t4 = Tc4Synced::getInstance().computeTimeLastTrigger();
   //
@@ -78,4 +84,9 @@ void loop() {
 #ifndef DEBUG
   nh.spinOnce();
 #endif
+}
+
+void EIC_HANDLER() {
+  DEBUG_PRINTLN("EIC_HANDLER");
+  Tc3Synced::getInstance().handleEic();
 }

@@ -18,8 +18,8 @@ public:
 
   void setup() const override;
   void setupMfrq(uint16_t rate_hz, bool invert);
-  void setupDataReady(const Port &port, const uint8_t pin,
-                      const InterruptLogic &logic);
+  void setupDataReady(const uint8_t port_group, const uint8_t pin,
+                      const InterruptLogic &logic) override;
 
   void handleInterrupt() override;
 

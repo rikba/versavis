@@ -30,3 +30,12 @@ void TimerSynced::overflow() {
   // +1 to account for setting counter from TOP to ZERO cycle.
   ovf_ticks_since_sync_ += top_ + 1;
 }
+
+void TimerSynced::handleEic() {
+  DEBUG_PRINTLN("handleEic");
+  if (EIC->INTFLAG.vec.EXTINT & (1 << (dr_pin_ % 16))) {
+    data_ready_ = true;
+  }
+
+  EIC->INTFLAG.reg |= EIC_INTFLAG_EXTINT(1 << (dr_pin_ % 16));
+}

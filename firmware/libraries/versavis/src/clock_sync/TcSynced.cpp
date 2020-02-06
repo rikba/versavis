@@ -100,8 +100,12 @@ void TcSynced::setupMfrq(uint16_t rate_hz, bool invert) {
   setupOutPin();
 }
 
-void setupDataReady(const uint8_t port_group, const uint8_t pin,
-                    const InterruptLogic &logic) {
+void TcSynced::setupDataReady(const uint8_t port_group, const uint8_t pin,
+                              const InterruptLogic &logic) {
+  // Store parameters.
+  dr_port_group_ = port_group;
+  dr_pin_ = pin;
+
   // PORT configurations.
   REG_PM_APBBMASK |= PM_APBBMASK_PORT;
 
@@ -110,11 +114,14 @@ void setupDataReady(const uint8_t port_group, const uint8_t pin,
 
   DEBUG_PRINTLN("[TcSynced]: Connect data ready pin with PMUX A.");
   if (pin % 2) {
+    DEBUG_PRINTLN("[TcSynced]: Odd.");
     PORT->Group[port_group].PMUX[pin >> 1].reg |= PORT_PMUX_PMUXO_A; // Odd
   } else {
+    DEBUG_PRINTLN("[TcSynced]: Even.");
     PORT->Group[port_group].PMUX[pin >> 1].reg |= PORT_PMUX_PMUXE_A; // Even
   }
   PORT->Group[port_group].PINCFG[pin].reg |= PORT_PINCFG_PMUXEN;
+  PORT->Group[port_group].PINCFG[pin].reg |= PORT_PINCFG_INEN;
 
   // Activate EIC edge detection.
   if (logic == InterruptLogic::kRise || logic == InterruptLogic::kFall ||
@@ -128,14 +135,21 @@ void setupDataReady(const uint8_t port_group, const uint8_t pin,
 
   // EIC configurations.
   REG_PM_APBAMASK |= PM_APBAMASK_EIC;
+  DEBUG_PRINTLN("[TcSynced]: Disable EIC.");
+  while (EIC->STATUS.bit.SYNCBUSY) {
+  } // Wait for synchronization
+  EIC->CTRL.reg &= ~EIC_CTRL_ENABLE;
+  while (EIC->STATUS.bit.SYNCBUSY) {
+  } // Wait for synchronization
 
   DEBUG_PRINTLN("[TcSynced]: Configure EXTINTEO.");
-  EIC->EVCTRL.reg |= EIC_EVCTRL_EXTINTEO(pin % 16);
+  EIC->EVCTRL.reg |= EIC_EVCTRL_EXTINTEO(1 << (pin % 16));
 
   uint8_t config_id = pin < 16 ? 1 : 2;
   config_id = pin < 8 ? 0 : config_id;
 
   DEBUG_PRINTLN("[TcSynced]: Configure SENSE.");
+  DEBUG_PRINTLN(config_id);
   uint8_t id = pin % 8;
   uint32_t logic_val = static_cast<uint32_t>(logic);
   switch (id) {
@@ -155,6 +169,9 @@ void setupDataReady(const uint8_t port_group, const uint8_t pin,
     EIC->CONFIG[config_id].bit.SENSE4 = logic_val;
     break;
   case 5:
+    DEBUG_PRINTLN("[TcSynced]: SENSE5.");
+    DEBUG_PRINTLN(config_id);
+    // EIC->CONFIG[1].reg |= EIC_CONFIG_SENSE5_HIGH;
     EIC->CONFIG[config_id].bit.SENSE5 = logic_val;
     break;
   case 6:
@@ -166,13 +183,18 @@ void setupDataReady(const uint8_t port_group, const uint8_t pin,
   }
 
   DEBUG_PRINTLN("[TcSynced]: Enable interrupt handler.");
-  EIC->INTENSET.reg |= EIC_INTENSET_EXTINT(pin % 16);
-  EIC->INTFLAG.reg |= EIC_INTFLAG_EXTINT(pin % 16);
+  EIC->INTENSET.reg |= EIC_INTENSET_EXTINT(1 << (pin % 16));
+  EIC->INTFLAG.reg |= EIC_INTFLAG_EXTINT(1 << (pin % 16));
 
   DEBUG_PRINTLN("[TcSynced]: Enable EIC.");
+  while (EIC->STATUS.bit.SYNCBUSY) {
+  } // Wait for synchronization
   EIC->CTRL.reg |= EIC_CTRL_ENABLE;
   while (EIC->STATUS.bit.SYNCBUSY) {
   } // Wait for synchronization
+
+  NVIC_SetPriority(EIC_IRQn, 0x02);
+  NVIC_EnableIRQ(EIC_IRQn);
 }
 
 void TcSynced::handleInterrupt() {
