@@ -46,7 +46,7 @@ public:
   void handleEic();
 
   inline bool isTriggered() const { return is_triggered_; }
-  inline bool hasDataReady() const { return data_ready_; }
+  bool hasDataReady();                // resets data_ready_ flag.
   ros::Time computeTimeLastTrigger(); // resets is_triggered_ flag.
 
 protected:

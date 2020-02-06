@@ -7,6 +7,15 @@ TimerSynced::TimerSynced() {
   RtcSync::getInstance(); // Make sure RTC singleton exists.
 }
 
+bool TimerSynced::hasDataReady() {
+  if (data_ready_) {
+    data_ready_ = false;
+    return true;
+  } else {
+    return false;
+  }
+}
+
 ros::Time TimerSynced::computeTimeLastTrigger() {
   is_triggered_ = false;
   const uint16_t trigger_in_second = trigger_num_ % rate_hz_;
@@ -32,7 +41,6 @@ void TimerSynced::overflow() {
 }
 
 void TimerSynced::handleEic() {
-  DEBUG_PRINTLN("handleEic");
   if (EIC->INTFLAG.vec.EXTINT & (1 << (dr_pin_ % 16))) {
     data_ready_ = true;
   }

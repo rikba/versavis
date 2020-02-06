@@ -43,10 +43,11 @@ void loop() {
     DEBUG_PRINT(".");
     DEBUG_PRINTDECLN(t3.nsec);
   }
+  //DEBUG_PRINTLN(PORT->Group[PORTA].IN.reg & (1 << 13));
 
-  if (Tc3Synced::getInstance().hasDataReady()) {
-    DEBUG_PRINT("t3 data ready.");
-  }
+if (Tc3Synced::getInstance().hasDataReady()) {
+  DEBUG_PRINTLN("t3 data ready.");
+}
 
   //  if (Tc4Synced::getInstance().isTriggered()) {
   //    auto t4 = Tc4Synced::getInstance().computeTimeLastTrigger();
@@ -86,7 +87,6 @@ void loop() {
 #endif
 }
 
-void EIC_HANDLER() {
-  DEBUG_PRINTLN("EIC_HANDLER");
+void EIC_Handler() {
   Tc3Synced::getInstance().handleEic();
 }

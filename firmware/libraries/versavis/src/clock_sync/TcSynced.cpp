@@ -114,10 +114,8 @@ void TcSynced::setupDataReady(const uint8_t port_group, const uint8_t pin,
 
   DEBUG_PRINTLN("[TcSynced]: Connect data ready pin with PMUX A.");
   if (pin % 2) {
-    DEBUG_PRINTLN("[TcSynced]: Odd.");
     PORT->Group[port_group].PMUX[pin >> 1].reg |= PORT_PMUX_PMUXO_A; // Odd
   } else {
-    DEBUG_PRINTLN("[TcSynced]: Even.");
     PORT->Group[port_group].PMUX[pin >> 1].reg |= PORT_PMUX_PMUXE_A; // Even
   }
   PORT->Group[port_group].PINCFG[pin].reg |= PORT_PINCFG_PMUXEN;
@@ -169,9 +167,6 @@ void TcSynced::setupDataReady(const uint8_t port_group, const uint8_t pin,
     EIC->CONFIG[config_id].bit.SENSE4 = logic_val;
     break;
   case 5:
-    DEBUG_PRINTLN("[TcSynced]: SENSE5.");
-    DEBUG_PRINTLN(config_id);
-    // EIC->CONFIG[1].reg |= EIC_CONFIG_SENSE5_HIGH;
     EIC->CONFIG[config_id].bit.SENSE5 = logic_val;
     break;
   case 6:
@@ -198,7 +193,6 @@ void TcSynced::setupDataReady(const uint8_t port_group, const uint8_t pin,
 }
 
 void TcSynced::handleInterrupt() {
-
   if (tc_->INTFLAG.bit.MC0 && (getOutPinValue() ^ invert_trigger_)) {
     trigger();
   }
