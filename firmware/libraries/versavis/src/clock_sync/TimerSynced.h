@@ -51,6 +51,9 @@ protected:
   void overflow();
   void trigger();
 
+  virtual void setupOutPin() = 0;
+
+  // States
   uint8_t prescaler_ = 0;
   uint32_t top_ = 0xFFFF; // Default 16 bit counter.
 
@@ -61,8 +64,7 @@ protected:
   uint32_t trigger_num_ = 0xFFFFFFFF;
   bool is_triggered_ = false;
 
-private:
-  // State
+  // Free running state.
   uint32_t ovf_ticks_since_sync_ = 0;
 };
 

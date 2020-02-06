@@ -22,6 +22,8 @@ public:
 
 private:
   Tc4Synced();
+
+  void setupOutPin() override;
 };
 
 #endif

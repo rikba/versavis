@@ -22,6 +22,8 @@ public:
 
 private:
   Tc5Synced();
+
+  void setupOutPin() override;
 };
 
 #endif

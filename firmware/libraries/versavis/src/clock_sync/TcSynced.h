@@ -21,7 +21,7 @@ public:
 
   void handleInterrupt() override;
 
-private:
+protected:
   // Pointer to the actual timer.
   TcCount16 *tc_ = NULL;
 };

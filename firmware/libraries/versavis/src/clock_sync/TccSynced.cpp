@@ -2,7 +2,7 @@
 
 #include "helper.h"
 
-TccSynced::TccSynced(Tcc *tcc) : tcc_(tcc) {}
+TccSynced::TccSynced(Tcc *tcc) : tcc_(tcc) { setup(); }
 
 void TccSynced::setup() const {
   if (!tcc_) {

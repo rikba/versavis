@@ -5,7 +5,7 @@
 #include "helper.h"
 #include "versavis_configuration.h"
 
-TcSynced::TcSynced(TcCount16 *tc) : tc_(tc) {}
+TcSynced::TcSynced(TcCount16 *tc) : tc_(tc) { setup(); }
 
 void TcSynced::setup() const {
   DEBUG_PRINTLN("[TcSynced]: setupTimer.");
@@ -102,9 +102,7 @@ void TcSynced::setupMfrq(uint16_t rate_hz, bool invert) {
 
   // Setup output pin.
   REG_PM_APBBMASK |= PM_APBBMASK_PORT; // Port ABP Clock Enable.
-  DEBUG_PRINTLN("[TcSynced]: Configuring port PA14 TC3/WO[0] PWM pin.");
-  PORT->Group[PORTA].PMUX[14 >> 1].reg |= PORT_PMUX_PMUXE_E; // TC3/WO[0]
-  PORT->Group[PORTA].PINCFG[14].reg |= PORT_PINCFG_PMUXEN;   // Multiplexation
+  setupOutPin();
 }
 
 void TcSynced::handleInterrupt() {

@@ -22,6 +22,8 @@ public:
 
 private:
   Tc3Synced();
+
+  void setupOutPin() override;
 };
 
 #endif

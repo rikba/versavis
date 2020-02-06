@@ -22,6 +22,7 @@ public:
 
 private:
   Tcc0Synced();
+  void setupOutPin() override;
 };
 
 #endif

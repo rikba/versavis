@@ -19,7 +19,8 @@ void TimerSynced::syncRtc() { ovf_ticks_since_sync_ = 0; }
 
 void TimerSynced::trigger() {
   // TODO(rikba): If the trigger happens just before the RTC seconds update the
-  // seconds could already be updated here and the triggering is screwed.
+  // seconds could already be updated here and the triggering is screwed. One
+  // solution could be DMAC or capturing the total seconds.
   trigger_secs_ = RtcSync::getInstance().getSecs();
   trigger_num_++;
   is_triggered_ = true;

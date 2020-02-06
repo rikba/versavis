@@ -22,6 +22,7 @@ public:
 
 private:
   Tcc2Synced();
+  void setupOutPin() override;
 };
 
 #endif
