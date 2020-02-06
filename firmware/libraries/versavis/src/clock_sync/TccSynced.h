@@ -17,9 +17,9 @@ public:
   TccSynced(Tcc *tcc);
 
   void setup() const override;
-
-  void handleRetrigger() override;
-  void handleOverflow() override;
+  void setupPwm(uint16_t rate_hz, uint32_t pulse_us, bool invert) override;
+  
+  void handleInterrupt() override;
 
 private:
   // Pointer to the actual timer.

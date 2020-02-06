@@ -30,5 +30,8 @@ void TccSynced::setup() const {
   }
 }
 
-void TccSynced::handleRetrigger() { DEBUG_PRINTLN("[TccSynced]: IMPLEMENT!!"); }
-void TccSynced::handleOverflow() { DEBUG_PRINTLN("[TccSynced]: IMPLEMENT!!"); }
+void TccSynced::setupPwm(uint16_t rate_hz, uint32_t pulse_us, bool invert) {
+  DEBUG_PRINTLN("[TcSynced]: IMPLEMENT!!");
+}
+
+void TccSynced::handleInterrupt() { DEBUG_PRINTLN("[TccSynced]: IMPLEMENT!!"); }

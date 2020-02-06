@@ -26,9 +26,7 @@ void RtcSync::setupPort() const {
 #ifdef RTC_GCLKIN_10MHZ
   REG_PM_APBBMASK |= PM_APBBMASK_PORT; // Port ABP Clock Enable.
 
-  DEBUG_PRINTLN("[GnssSync]: Configuring PA10/GCLK_IO[4] as input.");
-  PORT->Group[PORTA].DIRCLR.reg =
-      PORT_DIRCLR_DIRCLR(1 << 10); // Set pin PA10 pin as input
+  DEBUG_PRINTLN("[GnssSync]: Configuring PA10 as GCLK_IO[4].");
   PORT->Group[PORTA].PMUX[10 >> 1].reg |=
       PORT_PMUX_PMUXE_H; // Connect PA10 pin to peripheral H (GCLK_IO[4])
   PORT->Group[PORTA].PINCFG[10].reg |=
@@ -93,7 +91,7 @@ void RtcSync::setupEvsys() const {
 
   // TCC1
   EVSYS->USER.reg = EVSYS_USER_CHANNEL(1) |
-                    EVSYS_USER_USER(EVSYS_ID_USER_TCC1_MC_0); // Capture
+                    EVSYS_USER_USER(EVSYS_ID_USER_TCC0_EV_0); // Retrigger
 
   // TCC2
   EVSYS->USER.reg = EVSYS_USER_CHANNEL(1) |
@@ -192,11 +190,25 @@ void RtcSync::setComp0(const uint32_t comp_0) const {
   }
 }
 
-ros::Time RtcSync::computeTime(const uint32_t ticks, uint8_t prescaler) const {
+ros::Time RtcSync::computeTime(const uint32_t ticks, uint16_t prescaler) const {
   uint32_t secs = secs_;
   uint32_t nsecs = ticks * prescaler * ns_per_tick_;
   ros::normalizeSecNSec(secs, nsecs);
   return ros::Time(secs, nsecs);
+}
+
+void RtcSync::computePwm(const uint16_t rate_hz, const uint32_t pulse_us,
+                         const uint16_t prescaler, uint32_t *top,
+                         uint32_t *duty_cycle) const {
+  if (top) {
+    *top = clock_freq_ / prescaler / rate_hz - 1;
+  }
+
+  if (duty_cycle) {
+    uint32_t mega_pulses = pulse_us * clock_freq_;
+    *duty_cycle = mega_pulses / 1e6 +
+                  (mega_pulses % static_cast<uint32_t>(1e6) != 0); // Ceil.
+  }
 }
 
 void RTC_Handler() {

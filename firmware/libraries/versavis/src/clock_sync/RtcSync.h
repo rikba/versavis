@@ -44,7 +44,10 @@ public:
   // Accessors
   inline uint32_t getSecs() const { return secs_; }
   inline uint32_t getComp0() const { return RTC->MODE0.COMP[0].reg; }
-  ros::Time computeTime(const uint32_t ticks, uint8_t prescaler) const;
+  ros::Time computeTime(const uint32_t ticks, uint16_t prescaler) const;
+  void computePwm(const uint16_t rate_hz, const uint32_t pulse_us,
+                  const uint16_t prescaler, uint32_t *top,
+                  uint32_t *duty_cycle) const;
   inline ros::Time getTimeSecs() const { return ros::Time(secs_, 0); }
 
   // Setters
@@ -68,7 +71,8 @@ private:
 
   // State
   uint32_t secs_ = 0;
-  double ns_per_tick_ = 1.0e9 / RTC_FREQ;
+  uint32_t clock_freq_ = RTC_FREQ;
+  double ns_per_tick_ = 1.0e9 / clock_freq_;
 };
 
 #endif
