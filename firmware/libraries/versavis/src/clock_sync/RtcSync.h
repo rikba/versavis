@@ -27,6 +27,8 @@
 
 #include "versavis_configuration.h"
 
+const uint16_t kPrescalers[8] = {1, 2, 4, 8, 16, 64, 256, 1024};
+
 class RtcSync {
 public:
   // Singleton implementation.
@@ -59,6 +61,12 @@ public:
   void setComp0(const uint32_t comp_0) const;
 
   inline void incrementSecs() { secs_++; }
+
+  uint8_t findMinPrescalerPwm(const uint16_t rate_hz,
+                              const uint32_t counter_max) const;
+
+  uint8_t findMinPrescalerFrq(const uint16_t rate_hz,
+                              const uint32_t counter_max) const;
 
 private:
   RtcSync();

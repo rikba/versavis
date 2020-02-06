@@ -222,6 +222,33 @@ void RtcSync::computeFrq(const uint16_t rate_hz, const uint16_t prescaler,
   }
 }
 
+uint8_t RtcSync::findMinPrescalerPwm(const uint16_t rate_hz,
+                                     const uint32_t counter_max) const {
+  bool found_prescaler = false;
+  uint8_t prescaler = 0;
+  for (; prescaler < sizeof(kPrescalers) / sizeof(kPrescalers[0]);
+       ++prescaler) {
+    const uint32_t kRequiredTicks =
+        clock_freq_ / kPrescalers[prescaler] / static_cast<uint32_t>(rate_hz);
+    found_prescaler = (kRequiredTicks < counter_max);
+    if (found_prescaler) {
+      break;
+    }
+  }
+
+  if (!found_prescaler) {
+    error("NO_PRESCALER (TimerSynced.cpp): cannot find suitable prescaler.",
+          201);
+  }
+
+  return prescaler;
+}
+
+uint8_t RtcSync::findMinPrescalerFrq(const uint16_t rate_hz,
+                                     const uint32_t counter_max) const {
+  return findMinPrescalerPwm(2 * rate_hz, counter_max);
+}
+
 void RTC_Handler() {
   if (RTC->MODE0.INTFLAG.bit.CMP0 && RTC->MODE0.INTFLAG.bit.OVF) {
     RtcSync::getInstance().incrementSecs();

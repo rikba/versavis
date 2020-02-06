@@ -24,8 +24,6 @@
 
 #include "versavis_configuration.h"
 
-const uint16_t kPrescalers[8] = {1, 2, 4, 8, 16, 64, 256, 1024};
-
 class TimerSynced {
 public:
   TimerSynced();
@@ -37,14 +35,6 @@ public:
 
   inline bool isTriggered() const { return is_triggered_; }
   ros::Time computeTimeLastTrigger(); // resets is_triggered_ flag.
-
-  static uint8_t findMinPrescalerPwm(const uint16_t rate_hz,
-                                     const uint32_t clock_freq,
-                                     const uint32_t counter_max);
-
-  static uint8_t findMinPrescalerFrq(const uint16_t rate_hz,
-                                     const uint32_t clock_freq,
-                                     const uint32_t counter_max);
 
 protected:
   void syncRtc();

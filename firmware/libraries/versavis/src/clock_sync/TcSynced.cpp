@@ -42,12 +42,11 @@ void TcSynced::setup() const {
 }
 
 void TcSynced::setupMfrq(uint16_t rate_hz, bool invert) {
+  // Set parameters.
   rate_hz_ = rate_hz;
   invert_trigger_ = invert;
-  // Compute prescaler
-  prescaler_ = findMinPrescalerFrq(rate_hz, RTC_FREQ, top_);
-  DEBUG_PRINT("[TcSynced]: Prescaling timer by ");
-  DEBUG_PRINTLN(kPrescalers[prescaler_]);
+  prescaler_ = RtcSync::getInstance().findMinPrescalerFrq(rate_hz, top_);
+  RtcSync::getInstance().computeFrq(rate_hz, kPrescalers[prescaler_], &top_);
 
   // Setup wavegen.
   DEBUG_PRINTLN("[TcSynced]: Disabling timer.");
@@ -57,7 +56,8 @@ void TcSynced::setupMfrq(uint16_t rate_hz, bool invert) {
   while (tc_->STATUS.bit.SYNCBUSY) {
   }
 
-  DEBUG_PRINTLN("[TcSynced]: Set prescaler.");
+  DEBUG_PRINT("[TcSynced]: Prescaling timer by ");
+  DEBUG_PRINTLN(kPrescalers[prescaler_]);
   tc_->CTRLA.reg |= TC_CTRLA_PRESCALER(prescaler_);
   while (tc_->STATUS.bit.SYNCBUSY) {
   }
@@ -72,22 +72,17 @@ void TcSynced::setupMfrq(uint16_t rate_hz, bool invert) {
   while (tc_->STATUS.bit.SYNCBUSY) {
   }
 
-  // Invert the inversion to start with a high pin at t = 0.
   if (invert) {
     tc_->CTRLC.reg |= TC_CTRLC_INVEN0;
     while (tc_->STATUS.bit.SYNCBUSY) {
     }
   }
 
-  RtcSync::getInstance().computeFrq(rate_hz, kPrescalers[prescaler_], &top_);
   DEBUG_PRINT("[TcSynced]: Set FRQ top: ");
   DEBUG_PRINTLN(top_);
   tc_->CC[0].reg = top_;
   while (tc_->STATUS.bit.SYNCBUSY) {
   }
-
-  // DEBUG_PRINTLN("[TcSynced]: Set counter top to trigger immediately on
-  // start."); tc_->COUNT.reg = TC_COUNT16_COUNT_COUNT(top_);
 
   DEBUG_PRINTLN("[TcSynced]: Enabling MFRQ interrupts.");
   tc_->INTENSET.reg |= TC_INTENSET_MC0;
