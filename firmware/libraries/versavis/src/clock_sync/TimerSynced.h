@@ -24,6 +24,15 @@
 
 #include "versavis_configuration.h"
 
+enum class InterruptLogic {
+  kNone = 0x0u,
+  kRise = 0x1u,
+  kFall = 0x2u,
+  kBoth = 0x3u,
+  kHigh = 0x4u,
+  kLow = 0x5u
+};
+
 class TimerSynced {
 public:
   TimerSynced();
@@ -42,6 +51,7 @@ protected:
   void trigger();
 
   virtual void setupOutPin() = 0;
+  virtual bool getOutPinValue() const = 0;
 
   // States
   uint8_t prescaler_ = 0;

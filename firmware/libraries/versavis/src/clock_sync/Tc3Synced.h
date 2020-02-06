@@ -24,6 +24,7 @@ private:
   Tc3Synced();
 
   void setupOutPin() override;
+  virtual bool getOutPinValue() const override;
 };
 
 #endif

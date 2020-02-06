@@ -12,4 +12,9 @@ void Tc5Synced::setupOutPin() {
   DEBUG_PRINTLN("[Tc5Synced]: Wave output pin TC5/WO[0] not configured!");
 }
 
+bool Tc5Synced::getOutPinValue() const {
+  DEBUG_PRINTLN("[Tc5Synced]: Wave output pin TC5/WO[0] not configured!");
+  return invert_trigger_;
+}
+
 void TC5_Handler() { Tc5Synced::getInstance().handleInterrupt(); }

@@ -23,6 +23,7 @@ public:
 private:
   Tcc2Synced();
   void setupOutPin() override;
+  virtual bool getOutPinValue() const override;
 };
 
 #endif

@@ -17,4 +17,8 @@ void Tcc1Synced::setupOutPin() {
   PORT->Group[PORTA].PINCFG[7].reg |= PORT_PINCFG_PMUXEN;
 }
 
+bool Tcc1Synced::getOutPinValue() const {
+  return PORT->Group[PORTA].IN.reg & (1 << 7);
+}
+
 void TCC1_Handler() { DEBUG_PRINTLN("[Tcc1Synced]: TCC1_Handler."); }

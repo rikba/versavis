@@ -12,4 +12,9 @@ void Tc4Synced::setupOutPin() {
   DEBUG_PRINTLN("[Tc4Synced]: Wave output pin TC4/WO[0] not configured!");
 }
 
+bool Tc4Synced::getOutPinValue() const {
+  DEBUG_PRINTLN("[Tc4Synced]: Wave output pin TC4/WO[0] not configured!");
+  return invert_trigger_;
+}
+
 void TC4_Handler() { Tc4Synced::getInstance().handleInterrupt(); }

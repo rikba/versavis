@@ -12,4 +12,9 @@ void Tcc2Synced::setupOutPin() {
   DEBUG_PRINTLN("[Tcc0Synced]: Wave output pin TCC2/WO[0] not configured!");
 }
 
+bool Tcc2Synced::getOutPinValue() const {
+  DEBUG_PRINTLN("[Tcc0Synced]: Wave output pin TCC2/WO[0] not configured!");
+  return invert_trigger_;
+}
+
 void TCC2_Handler() { DEBUG_PRINTLN("[Tcc2Synced]: TCC2_Handler."); }

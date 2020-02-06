@@ -15,4 +15,8 @@ void Tc3Synced::setupOutPin() {
   PORT->Group[PORTA].PINCFG[14].reg |= PORT_PINCFG_PMUXEN;
 }
 
+bool Tc3Synced::getOutPinValue() const {
+  return PORT->Group[PORTA].IN.reg & (1 << 14);
+}
+
 void TC3_Handler() { Tc3Synced::getInstance().handleInterrupt(); }
