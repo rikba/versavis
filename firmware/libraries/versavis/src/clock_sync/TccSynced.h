@@ -16,16 +16,18 @@ class TccSynced : public TimerSynced {
 public:
   TccSynced(Tcc *tcc);
 
-  void setup() const override;
   void setupPwm(uint16_t rate_hz, uint32_t pulse_us, bool invert);
   void setupDataReady(const uint8_t port_group, const uint8_t pin,
                       const InterruptLogic &logic) override {}
+  void setupMfrq(const uint16_t rate_hz, const bool invert) override {}
 
   void handleInterrupt() override;
 
 private:
   // Pointer to the actual timer.
   Tcc *tcc_ = NULL;
+
+  void setup() const;
 };
 
 #endif

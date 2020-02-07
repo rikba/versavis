@@ -41,7 +41,7 @@ void TcSynced::setup() const {
   }
 }
 
-void TcSynced::setupMfrq(uint16_t rate_hz, bool invert) {
+void TcSynced::setupMfrq(const uint16_t rate_hz, const bool invert) {
   // Set parameters.
   rate_hz_ = rate_hz;
   invert_trigger_ = invert;

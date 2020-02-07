@@ -38,9 +38,9 @@ public:
   TimerSynced();
 
   // Setup the timer.
-  virtual void setup() const = 0;
   virtual void setupDataReady(const uint8_t port_group, const uint8_t pin,
                               const InterruptLogic &logic) = 0;
+  virtual void setupMfrq(const uint16_t rate_hz, const bool invert) = 0;
 
   virtual void handleInterrupt() = 0;
   void handleEic();
