@@ -13,44 +13,39 @@
 #include <Arduino.h>
 
 // ROS
-ros::NodeHandle nh;
+ros::NodeHandle *nh = NULL;
 
 // Sensors.
-Adis16448BmlzTriggered *imu_ptr_;
+SensorSynced *imu = NULL;
 
 void setup() {
-#ifdef DEBUG
-  while (!SerialUSB) { // wait for serial port to connect.
-  }
-#endif
-  DEBUG_PRINTLN("Setup.");
-
-  // Sensors
-  static Adis16448BmlzTriggered imu(&Tc3Synced::getInstance(), 10, PORTA, 13,
-                                    10);
-  imu_ptr_ = &imu;
-
-/* ----- ROS ----- */
 #ifndef DEBUG
-  nh.getHardware()->setBaud(250000);
-  nh.initNode();
+  static ros::NodeHandle node_handle;
+  nh = &node_handle;
+  nh->initNode();
+#endif
   while (!SerialUSB)
     ;
 
-  RtcSync::getInstance().setupRos(&nh, "/versavis/rtc");
-  imu.setupRos(&nh, "/versavis/imu");
-#endif
+  DEBUG_PRINTLN("Setup.");
+
+  // Sensors
+  static Adis16448BmlzTriggered adis_16448(&Tc3Synced::getInstance(), 10, PORTA,
+                                           13, 10);
+  imu = &adis_16448;
+
+  // ROS
+  RtcSync::getInstance().setupRos(nh, "/versavis/rtc");
+  imu->setupRos(nh, "/versavis/imu");
 }
 
 void loop() {
-  if (imu_ptr_)
-    imu_ptr_->publish();
+  imu->publish();
 
-  //RtcSync::getInstance().publish();
+  // RtcSync::getInstance().publish();
 
-#ifndef DEBUG
-  nh.spinOnce();
-#endif
+  if (nh)
+    nh->spinOnce();
 }
 
 void EIC_Handler() { Tc3Synced::getInstance().handleEic(); }
