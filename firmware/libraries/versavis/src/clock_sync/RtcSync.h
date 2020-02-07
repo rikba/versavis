@@ -82,7 +82,7 @@ private:
   // ROS
   ros::Publisher *rtc_pub_ = NULL;
   std_msgs::Time *rtc_msg_ = NULL;
-  bool has_stamp_ = false;
+  bool has_stamp_ = true;
 
   // State
   uint32_t secs_ = 0;

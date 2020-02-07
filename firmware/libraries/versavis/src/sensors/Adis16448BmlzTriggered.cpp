@@ -28,7 +28,7 @@ void Adis16448BmlzTriggered::publish() {
   if (timer_ && timer_->hasDataReady()) {
     int16_t *imu_data = imu_.sensorReadAllCRC();
 
-    if (imu_msg_ && imu_.checksum(imu_data)) {
+    if (imu_msg_ && (imu_.checksum(imu_data) == imu_data[12])) {
       imu_msg_->gx = imu_data[1];
       imu_msg_->gy = imu_data[2];
       imu_msg_->gz = imu_data[3];
