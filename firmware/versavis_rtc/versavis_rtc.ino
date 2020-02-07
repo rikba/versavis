@@ -15,45 +15,38 @@
 // ROS
 ros::NodeHandle nh;
 
+// Sensors.
+Adis16448BmlzTriggered *imu_ptr_;
+
 void setup() {
+#ifdef DEBUG
+  while (!SerialUSB) { // wait for serial port to connect.
+  }
+#endif
   DEBUG_PRINTLN("Setup.");
+
+  // Sensors
+  static Adis16448BmlzTriggered imu(&Tc3Synced::getInstance(), 10, PORTA, 13,
+                                    10);
+  imu_ptr_ = &imu;
 
 /* ----- ROS ----- */
 #ifndef DEBUG
   nh.getHardware()->setBaud(250000);
   nh.initNode();
+  while (!SerialUSB)
+    ;
 
-  RtcSync::getInstance().setupRos(nh);
-  imu.setupRos(nh, "/versavis/imu");
-  nh.spinOnce();
-#else
-  while (!SerialUSB) { // wait for serial port to connect.
-  }
+  RtcSync::getInstance().setupRos(&nh, "/versavis/rtc");
+  imu.setupRos(&nh, "/versavis/imu");
 #endif
-
-  // Sensors
-  Adis16448BmlzTriggered imu(&Tc3Synced::getInstance(), 10, PORTA, 13, 10);
-
-  /* ----- Timers ----- */
-  //  Tc3Synced::getInstance().setupMfrq(10, false);
-  //  Tc3Synced::getInstance().setupDataReady(PORTA, 13, InterruptLogic::kRise);
 }
 
 void loop() {
-  // Synchronize timers against RTC clock.
-  if (Tc3Synced::getInstance().isTriggered()) {
-    auto t3 = Tc3Synced::getInstance().computeTimeLastTrigger();
+  if (imu_ptr_)
+    imu_ptr_->publish();
 
-    DEBUG_PRINT("triggered t3: ");
-    DEBUG_PRINT(t3.sec);
-    DEBUG_PRINT(".");
-    DEBUG_PRINTDECLN(t3.nsec);
-  }
-  // DEBUG_PRINTLN(PORT->Group[PORTA].IN.reg & (1 << 13));
-
-  if (Tc3Synced::getInstance().hasDataReady()) {
-    DEBUG_PRINTLN("t3 data ready.");
-  }
+  //RtcSync::getInstance().publish();
 
 #ifndef DEBUG
   nh.spinOnce();

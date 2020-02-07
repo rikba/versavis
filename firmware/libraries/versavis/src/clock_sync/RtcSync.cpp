@@ -5,20 +5,35 @@
 #include "helper.h"
 #include "versavis_configuration.h"
 
-RtcSync::RtcSync() : rtc_pub_("/versavis/gnss_sync/rtc", &rtc_msg_) {
+RtcSync::RtcSync() {
   setupPort();
   setupGenericClock4();
   setupEvsys();
   setupRtc();
 }
 
-void RtcSync::setupRos(ros::NodeHandle *nh) {
-  nh_ = nh;
-#ifndef DEBUG
-  if (nh_) {
-    nh_->advertise(rtc_pub_);
+void RtcSync::setupRos(ros::NodeHandle *nh, const char *topic) {
+  if (nh) {
+    // Create static ROS objects.
+    static auto static_topic = topic;
+    static std_msgs::Time msg;
+    static ros::Publisher pub(static_topic, &msg);
+
+    // Set member variables.
+    rtc_msg_ = &msg;
+    rtc_pub_ = &pub;
+
+    // Advertise topic
+    nh->advertise(pub);
   }
-#endif
+}
+
+void RtcSync::publish() {
+  if (rtc_pub_ && rtc_msg_ && has_stamp_) {
+    rtc_msg_->data = ros::Time(secs_, 0);
+    rtc_pub_->publish(rtc_msg_);
+    has_stamp_ = false;
+  }
 }
 
 void RtcSync::setupPort() const {

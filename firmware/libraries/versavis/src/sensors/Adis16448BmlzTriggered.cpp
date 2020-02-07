@@ -1,5 +1,7 @@
 #include "sensors/Adis16448BmlzTriggered.h"
 
+#include "helper.h"
+
 Adis16448BmlzTriggered::Adis16448BmlzTriggered(TimerSynced *timer,
                                                const uint16_t rate_hz,
                                                const uint8_t dr_port_group,
@@ -20,6 +22,7 @@ Adis16448BmlzTriggered::Adis16448BmlzTriggered(TimerSynced *timer,
 void Adis16448BmlzTriggered::publish() {
   if (imu_msg_ && timer_ && timer_->isTriggered()) {
     imu_msg_->time.data = timer_->computeTimeLastTrigger();
+    DEBUG_PRINTLN("triggered.");
   }
 
   if (timer_ && timer_->hasDataReady()) {
@@ -37,6 +40,7 @@ void Adis16448BmlzTriggered::publish() {
       imu_msg_->mz = imu_data[9];
       imu_msg_->baro = imu_data[10];
       imu_msg_->temp = imu_data[11];
+      DEBUG_PRINTLN("publishing.");
 
       if (publisher_) {
         publisher_->publish(imu_msg_);

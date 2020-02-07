@@ -40,8 +40,8 @@ public:
   void operator=(RtcSync const &) = delete;
 
   // ROS
-  void setupRos(ros::NodeHandle *nh);
-  void publish();
+  void setupRos(ros::NodeHandle *nh, const char *topic);
+  void publish(); // Resets has_stamp_ flag.
 
   // Accessors
   inline uint32_t getSecs() const { return secs_; }
@@ -60,7 +60,10 @@ public:
   inline uint32_t setSecs(const uint32_t secs) { secs_ = secs; }
   void setComp0(const uint32_t comp_0) const;
 
-  inline void incrementSecs() { secs_++; }
+  inline void incrementSecs() {
+    secs_++;
+    has_stamp_ = true;
+  }
 
   uint8_t findMinPrescalerPwm(const uint16_t rate_hz,
                               const uint32_t counter_max) const;
@@ -77,9 +80,9 @@ private:
   void setupRtc() const;
 
   // ROS
-  ros::NodeHandle *nh_ = NULL;
-  ros::Publisher rtc_pub_;
-  std_msgs::Time rtc_msg_;
+  ros::Publisher *rtc_pub_ = NULL;
+  std_msgs::Time *rtc_msg_ = NULL;
+  bool has_stamp_ = false;
 
   // State
   uint32_t secs_ = 0;
