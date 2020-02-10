@@ -30,8 +30,8 @@ void setup() {
   DEBUG_PRINTLN("Setup.");
 
   // Sensors
-  static Adis16448BmlzTriggered adis_16448(&Tc3Synced::getInstance(), 10, PORTA,
-                                           13, 10);
+  static Adis16448BmlzTriggered adis_16448(&Tc3Synced::getInstance(), 1000,
+                                           PORTA, 13, 10);
   imu = &adis_16448;
 
   // ROS
