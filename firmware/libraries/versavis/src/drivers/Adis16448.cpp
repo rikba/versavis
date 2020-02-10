@@ -282,74 +282,43 @@ int16_t *Adis16448::sensorReadAll() {
 ////////////////////////////////////////////////////////////////////////////////
 int16_t *Adis16448::sensorReadAllCRC() {
   // Read registers using SPI
-  // Initialize sensor data arrays.
-  uint8_t sensorData[26];
   // Write each requested register address and read back it's data
   beginTransaction();
   SPI.transfer(GLOB_CMD); // Initial SPI read. Returned data for this transfer
                           // is invalid
   SPI.transfer(0x00); // Write 0x00 to the SPI bus fill the 16 bit transaction
-                      // requirement
+  // requirement
 
+  static int16_t joinedData[13];
   // DIAG_STAT
-  sensorData[0] =
-      SPI.transfer(0x00); // Write next address to device and read upper byte
-  sensorData[1] = SPI.transfer(0x00); // Read lower byte
+  joinedData[0] = (SPI.transfer(0x00) << 8) | (SPI.transfer(0x00) & 0xFF);
+
   // XGYRO_OUT
-  sensorData[2] = SPI.transfer(0x00);
-  sensorData[3] = SPI.transfer(0x00);
+  joinedData[1] = (SPI.transfer(0x00) << 8) | (SPI.transfer(0x00) & 0xFF);
   // YGYRO_OUT
-  sensorData[4] = SPI.transfer(0x00);
-  sensorData[5] = SPI.transfer(0x00);
+  joinedData[2] = (SPI.transfer(0x00) << 8) | (SPI.transfer(0x00) & 0xFF);
   // ZGYRO_OUT
-  sensorData[6] = SPI.transfer(0x00);
-  sensorData[7] = SPI.transfer(0x00);
+  joinedData[3] = (SPI.transfer(0x00) << 8) | (SPI.transfer(0x00) & 0xFF);
   // XACCL_OUT
-  sensorData[8] = SPI.transfer(0x00);
-  sensorData[9] = SPI.transfer(0x00);
+  joinedData[4] = (SPI.transfer(0x00) << 8) | (SPI.transfer(0x00) & 0xFF);
   // YACCL_OUT
-  sensorData[10] = SPI.transfer(0x00);
-  sensorData[11] = SPI.transfer(0x00);
+  joinedData[5] = (SPI.transfer(0x00) << 8) | (SPI.transfer(0x00) & 0xFF);
   // ZACCL_OUT
-  sensorData[12] = SPI.transfer(0x00);
-  sensorData[13] = SPI.transfer(0x00);
+  joinedData[6] = (SPI.transfer(0x00) << 8) | (SPI.transfer(0x00) & 0xFF);
   // XMAGN_OUT
-  sensorData[14] = SPI.transfer(0x00);
-  sensorData[15] = SPI.transfer(0x00);
+  joinedData[7] = (SPI.transfer(0x00) << 8) | (SPI.transfer(0x00) & 0xFF);
   // YMAGN_OUT
-  sensorData[16] = SPI.transfer(0x00);
-  sensorData[17] = SPI.transfer(0x00);
+  joinedData[8] = (SPI.transfer(0x00) << 8) | (SPI.transfer(0x00) & 0xFF);
   // ZMAGN_OUT
-  sensorData[18] = SPI.transfer(0x00);
-  sensorData[19] = SPI.transfer(0x00);
+  joinedData[9] = (SPI.transfer(0x00) << 8) | (SPI.transfer(0x00) & 0xFF);
   // BARO_OUT
-  sensorData[20] = SPI.transfer(0x00);
-  sensorData[21] = SPI.transfer(0x00);
+  joinedData[10] = (SPI.transfer(0x00) << 8) | (SPI.transfer(0x00) & 0xFF);
   // TEMP_OUT
-  sensorData[22] = SPI.transfer(0x00);
-  sensorData[23] = SPI.transfer(0x00);
+  joinedData[11] = (SPI.transfer(0x00) << 8) | (SPI.transfer(0x00) & 0xFF);
   // CRC-16
-  sensorData[24] =
-      SPI.transfer(0x00); // Final transfer. Data after this invalid
-  sensorData[25] = SPI.transfer(0x00);
+  joinedData[12] = (SPI.transfer(0x00) << 8) | (SPI.transfer(0x00) & 0xFF);
 
   endTransaction();
-
-  // Concatenate two bytes into word
-  static int16_t joinedData[13];
-  joinedData[0] = (sensorData[0] << 8) | (sensorData[1] & 0xFF);    // DIAG_STAT
-  joinedData[1] = (sensorData[2] << 8) | (sensorData[3] & 0xFF);    // XGYRO_OUT
-  joinedData[2] = (sensorData[4] << 8) | (sensorData[5] & 0xFF);    // YGYRO_OUT
-  joinedData[3] = (sensorData[6] << 8) | (sensorData[7] & 0xFF);    // ZGYRO_OUT
-  joinedData[4] = (sensorData[8] << 8) | (sensorData[9] & 0xFF);    // XACCL_OUT
-  joinedData[5] = (sensorData[10] << 8) | (sensorData[11] & 0xFF);  // YACCL_OUT
-  joinedData[6] = (sensorData[12] << 8) | (sensorData[13] & 0xFF);  // ZACCL_OUT
-  joinedData[7] = (sensorData[14] << 8) | (sensorData[15] & 0xFF);  // XMAGN_OUT
-  joinedData[8] = (sensorData[16] << 8) | (sensorData[17] & 0xFF);  // YMAGN_OUT
-  joinedData[9] = (sensorData[18] << 8) | (sensorData[19] & 0xFF);  // ZMAGN_OUT
-  joinedData[10] = (sensorData[20] << 8) | (sensorData[21] & 0xFF); // BARO_OUT
-  joinedData[11] = (sensorData[22] << 8) | (sensorData[23] & 0xFF); // TEMP_OUT
-  joinedData[12] = (sensorData[24] << 8) | (sensorData[25] & 0xFF); // CRC-16
 
   return (joinedData); // Return pointer with data
 }
