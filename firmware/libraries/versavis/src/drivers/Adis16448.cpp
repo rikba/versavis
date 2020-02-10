@@ -69,7 +69,7 @@ void Adis16448::setup() {
 ////////////////////////////////////////////////////////////////////////////
 void Adis16448::beginTransaction() {
   // max. 1 MHz burst read, MSBFIRST, SPI_MODE3 according to datasheet.
-  SPI.beginTransaction(SPISettings(50000, MSBFIRST, SPI_MODE3));
+  SPI.beginTransaction(SPISettings(1000000, MSBFIRST, SPI_MODE3));
   digitalWrite(_CS, LOW); // Set CS low to enable device
 }
 
