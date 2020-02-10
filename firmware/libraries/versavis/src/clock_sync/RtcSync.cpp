@@ -15,9 +15,8 @@ RtcSync::RtcSync() {
 void RtcSync::setupRos(ros::NodeHandle *nh, const char *topic) {
   if (nh) {
     // Create static ROS objects.
-    static auto static_topic = topic;
     static std_msgs::Time msg;
-    static ros::Publisher pub(static_topic, &msg);
+    static ros::Publisher pub(topic, &msg);
 
     // Set member variables.
     rtc_msg_ = &msg;

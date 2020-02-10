@@ -36,7 +36,8 @@ void setup() {
   imu = &adis_16448;
 
   // ROS
-  RtcSync::getInstance().setupRos(nh, "/versavis/rtc");
+  static char *rtc_topic = "/versavis/rtc";
+  RtcSync::getInstance().setupRos(nh, rtc_topic);
 
   static char *baro_topic = "/versavis/adis16448/baro";
   static char *imu_topic = "/versavis/adis16448/imu";
@@ -48,7 +49,7 @@ void setup() {
 void loop() {
   imu->publish();
 
-  // RtcSync::getInstance().publish();
+  RtcSync::getInstance().publish();
 
   if (nh)
     nh->spinOnce();
