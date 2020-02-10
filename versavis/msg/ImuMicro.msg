@@ -13,8 +13,3 @@ int16 az
 int16 gx
 int16 gy
 int16 gz
-int16 mx
-int16 my
-int16 mz
-int16 baro
-int16 temp

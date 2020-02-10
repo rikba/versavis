@@ -16,13 +16,14 @@
 ros::NodeHandle *nh = NULL;
 
 // Sensors.
-SensorSynced *imu = NULL;
+Adis16448BmlzTriggered *imu = NULL;
 
 void setup() {
 #ifndef DEBUG
   static ros::NodeHandle node_handle;
   nh = &node_handle;
   nh->initNode();
+  nh->loginfo("Node initialized.");
 #endif
   while (!SerialUSB)
     ;
@@ -36,7 +37,12 @@ void setup() {
 
   // ROS
   RtcSync::getInstance().setupRos(nh, "/versavis/rtc");
-  imu->setupRos(nh, "/versavis/imu");
+
+  static char *baro_topic = "/versavis/adis16448/baro";
+  static char *imu_topic = "/versavis/adis16448/imu";
+  static char *mag_topic = "/versavis/adis16448/mag";
+  static char *temp_topic = "/versavis/adis16448/temp";
+  imu->setupRos(nh, baro_topic, imu_topic, mag_topic, temp_topic);
 }
 
 void loop() {

@@ -23,6 +23,9 @@ add_message_files(
   FILES
   ExtClkFilterState.msg
   ImuMicro.msg
+  MagneticMicro.msg
+  PressureMicro.msg
+  TemperatureMicro.msg
   TimeNumbered.msg
 )
 

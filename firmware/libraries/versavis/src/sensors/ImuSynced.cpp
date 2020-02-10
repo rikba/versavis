@@ -1,15 +1,18 @@
 #include "sensors/ImuSynced.h"
 
-ImuSynced::ImuSynced(TimerSynced *timer) : SensorSynced(timer) {
-  static versavis::ImuMicro imu_msg;
-  imu_msg_ = &imu_msg;
-}
+ImuSynced::ImuSynced(TimerSynced *timer) : SensorSynced(timer) {}
 
-void ImuSynced::setupRos(ros::NodeHandle *nh, char *topic) {
+void ImuSynced::setupRos(ros::NodeHandle *nh, const char *topic) {
   if (nh) {
-    static char *static_topic = topic;
-    static ros::Publisher pub(static_topic, imu_msg_);
+    // Create static ROS message.
+    static versavis::ImuMicro imu_msg;
+    imu_msg_ = &imu_msg;
+
+    // Create static ROS publisher.
+    static ros::Publisher pub(topic, imu_msg_);
     publisher_ = &pub;
+
+    // Advertise.
     nh->advertise(pub);
   }
 }
