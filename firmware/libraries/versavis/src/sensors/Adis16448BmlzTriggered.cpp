@@ -58,17 +58,21 @@ void Adis16448BmlzTriggered::setupRos(ros::NodeHandle *nh,
 void Adis16448BmlzTriggered::publish() {
   if (imu_msg_ && timer_ && timer_->isTriggered()) {
     imu_msg_->time.data = timer_->computeTimeLastTrigger();
-    mag_msg_->time.data = imu_msg_->time.data;
-    baro_msg_->time.data = imu_msg_->time.data;
-    temp_msg_->time.data = imu_msg_->time.data;
   }
 
   if (timer_ && timer_->hasDataReady()) {
     int16_t *imu_data = imu_.sensorReadAllCRC();
 
     if ((imu_.checksum(imu_data) == imu_data[12])) {
+      // MAG and baro update every 16th trigger.
+      // https://ez.analog.com/mems/w/documents/4122/adis16448-data-sampling
+      // 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, -->15<--
+      bool has_mag_and_baro = ((timer_->getTriggerNumber() + 1) % 16) == 0;
+
       // BARO.
-      if (baro_msg_) {
+      if (has_mag_and_baro && baro_msg_) {
+        baro_msg_->time.data = imu_msg_->time.data;
+        baro_msg_->number = timer_->getTriggerNumber();
         baro_msg_->pressure = imu_data[10];
 
         if (baro_pub_) {
@@ -78,6 +82,7 @@ void Adis16448BmlzTriggered::publish() {
 
       // IMU.
       if (imu_msg_) {
+        imu_msg_->number = timer_->getTriggerNumber();
         imu_msg_->gx = imu_data[1];
         imu_msg_->gy = imu_data[2];
         imu_msg_->gz = imu_data[3];
@@ -91,7 +96,9 @@ void Adis16448BmlzTriggered::publish() {
       }
 
       // MAG.
-      if (mag_msg_) {
+      if (has_mag_and_baro && mag_msg_) {
+        mag_msg_->time.data = imu_msg_->time.data;
+        mag_msg_->number = timer_->getTriggerNumber();
         mag_msg_->mx = imu_data[7];
         mag_msg_->my = imu_data[8];
         mag_msg_->mz = imu_data[9];
@@ -103,6 +110,8 @@ void Adis16448BmlzTriggered::publish() {
 
       // TEMP.
       if (temp_msg_) {
+        temp_msg_->time.data = imu_msg_->time.data;
+        temp_msg_->number = timer_->getTriggerNumber();
         temp_msg_->temperature = imu_data[11];
 
         if (temp_pub_) {

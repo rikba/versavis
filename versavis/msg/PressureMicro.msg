@@ -6,5 +6,6 @@
 # the amount of data is truncated to its absolute minimum.
 
 std_msgs/Time time
+uint32 number
 
 int16 pressure
