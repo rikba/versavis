@@ -85,12 +85,12 @@ void TccSynced::setupMfrqWaveform() const {
 
 void TccSynced::handleInterrupt() {
   if (tcc_->INTFLAG.bit.MC0 && (getOutPinValue() ^ invert_trigger_)) {
-    DEBUG_PRINTLN("[TcSynced]: trigger");
     trigger();
   }
   if (tcc_->INTFLAG.bit.TRG) {
-    DEBUG_PRINTLN("[TcSynced]: syncRtc");
     syncRtc();
+  } else if (tcc_->INTFLAG.bit.OVF) {
+    overflow();
   }
 
   // Clear flags.
