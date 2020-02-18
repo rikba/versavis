@@ -5,7 +5,10 @@
 #include "helper.h"
 #include "versavis_configuration.h"
 
-TcSynced::TcSynced(TcCount16 *tc) : tc_(tc) { setup(); }
+TcSynced::TcSynced(const MfrqPin &mfrq_pin, TcCount16 *tc)
+    : TimerSynced(mfrq_pin), tc_(tc) {
+  setup();
+}
 
 void TcSynced::setup() const {
   DEBUG_PRINTLN("[TcSynced]: setupTimer.");
@@ -183,7 +186,7 @@ void TcSynced::setupDataReady(const uint8_t port_group, const uint8_t pin,
 }
 
 void TcSynced::handleInterrupt() {
-  if (tc_->INTFLAG.bit.MC0 && (getOutPinValue() ^ invert_trigger_)) {
+  if (tc_->INTFLAG.bit.MC0 && (getWaveOutPinValue() ^ invert_trigger_)) {
     trigger();
   }
   if (tc_->INTFLAG.bit.MC1) {

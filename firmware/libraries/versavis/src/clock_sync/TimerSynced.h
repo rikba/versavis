@@ -35,7 +35,14 @@ enum class InterruptLogic {
 
 class TimerSynced {
 public:
-  TimerSynced();
+  // TODO(rikba): Add default values in C++14.
+  struct MfrqPin {
+    uint8_t group;
+    uint8_t pin;
+    bool drvstr;
+  };
+
+  TimerSynced(const MfrqPin &mfrq_pin);
 
   // Setup the timer.
   virtual void setupDataReady(const uint8_t port_group, const uint8_t pin,
@@ -55,8 +62,8 @@ protected:
   void overflow();
   void trigger();
 
-  virtual void setupOutPin() const = 0;
-  virtual bool getOutPinValue() const = 0;
+  void setupWaveOutPin() const;
+  bool getWaveOutPinValue() const;
 
   virtual void setupMfrqWaveform() const = 0;
 
@@ -70,6 +77,9 @@ protected:
   uint32_t trigger_secs_ = 0xFFFFFFFF;
   uint32_t trigger_num_ = 0xFFFFFFFF;
   bool is_triggered_ = false;
+
+  // Trigger pin.
+  const MfrqPin mfrq_pin_;
 
   // Data ready state.
   bool data_ready_ = false;

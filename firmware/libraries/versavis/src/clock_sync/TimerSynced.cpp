@@ -3,7 +3,7 @@
 #include "clock_sync/RtcSync.h"
 #include "helper.h"
 
-TimerSynced::TimerSynced() {
+TimerSynced::TimerSynced(const MfrqPin &mfrq_pin) : mfrq_pin_(mfrq_pin) {
   RtcSync::getInstance(); // Make sure RTC singleton exists.
 }
 
@@ -18,8 +18,33 @@ void TimerSynced::setupMfrq(const uint16_t rate_hz, const bool invert) {
   setupMfrqWaveform();
 
   // Setup output pin.
+  setupWaveOutPin();
+}
+
+void TimerSynced::setupWaveOutPin() const {
+  DEBUG_PRINT("[TimerSynced]: Configuring wave output pin ");
+  DEBUG_PRINT(mfrq_pin_.pin);
+  DEBUG_PRINT(" of group ");
+  DEBUG_PRINTLN(mfrq_pin_.group);
   REG_PM_APBBMASK |= PM_APBBMASK_PORT; // Port ABP Clock Enable.
-  setupOutPin();
+  if (mfrq_pin_.pin % 2) {
+    PORT->Group[mfrq_pin_.group].PMUX[mfrq_pin_.pin >> 1].reg |=
+        PORT_PMUX_PMUXO_E;
+  } else {
+    PORT->Group[mfrq_pin_.group].PMUX[mfrq_pin_.pin >> 1].reg |=
+        PORT_PMUX_PMUXE_E;
+  }
+  PORT->Group[mfrq_pin_.group].PINCFG[mfrq_pin_.pin].reg |= PORT_PINCFG_PMUXEN;
+
+  if (mfrq_pin_.drvstr) {
+    DEBUG_PRINTLN("[TimerSynced]: Setting pin strong.");
+    PORT->Group[mfrq_pin_.group].PINCFG[mfrq_pin_.pin].reg |=
+        PORT_PINCFG_DRVSTR;
+  }
+}
+
+bool TimerSynced::getWaveOutPinValue() const {
+  return PORT->Group[mfrq_pin_.group].IN.reg & (1 << mfrq_pin_.pin);
 }
 
 bool TimerSynced::hasDataReady() {

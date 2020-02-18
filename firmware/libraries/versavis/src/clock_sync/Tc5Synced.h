@@ -22,9 +22,6 @@ public:
 
 private:
   Tc5Synced();
-
-  void setupOutPin() const override;
-  virtual bool getOutPinValue() const override;
 };
 
 #endif

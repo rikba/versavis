@@ -1,20 +1,19 @@
 #include "clock_sync/Tc4Synced.h"
 
-#include "helper.h"
+// Setup MFRQ pin.
+// TODO(rikba)
+#define TC4_MFRQ_GROUP 255
+#define TC4_MFRQ_PIN 255
+#define TC4_MFRQ_DRVSTR 0
 
-Tc4Synced::Tc4Synced() : TcSynced((TcCount16 *)TC4) {
+Tc4Synced::Tc4Synced()
+    : TcSynced(MfrqPin{.group = TC4_MFRQ_GROUP,
+                       .pin = TC4_MFRQ_PIN,
+                       .drvstr = TC4_MFRQ_DRVSTR},
+               (TcCount16 *)TC4) {
   // Enable interrupts. Not as high priority as the RTC interrupt.
   NVIC_SetPriority(TC4_IRQn, 0x01);
   NVIC_EnableIRQ(TC4_IRQn);
-}
-
-void Tc4Synced::setupOutPin() const {
-  DEBUG_PRINTLN("[Tc4Synced]: Wave output pin TC4/WO[0] not configured!");
-}
-
-bool Tc4Synced::getOutPinValue() const {
-  DEBUG_PRINTLN("[Tc4Synced]: Wave output pin TC4/WO[0] not configured!");
-  return invert_trigger_;
 }
 
 void TC4_Handler() { Tc4Synced::getInstance().handleInterrupt(); }

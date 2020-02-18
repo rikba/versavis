@@ -1,24 +1,20 @@
 #include "clock_sync/Tcc0Synced.h"
 
-#include "helper.h"
+// Setup MFRQ pin.
+#define TCC0_MFRQ_GROUP PORTA
+#define TCC0_MFRQ_PIN 4
+#define TCC0_MFRQ_DRVSTR 1
 
-Tcc0Synced::Tcc0Synced() : TccSynced((Tcc *)TCC0) {
+Tcc0Synced::Tcc0Synced()
+    : TccSynced(MfrqPin{.group = TCC0_MFRQ_GROUP,
+                        .pin = TCC0_MFRQ_PIN,
+                        .drvstr = TCC0_MFRQ_DRVSTR},
+                (Tcc *)TCC0) {
   // This is a 32 bit counter.
   top_ = 0xFFFFFFFF;
   // Enable interrupts. Not as high priority as the RTC interrupt.
   NVIC_SetPriority(TCC0_IRQn, 0x01);
   NVIC_EnableIRQ(TCC0_IRQn);
-}
-
-void Tcc0Synced::setupOutPin() const {
-  DEBUG_PRINTLN(
-      "[Tcc0Synced]: Configuring port PA04 TCC0/WO[0] wave output pin.");
-  PORT->Group[PORTA].PMUX[4 >> 1].reg |= PORT_PMUX_PMUXE_E;
-  PORT->Group[PORTA].PINCFG[4].reg |= PORT_PINCFG_PMUXEN;
-}
-
-bool Tcc0Synced::getOutPinValue() const {
-  return PORT->Group[PORTA].IN.reg & (1 << 4);
 }
 
 void TCC0_Handler() { Tcc0Synced::getInstance().handleInterrupt(); }

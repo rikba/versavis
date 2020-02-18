@@ -14,7 +14,7 @@
 
 class TccSynced : public TimerSynced {
 public:
-  TccSynced(Tcc *tcc);
+  TccSynced(const MfrqPin &mfrq_pin, Tcc *tcc);
 
   void setupDataReady(const uint8_t port_group, const uint8_t pin,
                       const InterruptLogic &logic) override {}

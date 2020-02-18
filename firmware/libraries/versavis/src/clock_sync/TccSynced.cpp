@@ -2,7 +2,10 @@
 
 #include "helper.h"
 
-TccSynced::TccSynced(Tcc *tcc) : tcc_(tcc) { setup(); }
+TccSynced::TccSynced(const MfrqPin &mfrq_pin, Tcc *tcc)
+    : TimerSynced(mfrq_pin), tcc_(tcc) {
+  setup();
+}
 
 void TccSynced::setup() const {
   if (!tcc_) {
@@ -84,7 +87,7 @@ void TccSynced::setupMfrqWaveform() const {
 }
 
 void TccSynced::handleInterrupt() {
-  if (tcc_->INTFLAG.bit.MC0 && (getOutPinValue() ^ invert_trigger_)) {
+  if (tcc_->INTFLAG.bit.MC0 && (getWaveOutPinValue() ^ invert_trigger_)) {
     trigger();
   }
   if (tcc_->INTFLAG.bit.TRG) {

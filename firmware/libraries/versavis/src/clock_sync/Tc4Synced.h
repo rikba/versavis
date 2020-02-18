@@ -22,9 +22,6 @@ public:
 
 private:
   Tc4Synced();
-
-  void setupOutPin() const override;
-  virtual bool getOutPinValue() const override;
 };
 
 #endif

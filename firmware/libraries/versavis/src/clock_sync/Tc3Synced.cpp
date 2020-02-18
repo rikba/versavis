@@ -1,22 +1,18 @@
 #include "clock_sync/Tc3Synced.h"
 
-#include "helper.h"
+// Setup MFRQ pin.
+#define TC3_MFRQ_GROUP PORTA
+#define TC3_MFRQ_PIN 14
+#define TC3_MFRQ_DRVSTR 0
 
-Tc3Synced::Tc3Synced() : TcSynced((TcCount16 *)TC3) {
+Tc3Synced::Tc3Synced()
+    : TcSynced(MfrqPin{.group = TC3_MFRQ_GROUP,
+                       .pin = TC3_MFRQ_PIN,
+                       .drvstr = TC3_MFRQ_DRVSTR},
+               (TcCount16 *)TC3) {
   // Enable interrupts. Not as high priority as the RTC interrupt.
   NVIC_SetPriority(TC3_IRQn, 0x01);
   NVIC_EnableIRQ(TC3_IRQn);
-}
-
-void Tc3Synced::setupOutPin() const {
-  DEBUG_PRINTLN(
-      "[Tc3Synced]: Configuring port PA14 TC3/WO[0] wave output pin.");
-  PORT->Group[PORTA].PMUX[14 >> 1].reg |= PORT_PMUX_PMUXE_E;
-  PORT->Group[PORTA].PINCFG[14].reg |= PORT_PINCFG_PMUXEN;
-}
-
-bool Tc3Synced::getOutPinValue() const {
-  return PORT->Group[PORTA].IN.reg & (1 << 14);
 }
 
 void TC3_Handler() { Tc3Synced::getInstance().handleInterrupt(); }
