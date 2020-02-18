@@ -2,8 +2,9 @@
 
 #include "helper.h"
 
-TccSynced::TccSynced(const MfrqPin &mfrq_pin, Tcc *tcc)
-    : TimerSynced(mfrq_pin), tcc_(tcc) {
+TccSynced::TccSynced(const MfrqPin &mfrq_pin, const ExposurePin &exp_pin,
+                     Tcc *tcc)
+    : TimerSynced(mfrq_pin), exposure_pin_(exp_pin), tcc_(tcc) {
   setup();
 }
 
@@ -84,6 +85,50 @@ void TccSynced::setupMfrqWaveform() const {
   tcc_->CTRLA.reg |= TCC_CTRLA_ENABLE;
   while (tcc_->SYNCBUSY.bit.ENABLE) {
   }
+}
+
+void TccSynced::setupExposure(const bool invert) const {
+  DEBUG_PRINT("[TccSynced]: Configuring exposure pin ");
+  DEBUG_PRINT(exposure_pin_.pin);
+  DEBUG_PRINT(" of group ");
+  DEBUG_PRINTLN(exposure_pin_.group);
+
+  // Setup PORT.
+
+  REG_PM_APBBMASK |= PM_APBBMASK_PORT; // Port ABP Clock Enable.
+  // Configure as input.
+  PORT->Group[mfrq_pin_.group].DIRCLR.reg |=
+      PORT_DIRCLR_DIRCLR(1 << mfrq_pin_.pin);
+  PORT->Group[mfrq_pin_.group].PINCFG[mfrq_pin_.pin].reg |= PORT_PINCFG_INEN;
+  // Configure EXTINT[pin]
+  if (exposure_pin_.pin % 2) {
+    PORT->Group[exposure_pin_.group].PMUX[exposure_pin_.pin >> 1].reg |=
+        PORT_PMUX_PMUXO_A;
+  } else {
+    PORT->Group[exposure_pin_.group].PMUX[exposure_pin_.pin >> 1].reg |=
+        PORT_PMUX_PMUXE_A;
+  }
+  // Enable pin multiplexation.
+  PORT->Group[exposure_pin_.group].PINCFG[exposure_pin_.pin].reg |=
+      PORT_PINCFG_PMUXEN;
+
+  // EVSYS (only configured for TCC timers)
+  REG_PM_APBCMASK |= PM_APBCMASK_EVSYS;
+  DEBUG_PRINTLN("[TimerSynced]: Configuring EVSYS exposure users.");
+  // Channel 0 is used by RTC.
+  EVSYS->USER.reg =
+      EVSYS_USER_CHANNEL(3) | EVSYS_USER_USER(EVSYS_ID_USER_TCC1_MC_0);
+  EVSYS->USER.reg =
+      EVSYS_USER_CHANNEL(4) | EVSYS_USER_USER(EVSYS_ID_USER_TCC2_MC_0);
+
+  DEBUG_PRINTLN("[TimerSynced]: Configuring EVSYS exposure channels.");
+
+  // Setup interrupt
+}
+
+uint8_t TccSynced::getExposureEventGeneratorId() const {
+  // https://github.com/ethz-asl/versavis_hw/blob/1e71a3843aefbbec8e6261c0855bd7cad7f38f9e/VersaVIS/bootloaders/mzero/Bootloader_D21/src/ASF/sam0/utils/cmsis/samd21/include/instance/evsys.h
+  return (exposure_pin_.pin % 16) + 12;
 }
 
 void TccSynced::handleInterrupt() {

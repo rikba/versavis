@@ -14,19 +14,41 @@
 
 class TccSynced : public TimerSynced {
 public:
-  TccSynced(const MfrqPin &mfrq_pin, Tcc *tcc);
+  // TODO(rikba): Add default values in C++14.
+  struct ExposurePin {
+    uint8_t group;
+    uint8_t pin;
+  };
+  struct ExposureState {
+    uint32_t start = 0xFFFFFFFF;
+    uint32_t stop = 0xFFFFFFFF;
+
+    inline bool isExposing() const { return start > stop; }
+  };
+
+  TccSynced(const MfrqPin &mfrq_pin, const ExposurePin &exp_pin, Tcc *tcc);
 
   void setupDataReady(const uint8_t port_group, const uint8_t pin,
                       const InterruptLogic &logic) override {}
   void setupMfrqWaveform() const override;
+  void setupExposure(const bool invert) const;
 
   void handleInterrupt() override;
+
+protected:
+  virtual void setupExposureEvsys() const = 0;
+
+  uint8_t getExposureEventGeneratorId() const;
 
 private:
   // Pointer to the actual timer.
   Tcc *tcc_ = NULL;
 
   void setup() const;
+
+  // Exposure state.
+  const ExposurePin exposure_pin_;
+  ExposureState exposure_state_;
 };
 
 #endif

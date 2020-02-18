@@ -22,6 +22,8 @@ public:
 
 private:
   Tcc2Synced();
+
+  void setupExposureEvsys() const override;
 };
 
 #endif
