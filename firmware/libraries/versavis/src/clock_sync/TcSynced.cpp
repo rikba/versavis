@@ -41,13 +41,7 @@ void TcSynced::setup() const {
   }
 }
 
-void TcSynced::setupMfrq(const uint16_t rate_hz, const bool invert) {
-  // Set parameters.
-  rate_hz_ = rate_hz;
-  invert_trigger_ = invert;
-  prescaler_ = RtcSync::getInstance().findMinPrescalerFrq(rate_hz, top_);
-  RtcSync::getInstance().computeFrq(rate_hz, kPrescalers[prescaler_], &top_);
-
+void TcSynced::setupMfrqWaveform() const {
   // Setup wavegen.
   DEBUG_PRINTLN("[TcSynced]: Disabling timer.");
   while (tc_->STATUS.bit.SYNCBUSY) {
@@ -72,7 +66,7 @@ void TcSynced::setupMfrq(const uint16_t rate_hz, const bool invert) {
   while (tc_->STATUS.bit.SYNCBUSY) {
   }
 
-  if (invert) {
+  if (invert_trigger_) {
     tc_->CTRLC.reg |= TC_CTRLC_INVEN0;
     while (tc_->STATUS.bit.SYNCBUSY) {
     }
@@ -197,6 +191,7 @@ void TcSynced::handleInterrupt() {
     trigger();
   }
   if (tc_->INTFLAG.bit.MC1) {
+    DEBUG_PRINTLN("[TcSynced]: syncRtc");
     syncRtc();
   } else if (tc_->INTFLAG.bit.OVF) {
     overflow();

@@ -8,7 +8,7 @@ Tc4Synced::Tc4Synced() : TcSynced((TcCount16 *)TC4) {
   NVIC_EnableIRQ(TC4_IRQn);
 }
 
-void Tc4Synced::setupOutPin() {
+void Tc4Synced::setupOutPin() const {
   DEBUG_PRINTLN("[Tc4Synced]: Wave output pin TC4/WO[0] not configured!");
 }
 

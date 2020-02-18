@@ -16,7 +16,7 @@ class TcSynced : public TimerSynced {
 public:
   TcSynced(TcCount16 *tc);
 
-  void setupMfrq(const uint16_t rate_hz, const bool invert) override;
+  void setupMfrqWaveform() const override;
   void setupDataReady(const uint8_t port_group, const uint8_t pin,
                       const InterruptLogic &logic) override;
 

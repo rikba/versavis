@@ -8,7 +8,7 @@ Tcc2Synced::Tcc2Synced() : TccSynced((Tcc *)TCC2) {
   NVIC_EnableIRQ(TCC2_IRQn);
 }
 
-void Tcc2Synced::setupOutPin() {
+void Tcc2Synced::setupOutPin() const {
   DEBUG_PRINTLN("[Tcc0Synced]: Wave output pin TCC2/WO[0] not configured!");
 }
 

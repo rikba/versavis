@@ -10,7 +10,7 @@ Tcc1Synced::Tcc1Synced() : TccSynced((Tcc *)TCC1) {
   NVIC_EnableIRQ(TCC1_IRQn);
 }
 
-void Tcc1Synced::setupOutPin() {
+void Tcc1Synced::setupOutPin() const {
   DEBUG_PRINTLN(
       "[Tcc1Synced]: Configuring port PA07 TCC1/WO[1] wave output pin.");
   PORT->Group[PORTA].PMUX[7 >> 1].reg |= PORT_PMUX_PMUXO_E;

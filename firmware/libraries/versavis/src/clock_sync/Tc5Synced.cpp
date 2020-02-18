@@ -8,7 +8,7 @@ Tc5Synced::Tc5Synced() : TcSynced((TcCount16 *)TC5) {
   NVIC_EnableIRQ(TC5_IRQn);
 }
 
-void Tc5Synced::setupOutPin() {
+void Tc5Synced::setupOutPin() const {
   DEBUG_PRINTLN("[Tc5Synced]: Wave output pin TC5/WO[0] not configured!");
 }
 

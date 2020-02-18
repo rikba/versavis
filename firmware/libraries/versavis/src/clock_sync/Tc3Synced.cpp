@@ -8,7 +8,7 @@ Tc3Synced::Tc3Synced() : TcSynced((TcCount16 *)TC3) {
   NVIC_EnableIRQ(TC3_IRQn);
 }
 
-void Tc3Synced::setupOutPin() {
+void Tc3Synced::setupOutPin() const {
   DEBUG_PRINTLN(
       "[Tc3Synced]: Configuring port PA14 TC3/WO[0] wave output pin.");
   PORT->Group[PORTA].PMUX[14 >> 1].reg |= PORT_PMUX_PMUXE_E;

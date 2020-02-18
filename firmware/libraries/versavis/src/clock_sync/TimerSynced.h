@@ -40,7 +40,7 @@ public:
   // Setup the timer.
   virtual void setupDataReady(const uint8_t port_group, const uint8_t pin,
                               const InterruptLogic &logic) = 0;
-  virtual void setupMfrq(const uint16_t rate_hz, const bool invert) = 0;
+  void setupMfrq(const uint16_t rate_hz, const bool invert);
 
   virtual void handleInterrupt() = 0;
   void handleEic();
@@ -55,8 +55,10 @@ protected:
   void overflow();
   void trigger();
 
-  virtual void setupOutPin() = 0;
+  virtual void setupOutPin() const = 0;
   virtual bool getOutPinValue() const = 0;
+
+  virtual void setupMfrqWaveform() const = 0;
 
   // States
   uint8_t prescaler_ = 0;

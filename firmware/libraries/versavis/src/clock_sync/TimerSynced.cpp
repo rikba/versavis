@@ -7,6 +7,16 @@ TimerSynced::TimerSynced() {
   RtcSync::getInstance(); // Make sure RTC singleton exists.
 }
 
+void TimerSynced::setupMfrq(const uint16_t rate_hz, const bool invert) {
+  // Set parameters.
+  rate_hz_ = rate_hz;
+  invert_trigger_ = invert;
+  prescaler_ = RtcSync::getInstance().findMinPrescalerFrq(rate_hz, top_);
+  RtcSync::getInstance().computeFrq(rate_hz, kPrescalers[prescaler_], &top_);
+
+  setupMfrqWaveform();
+}
+
 bool TimerSynced::hasDataReady() {
   if (data_ready_) {
     data_ready_ = false; // Reset data ready flag.
