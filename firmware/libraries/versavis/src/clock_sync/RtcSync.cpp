@@ -251,8 +251,10 @@ uint8_t RtcSync::findMinPrescalerPwm(const uint16_t rate_hz,
   }
 
   if (!found_prescaler) {
-    error("NO_PRESCALER (TimerSynced.cpp): cannot find suitable prescaler.",
-          201);
+    error("NO_PRESCALER (RtcSync.cpp): cannot find suitable prescaler.", 201);
+  } else {
+    DEBUG_PRINT("[RtcSync]: Found optimal prescaler: ");
+    DEBUG_PRINTLN(kPrescalers[prescaler]);
   }
 
   return prescaler;

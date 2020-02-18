@@ -14,7 +14,12 @@ void TimerSynced::setupMfrq(const uint16_t rate_hz, const bool invert) {
   prescaler_ = RtcSync::getInstance().findMinPrescalerFrq(rate_hz, top_);
   RtcSync::getInstance().computeFrq(rate_hz, kPrescalers[prescaler_], &top_);
 
+  // Setup timer specific match frequency configuration.
   setupMfrqWaveform();
+
+  // Setup output pin.
+  REG_PM_APBBMASK |= PM_APBBMASK_PORT; // Port ABP Clock Enable.
+  setupOutPin();
 }
 
 bool TimerSynced::hasDataReady() {

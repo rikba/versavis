@@ -88,10 +88,6 @@ void TcSynced::setupMfrqWaveform() const {
   tc_->CTRLA.reg |= TC_CTRLA_ENABLE;
   while (tc_->STATUS.bit.SYNCBUSY) {
   }
-
-  // Setup output pin.
-  REG_PM_APBBMASK |= PM_APBBMASK_PORT; // Port ABP Clock Enable.
-  setupOutPin();
 }
 
 void TcSynced::setupDataReady(const uint8_t port_group, const uint8_t pin,
@@ -191,7 +187,6 @@ void TcSynced::handleInterrupt() {
     trigger();
   }
   if (tc_->INTFLAG.bit.MC1) {
-    DEBUG_PRINTLN("[TcSynced]: syncRtc");
     syncRtc();
   } else if (tc_->INTFLAG.bit.OVF) {
     overflow();
