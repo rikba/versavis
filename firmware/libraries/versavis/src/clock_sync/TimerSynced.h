@@ -66,6 +66,9 @@ protected:
   bool getWaveOutPinValue() const;
 
   virtual void setupMfrqWaveform() const = 0;
+  void setupInterruptPin(const uint8_t port_group, const uint8_t pin,
+                         const InterruptLogic &logic,
+                         const bool enable_interrupt) const;
 
   // States
   uint8_t prescaler_ = 0;

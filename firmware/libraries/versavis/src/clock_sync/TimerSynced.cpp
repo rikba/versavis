@@ -43,6 +43,100 @@ void TimerSynced::setupWaveOutPin() const {
   }
 }
 
+void TimerSynced::setupInterruptPin(const uint8_t port_group, const uint8_t pin,
+                                    const InterruptLogic &logic,
+                                    const bool enable_interrupt) const {
+
+  // PORT configurations.
+  REG_PM_APBBMASK |= PM_APBBMASK_PORT;
+
+  DEBUG_PRINTLN("[TimerSynced]: Configure pin input.");
+  PORT->Group[port_group].DIRCLR.reg = PORT_DIRCLR_DIRCLR(1 << pin);
+
+  DEBUG_PRINTLN("[TimerSynced]: Connect data ready pin with PMUX A.");
+  if (pin % 2) {
+    PORT->Group[port_group].PMUX[pin >> 1].reg |= PORT_PMUX_PMUXO_A; // Odd
+  } else {
+    PORT->Group[port_group].PMUX[pin >> 1].reg |= PORT_PMUX_PMUXE_A; // Even
+  }
+  PORT->Group[port_group].PINCFG[pin].reg |= PORT_PINCFG_PMUXEN;
+  PORT->Group[port_group].PINCFG[pin].reg |= PORT_PINCFG_INEN;
+
+  // Activate EIC edge detection.
+  if (logic == InterruptLogic::kRise || logic == InterruptLogic::kFall ||
+      logic == InterruptLogic::kBoth) {
+    DEBUG_PRINTLN(
+        "[TimerSynced]: Enabling generic clock 4 for edge detection.");
+    GCLK->CLKCTRL.reg =
+        GCLK_CLKCTRL_CLKEN | GCLK_CLKCTRL_GEN_GCLK4 | GCLK_CLKCTRL_ID_EIC;
+    while (GCLK->STATUS.bit.SYNCBUSY) {
+    } // Wait for synchronization
+  }
+
+  // EIC configurations.
+  REG_PM_APBAMASK |= PM_APBAMASK_EIC;
+  DEBUG_PRINTLN("[TimerSynced]: Disable EIC.");
+  while (EIC->STATUS.bit.SYNCBUSY) {
+  } // Wait for synchronization
+  EIC->CTRL.reg &= ~EIC_CTRL_ENABLE;
+  while (EIC->STATUS.bit.SYNCBUSY) {
+  } // Wait for synchronization
+
+  DEBUG_PRINTLN("[TimerSynced]: Configure EXTINTEO.");
+  EIC->EVCTRL.reg |= EIC_EVCTRL_EXTINTEO(1 << (pin % 16));
+
+  uint8_t config_id = pin < 16 ? 1 : 2;
+  config_id = pin < 8 ? 0 : config_id;
+  DEBUG_PRINTLN("[TimerSynced]: Configure SENSE.");
+  DEBUG_PRINTLN(config_id);
+  uint8_t id = pin % 8;
+  uint32_t logic_val = static_cast<uint32_t>(logic);
+  switch (id) {
+  case 0:
+    EIC->CONFIG[config_id].bit.SENSE0 = logic_val;
+    break;
+  case 1:
+    EIC->CONFIG[config_id].bit.SENSE1 = logic_val;
+    break;
+  case 2:
+    EIC->CONFIG[config_id].bit.SENSE2 = logic_val;
+    break;
+  case 3:
+    EIC->CONFIG[config_id].bit.SENSE3 = logic_val;
+    break;
+  case 4:
+    EIC->CONFIG[config_id].bit.SENSE4 = logic_val;
+    break;
+  case 5:
+    EIC->CONFIG[config_id].bit.SENSE5 = logic_val;
+    break;
+  case 6:
+    EIC->CONFIG[config_id].bit.SENSE6 = logic_val;
+    break;
+  case 7:
+    EIC->CONFIG[config_id].bit.SENSE7 = logic_val;
+    break;
+  }
+
+  if (enable_interrupt) {
+    DEBUG_PRINTLN("[TimerSynced]: Enable interrupt handler.");
+    EIC->INTENSET.reg |= EIC_INTENSET_EXTINT(1 << (pin % 16));
+    EIC->INTFLAG.reg |= EIC_INTFLAG_EXTINT(1 << (pin % 16));
+  }
+
+  DEBUG_PRINTLN("[TimerSynced]: Enable EIC.");
+  while (EIC->STATUS.bit.SYNCBUSY) {
+  } // Wait for synchronization
+  EIC->CTRL.reg |= EIC_CTRL_ENABLE;
+  while (EIC->STATUS.bit.SYNCBUSY) {
+  } // Wait for synchronization
+
+  if (enable_interrupt) {
+    NVIC_SetPriority(EIC_IRQn, 0x02);
+    NVIC_EnableIRQ(EIC_IRQn);
+  }
+}
+
 bool TimerSynced::getWaveOutPinValue() const {
   return PORT->Group[mfrq_pin_.group].IN.reg & (1 << mfrq_pin_.pin);
 }

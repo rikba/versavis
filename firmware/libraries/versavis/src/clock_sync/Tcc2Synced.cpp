@@ -25,7 +25,7 @@ Tcc2Synced::Tcc2Synced()
 void Tcc2Synced::setupExposureEvsys() const {
   REG_PM_APBCMASK |= PM_APBCMASK_EVSYS;
   EVSYS->USER.reg = EVSYS_USER_CHANNEL(TCC2_EXP_CHANNEL + 1) |
-                    EVSYS_USER_USER(EVSYS_ID_USER_TCC2_MC_0);
+                    EVSYS_USER_USER(EVSYS_ID_USER_TCC2_MC_1);
   EVSYS->CHANNEL.reg = EVSYS_CHANNEL_EDGSEL_NO_EVT_OUTPUT |
                        EVSYS_CHANNEL_PATH_ASYNCHRONOUS |
                        EVSYS_CHANNEL_EVGEN(getExposureEventGeneratorId()) |

@@ -93,37 +93,14 @@ void TccSynced::setupExposure(const bool invert) const {
   DEBUG_PRINT(" of group ");
   DEBUG_PRINTLN(exposure_pin_.group);
 
-  // Setup PORT.
-
-  REG_PM_APBBMASK |= PM_APBBMASK_PORT; // Port ABP Clock Enable.
-  // Configure as input.
-  PORT->Group[mfrq_pin_.group].DIRCLR.reg |=
-      PORT_DIRCLR_DIRCLR(1 << mfrq_pin_.pin);
-  PORT->Group[mfrq_pin_.group].PINCFG[mfrq_pin_.pin].reg |= PORT_PINCFG_INEN;
-  // Configure EXTINT[pin]
-  if (exposure_pin_.pin % 2) {
-    PORT->Group[exposure_pin_.group].PMUX[exposure_pin_.pin >> 1].reg |=
-        PORT_PMUX_PMUXO_A;
-  } else {
-    PORT->Group[exposure_pin_.group].PMUX[exposure_pin_.pin >> 1].reg |=
-        PORT_PMUX_PMUXE_A;
-  }
-  // Enable pin multiplexation.
-  PORT->Group[exposure_pin_.group].PINCFG[exposure_pin_.pin].reg |=
-      PORT_PINCFG_PMUXEN;
-
-  // EVSYS (only configured for TCC timers)
-  REG_PM_APBCMASK |= PM_APBCMASK_EVSYS;
-  DEBUG_PRINTLN("[TimerSynced]: Configuring EVSYS exposure users.");
-  // Channel 0 is used by RTC.
-  EVSYS->USER.reg =
-      EVSYS_USER_CHANNEL(3) | EVSYS_USER_USER(EVSYS_ID_USER_TCC1_MC_0);
-  EVSYS->USER.reg =
-      EVSYS_USER_CHANNEL(4) | EVSYS_USER_USER(EVSYS_ID_USER_TCC2_MC_0);
-
-  DEBUG_PRINTLN("[TimerSynced]: Configuring EVSYS exposure channels.");
+  setupInterruptPin(exposure_pin_.group, exposure_pin_.pin,
+                    InterruptLogic::kBoth, false);
+  setupExposureEvsys();
 
   // Setup interrupt
+  tcc_->EVCTRL.reg |= TCC_EVCTRL_MCEI1;
+  tcc_->INTENSET.reg |= TCC_INTENSET_MC1;
+  tcc_->INTFLAG.reg |= TCC_INTFLAG_MC1;
 }
 
 uint8_t TccSynced::getExposureEventGeneratorId() const {
