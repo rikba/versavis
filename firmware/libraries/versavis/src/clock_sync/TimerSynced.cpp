@@ -9,7 +9,7 @@ TimerSynced::TimerSynced() {
 
 bool TimerSynced::hasDataReady() {
   if (data_ready_) {
-    data_ready_ = false;
+    data_ready_ = false; // Reset data ready flag.
     return true;
   } else {
     return false;

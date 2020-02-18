@@ -21,4 +21,4 @@ bool Tcc0Synced::getOutPinValue() const {
   return PORT->Group[PORTA].IN.reg & (1 << 4);
 }
 
-void TCC0_Handler() { DEBUG_PRINTLN("[Tcc0Synced]: TCC0_Handler."); }
+void TCC0_Handler() { Tcc0Synced::getInstance().handleInterrupt(); }

@@ -105,7 +105,7 @@ void RtcSync::setupEvsys() const {
 
   // TCC1
   EVSYS->USER.reg = EVSYS_USER_CHANNEL(1) |
-                    EVSYS_USER_USER(EVSYS_ID_USER_TCC0_EV_0); // Retrigger
+                    EVSYS_USER_USER(EVSYS_ID_USER_TCC1_EV_0); // Retrigger
 
   // TCC2
   EVSYS->USER.reg = EVSYS_USER_CHANNEL(1) |

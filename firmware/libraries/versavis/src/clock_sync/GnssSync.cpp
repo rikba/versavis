@@ -286,7 +286,7 @@ void GnssSync::setupEvsys() {
       EVSYS_CHANNEL_EVGEN(
           EVSYS_ID_GEN_EIC_EXTINT_11) | // Set event generator (sender) as
                                         // external interrupt 11
-      EVSYS_CHANNEL_CHANNEL(0); // Attach the generator (sender) to channel 1
+      EVSYS_CHANNEL_CHANNEL(0); // Attach the generator (sender) to channel 0
   while (EVSYS->CHSTATUS.bit.CHBUSY0) {
   }
 }

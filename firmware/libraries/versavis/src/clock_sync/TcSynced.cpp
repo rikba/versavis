@@ -31,7 +31,7 @@ void TcSynced::setup() const {
   DEBUG_PRINTLN("[TcSynced]: Enabling event interrupts.");
   tc_->INTENSET.reg |= TC_INTENSET_MC1 | TC_INTENSET_OVF;
   DEBUG_PRINTLN("[TcSynced]: Clearing interrupt flags.");
-  tc_->INTFLAG.reg |= TC_INTENSET_MC1 | TC_INTFLAG_OVF;
+  tc_->INTFLAG.reg |= TC_INTFLAG_MC1 | TC_INTFLAG_OVF;
 
   DEBUG_PRINTLN("[TcSynced]: Enable timer.");
   while (tc_->STATUS.bit.SYNCBUSY) {
@@ -86,7 +86,7 @@ void TcSynced::setupMfrq(const uint16_t rate_hz, const bool invert) {
 
   DEBUG_PRINTLN("[TcSynced]: Enabling MFRQ interrupts.");
   tc_->INTENSET.reg |= TC_INTENSET_MC0;
-  tc_->INTFLAG.reg |= TC_INTENSET_MC0;
+  tc_->INTFLAG.reg |= TC_INTFLAG_MC0;
 
   DEBUG_PRINTLN("[TcSynced]: Enable timer.");
   while (tc_->STATUS.bit.SYNCBUSY) {

@@ -16,11 +16,13 @@ void TccSynced::setup() const {
   while (tcc_->SYNCBUSY.bit.ENABLE) {
   }
 
-  // DEBUG_PRINTLN("[TccSynced]: Setup CTRLa to capture event input.");
-  // tc_->CTRLC.reg |= TCC_CTRLA_CPTEN0;
-
   DEBUG_PRINTLN("[TccSynced]: Setup EVCTRL to retrigger on RTC overflow.");
-  tcc_->EVCTRL.reg |= TCC_EVCTRL_TCEI1 | TCC_EVCTRL_EVACT1_RETRIGGER;
+  tcc_->EVCTRL.reg |= TCC_EVCTRL_TCEI0 | TCC_EVCTRL_EVACT0_RETRIGGER;
+
+  DEBUG_PRINTLN("[TccSynced]: Enabling event interrupts.");
+  tcc_->INTENSET.reg |= TCC_INTENSET_TRG | TCC_INTENSET_OVF;
+  DEBUG_PRINTLN("[TccSynced]: Clearing interrupt flags.");
+  tcc_->INTFLAG.reg |= TCC_INTFLAG_TRG | TCC_INTFLAG_OVF;
 
   DEBUG_PRINTLN("[TccSynced]: Enable timer.");
   while (tcc_->SYNCBUSY.bit.ENABLE) {
@@ -28,10 +30,20 @@ void TccSynced::setup() const {
   tcc_->CTRLA.reg |= TCC_CTRLA_ENABLE;
   while (tcc_->SYNCBUSY.bit.ENABLE) {
   }
+
+  DEBUG_PRINTLN("[TccSynced]: Setup done..");
 }
 
 void TccSynced::setupPwm(uint16_t rate_hz, uint32_t pulse_us, bool invert) {
   DEBUG_PRINTLN("[TcSynced]: IMPLEMENT!!");
 }
 
-void TccSynced::handleInterrupt() { DEBUG_PRINTLN("[TccSynced]: IMPLEMENT!!"); }
+void TccSynced::handleInterrupt() {
+  if (tcc_->INTFLAG.bit.TRG) {
+    syncRtc();
+  }
+
+  // Clear flags.
+  tcc_->INTFLAG.reg |= tcc_->INTFLAG.bit.TRG;
+  tcc_->INTFLAG.reg |= tcc_->INTFLAG.bit.OVF;
+}

@@ -17,4 +17,4 @@ bool Tcc2Synced::getOutPinValue() const {
   return invert_trigger_;
 }
 
-void TCC2_Handler() { DEBUG_PRINTLN("[Tcc2Synced]: TCC2_Handler."); }
+void TCC2_Handler() { Tcc2Synced::getInstance().handleInterrupt(); }
