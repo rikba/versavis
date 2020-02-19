@@ -89,8 +89,8 @@ public:
   void handleInterrupt() override;
 
   // Returns true only once per image.
-  inline bool computeTimeLastImage(ros::Time *time, ros::Duration *exp,
-                                   uint32_t *img_num) {
+  inline bool computeTimeLastMidExposure(ros::Time *time, ros::Duration *exp,
+                                         uint32_t *img_num) {
     return exposure_state_.getTime(time, exp, img_num);
   }
 
