@@ -87,11 +87,13 @@ void TccSynced::setupMfrqWaveform() const {
   }
 }
 
-void TccSynced::setupExposure(const bool invert) const {
+void TccSynced::setupExposure(const bool invert) {
   DEBUG_PRINT("[TccSynced]: Configuring exposure pin ");
   DEBUG_PRINT(exposure_pin_.pin);
   DEBUG_PRINT(" of group ");
   DEBUG_PRINTLN(exposure_pin_.group);
+
+  exposure_state_.invert = invert;
 
   setupInterruptPin(exposure_pin_.group, exposure_pin_.pin,
                     InterruptLogic::kBoth, false);
@@ -108,10 +110,26 @@ uint8_t TccSynced::getExposureEventGeneratorId() const {
   return (exposure_pin_.pin % 16) + 12;
 }
 
+bool TccSynced::getExposurePinValue() const {
+  return getPinValue(exposure_pin_.group, exposure_pin_.pin);
+}
+
 void TccSynced::handleInterrupt() {
+  // Handle wave generator trigger.
   if (tcc_->INTFLAG.bit.MC0 && (getWaveOutPinValue() ^ invert_trigger_)) {
     trigger();
   }
+
+  // Handle exposure.
+  if (tcc_->INTFLAG.bit.MC1 && (getExposurePinValue() ^ exposure_state_.invert)) {
+    DEBUG_PRINTLN("Exposure start");
+    tcc_->INTFLAG.reg |= tcc_->INTFLAG.bit.MC1;
+  } else if (tcc_->INTFLAG.bit.MC1) {
+    DEBUG_PRINTLN("Exposure stop");
+    tcc_->INTFLAG.reg |= tcc_->INTFLAG.bit.MC1;
+  }
+
+  // Handle RTC retrigger.
   if (tcc_->INTFLAG.bit.TRG) {
     syncRtc();
   } else if (tcc_->INTFLAG.bit.OVF) {

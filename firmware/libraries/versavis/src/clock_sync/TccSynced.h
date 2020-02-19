@@ -22,6 +22,7 @@ public:
   struct ExposureState {
     uint32_t start = 0xFFFFFFFF;
     uint32_t stop = 0xFFFFFFFF;
+    bool invert = false;
 
     inline bool isExposing() const { return start > stop; }
   };
@@ -31,7 +32,7 @@ public:
   void setupDataReady(const uint8_t port_group, const uint8_t pin,
                       const InterruptLogic &logic) override {}
   void setupMfrqWaveform() const override;
-  void setupExposure(const bool invert) const;
+  void setupExposure(const bool invert);
 
   void handleInterrupt() override;
 
@@ -41,6 +42,8 @@ protected:
   uint8_t getExposureEventGeneratorId() const;
 
 private:
+  bool getExposurePinValue() const;
+
   // Pointer to the actual timer.
   Tcc *tcc_ = NULL;
 

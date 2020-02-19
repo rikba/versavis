@@ -53,7 +53,7 @@ void TimerSynced::setupInterruptPin(const uint8_t port_group, const uint8_t pin,
   DEBUG_PRINTLN("[TimerSynced]: Configure pin input.");
   PORT->Group[port_group].DIRCLR.reg = PORT_DIRCLR_DIRCLR(1 << pin);
 
-  DEBUG_PRINTLN("[TimerSynced]: Connect data ready pin with PMUX A.");
+  DEBUG_PRINTLN("[TimerSynced]: Connect interrupt pin with PMUX A.");
   if (pin % 2) {
     PORT->Group[port_group].PMUX[pin >> 1].reg |= PORT_PMUX_PMUXO_A; // Odd
   } else {
@@ -137,8 +137,12 @@ void TimerSynced::setupInterruptPin(const uint8_t port_group, const uint8_t pin,
   }
 }
 
+bool TimerSynced::getPinValue(const uint8_t group, const uint8_t pin) const {
+  return PORT->Group[group].IN.reg & (1 << pin);
+}
+
 bool TimerSynced::getWaveOutPinValue() const {
-  return PORT->Group[mfrq_pin_.group].IN.reg & (1 << mfrq_pin_.pin);
+  return getPinValue(mfrq_pin_.group, mfrq_pin_.pin);
 }
 
 bool TimerSynced::hasDataReady() {

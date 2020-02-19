@@ -63,6 +63,7 @@ protected:
   void trigger();
 
   void setupWaveOutPin() const;
+  bool getPinValue(const uint8_t group, const uint8_t pin) const;
   bool getWaveOutPinValue() const;
 
   virtual void setupMfrqWaveform() const = 0;
