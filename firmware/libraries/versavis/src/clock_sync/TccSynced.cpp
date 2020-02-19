@@ -93,7 +93,7 @@ void TccSynced::setupExposure(const bool invert) {
   DEBUG_PRINT(" of group ");
   DEBUG_PRINTLN(exposure_pin_.group);
 
-  exposure_state_.invert = invert;
+  exposure_state_.invert_ = invert;
 
   DEBUG_PRINTLN("[TccSynced]: Setup interrupt pin.");
   setupInterruptPin(exposure_pin_.group, exposure_pin_.pin,
@@ -137,6 +137,18 @@ bool TccSynced::getExposurePinValue() const {
 }
 
 void TccSynced::handleInterrupt() {
+  // Handle RTC retrigger.
+  if (tcc_->INTFLAG.bit.TRG) {
+    syncRtc();
+    exposure_state_.syncRtc();
+    tcc_->INTFLAG.reg |= tcc_->INTFLAG.bit.TRG;
+    tcc_->INTFLAG.reg |= tcc_->INTFLAG.bit.OVF;
+  } else if (tcc_->INTFLAG.bit.OVF) {
+    overflow();
+    exposure_state_.overflow();
+    tcc_->INTFLAG.reg |= tcc_->INTFLAG.bit.OVF;
+  }
+
   // Handle wave generator trigger.
   if (tcc_->INTFLAG.bit.MC0 && (getWaveOutPinValue() ^ invert_trigger_)) {
     trigger();
@@ -145,30 +157,10 @@ void TccSynced::handleInterrupt() {
 
   // Handle exposure.
   if (tcc_->INTFLAG.bit.MC1 &&
-      (getExposurePinValue() ^ exposure_state_.invert)) {
-    exposure_state_.start = tcc_->CC[1].reg;
-    exposure_state_.is_exposing = true;
+      (getExposurePinValue() ^ exposure_state_.invert_)) {
+    exposure_state_.startExposure(tcc_->CC[1].reg, prescaler_, top_);
   } else if (tcc_->INTFLAG.bit.MC1) {
-    exposure_state_.stop = tcc_->CC[1].reg;
-    exposure_state_.image_counter++;
-    exposure_state_.is_exposing = false;
-    exposure_state_.ovf_counter = 0;
+    exposure_state_.stopExposure(tcc_->CC[1].reg, prescaler_, top_);
   }
   tcc_->INTFLAG.reg |= tcc_->INTFLAG.bit.MC1;
-
-  // Handle exposure overflow.
-  if (exposure_state_.is_exposing &&
-      (tcc_->INTFLAG.bit.TRG | tcc_->INTFLAG.bit.OVF)) {
-    exposure_state_.ovf_counter++;
-  }
-
-  // Handle RTC retrigger.
-  if (tcc_->INTFLAG.bit.TRG) {
-    syncRtc();
-    tcc_->INTFLAG.reg |= tcc_->INTFLAG.bit.TRG;
-    tcc_->INTFLAG.reg |= tcc_->INTFLAG.bit.OVF;
-  } else if (tcc_->INTFLAG.bit.OVF) {
-    overflow();
-    tcc_->INTFLAG.reg |= tcc_->INTFLAG.bit.OVF;
-  }
 }

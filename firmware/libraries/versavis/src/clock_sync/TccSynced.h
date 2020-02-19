@@ -11,6 +11,7 @@
 #include <Arduino.h>
 
 #include "clock_sync/TimerSynced.h"
+#include "clock_sync/Timestamp.h"
 
 class TccSynced : public TimerSynced {
 public:
@@ -19,13 +20,63 @@ public:
     uint8_t group;
     uint8_t pin;
   };
-  struct ExposureState {
-    uint32_t start = 0xFFFFFFFF;
-    uint32_t stop = 0xFFFFFFFF;
-    uint32_t image_counter = 0xFFFFFFFF;
-    bool is_exposing = false;
-    uint32_t ovf_counter = 0;
-    bool invert = false;
+  class ExposureState {
+  public:
+    inline void syncRtc() {
+      start_capture_.syncRtc();
+      stop_capture_.syncRtc();
+    }
+    inline void overflow() {
+      start_capture_.overflow();
+      stop_capture_.overflow();
+    }
+    inline void startExposure(const uint32_t cc, const uint8_t prescaler,
+                              const uint32_t top) {
+      start_capture_.setTicks(cc);
+      start_capture_.computeTime(prescaler, top, &start_time_);
+      has_image_ = false; // Invalidate current image.
+    }
+    inline void stopExposure(const uint32_t cc, const uint8_t prescaler,
+                             const uint32_t top) {
+      stop_capture_.setTicks(cc);
+      has_image_ = stop_capture_.computeTime(prescaler, top, &stop_time_);
+      image_counter_++;
+    }
+
+    inline bool getTime(ros::Time *time, ros::Duration *exp,
+                        uint32_t *img_num) {
+      bool valid = has_image_;
+      has_image_ = false; // Invalidate image.
+      ros::Duration duration = computeDuration(start_time_, stop_time_);
+      valid &=
+          ((duration.sec > 0) || ((duration.sec == 0) && (duration.nsec > 0)));
+
+      if (exp && valid) {
+        *exp = duration;
+      }
+      if (time && valid) {
+        *time = start_time_;
+        duration *= 0.5;
+        *time += duration;
+      }
+      if (img_num && valid) {
+        *img_num = image_counter_;
+      }
+      return valid;
+    }
+
+    bool invert_ = false;
+
+  private:
+    Timestamp start_capture_;
+    Timestamp stop_capture_;
+
+    ros::Time start_time_;
+    ros::Time stop_time_;
+
+    bool has_image_ = false;
+
+    uint32_t image_counter_ = 0xFFFFFFFF;
   };
 
   TccSynced(const MfrqPin &mfrq_pin, const ExposurePin &exp_pin, Tcc *tcc);
@@ -36,6 +87,12 @@ public:
   void setupExposure(const bool invert);
 
   void handleInterrupt() override;
+
+  // Returns true only once per image.
+  inline bool computeTimeLastImage(ros::Time *time, ros::Duration *exp,
+                                   uint32_t *img_num) {
+    return exposure_state_.getTime(time, exp, img_num);
+  }
 
 protected:
   virtual void setupExposureEvsys() const = 0;
