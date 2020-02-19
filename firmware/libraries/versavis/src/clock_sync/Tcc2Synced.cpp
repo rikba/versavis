@@ -7,7 +7,7 @@
 #define TCC2_MFRQ_DRVSTR 0
 
 // UNIQUE exposure definitions.
-#define TCC2_EXP_CHANNEL 2
+#define TCC2_EXP_CHANNEL 3
 #define TCC2_EXP_GROUP PORTA
 #define TCC2_EXP_PIN 21
 

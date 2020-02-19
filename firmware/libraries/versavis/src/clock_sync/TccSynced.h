@@ -22,9 +22,10 @@ public:
   struct ExposureState {
     uint32_t start = 0xFFFFFFFF;
     uint32_t stop = 0xFFFFFFFF;
+    uint32_t image_counter = 0xFFFFFFFF;
+    bool is_exposing = false;
+    uint32_t ovf_counter = 0;
     bool invert = false;
-
-    inline bool isExposing() const { return start > stop; }
   };
 
   TccSynced(const MfrqPin &mfrq_pin, const ExposurePin &exp_pin, Tcc *tcc);

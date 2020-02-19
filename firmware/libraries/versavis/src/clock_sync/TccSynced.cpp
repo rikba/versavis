@@ -95,14 +95,36 @@ void TccSynced::setupExposure(const bool invert) {
 
   exposure_state_.invert = invert;
 
+  DEBUG_PRINTLN("[TccSynced]: Setup interrupt pin.");
   setupInterruptPin(exposure_pin_.group, exposure_pin_.pin,
                     InterruptLogic::kBoth, false);
+  DEBUG_PRINTLN("[TccSynced]: Setup exposure evsys.");
   setupExposureEvsys();
 
   // Setup interrupt
+  DEBUG_PRINTLN("[TccSynced]: Disabling timer.");
+  while (tcc_->SYNCBUSY.bit.ENABLE) {
+  }
+  tcc_->CTRLA.reg &= ~TCC_CTRLA_ENABLE;
+  while (tcc_->SYNCBUSY.bit.ENABLE) {
+  }
+  DEBUG_PRINTLN("[TccSynced]: Configure exposure capture and interrupt.");
   tcc_->EVCTRL.reg |= TCC_EVCTRL_MCEI1;
+  DEBUG_PRINTLN("[TccSynced]: TCC_CTRLA_CPTEN1.");
+  tcc_->CTRLA.reg |= TCC_CTRLA_CPTEN1;
+  DEBUG_PRINTLN("[TccSynced]: TCC_INTENSET_MC1.");
   tcc_->INTENSET.reg |= TCC_INTENSET_MC1;
+  DEBUG_PRINTLN("[TccSynced]: TCC_INTFLAG_MC1.");
   tcc_->INTFLAG.reg |= TCC_INTFLAG_MC1;
+  while (tcc_->SYNCBUSY.bit.ENABLE) {
+  }
+
+  DEBUG_PRINTLN("[TccSynced]: Enable timer.");
+  while (tcc_->SYNCBUSY.bit.ENABLE) {
+  }
+  tcc_->CTRLA.reg |= TCC_CTRLA_ENABLE;
+  while (tcc_->SYNCBUSY.bit.ENABLE) {
+  }
 }
 
 uint8_t TccSynced::getExposureEventGeneratorId() const {
@@ -118,26 +140,35 @@ void TccSynced::handleInterrupt() {
   // Handle wave generator trigger.
   if (tcc_->INTFLAG.bit.MC0 && (getWaveOutPinValue() ^ invert_trigger_)) {
     trigger();
+    tcc_->INTFLAG.reg |= tcc_->INTFLAG.bit.MC0;
   }
 
   // Handle exposure.
-  if (tcc_->INTFLAG.bit.MC1 && (getExposurePinValue() ^ exposure_state_.invert)) {
-    DEBUG_PRINTLN("Exposure start");
-    tcc_->INTFLAG.reg |= tcc_->INTFLAG.bit.MC1;
+  if (tcc_->INTFLAG.bit.MC1 &&
+      (getExposurePinValue() ^ exposure_state_.invert)) {
+    exposure_state_.start = tcc_->CC[1].reg;
+    exposure_state_.is_exposing = true;
   } else if (tcc_->INTFLAG.bit.MC1) {
-    DEBUG_PRINTLN("Exposure stop");
-    tcc_->INTFLAG.reg |= tcc_->INTFLAG.bit.MC1;
+    exposure_state_.stop = tcc_->CC[1].reg;
+    exposure_state_.image_counter++;
+    exposure_state_.is_exposing = false;
+    exposure_state_.ovf_counter = 0;
+  }
+  tcc_->INTFLAG.reg |= tcc_->INTFLAG.bit.MC1;
+
+  // Handle exposure overflow.
+  if (exposure_state_.is_exposing &&
+      (tcc_->INTFLAG.bit.TRG | tcc_->INTFLAG.bit.OVF)) {
+    exposure_state_.ovf_counter++;
   }
 
   // Handle RTC retrigger.
   if (tcc_->INTFLAG.bit.TRG) {
     syncRtc();
+    tcc_->INTFLAG.reg |= tcc_->INTFLAG.bit.TRG;
+    tcc_->INTFLAG.reg |= tcc_->INTFLAG.bit.OVF;
   } else if (tcc_->INTFLAG.bit.OVF) {
     overflow();
+    tcc_->INTFLAG.reg |= tcc_->INTFLAG.bit.OVF;
   }
-
-  // Clear flags.
-  tcc_->INTFLAG.reg |= tcc_->INTFLAG.bit.MC0;
-  tcc_->INTFLAG.reg |= tcc_->INTFLAG.bit.TRG;
-  tcc_->INTFLAG.reg |= tcc_->INTFLAG.bit.OVF;
 }
