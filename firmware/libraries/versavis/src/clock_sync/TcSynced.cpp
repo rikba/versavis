@@ -69,7 +69,8 @@ void TcSynced::setupMfrqWaveform() const {
   while (tc_->STATUS.bit.SYNCBUSY) {
   }
 
-  if (trigger_state_.invert_) {
+  // Negate to emit the first pulse at the first tick.
+  if (!trigger_state_.invert_) {
     tc_->CTRLC.reg |= TC_CTRLC_INVEN0;
     while (tc_->STATUS.bit.SYNCBUSY) {
     }
@@ -109,11 +110,7 @@ void TcSynced::handleInterrupt() {
   DEBUG_PRINT(", ");
   DEBUG_PRINTLN(tc_->INTFLAG.bit.OVF);
 
-  if (tc_->INTFLAG.bit.MC0 && (getWaveOutPinValue() ^ trigger_state_.invert_)) {
-    DEBUG_PRINT("trigger MC0: ");
-    DEBUG_PRINTLN(tc_->INTFLAG.bit.MC0);
-    trigger_state_.trigger(prescaler_, top_);
-  }
+  // Handle overflow before handling trigger event.
   if (tc_->INTFLAG.bit.MC1) {
     DEBUG_PRINT("syncRtc MC1: ");
     DEBUG_PRINTLN(tc_->INTFLAG.bit.MC1);
@@ -123,9 +120,21 @@ void TcSynced::handleInterrupt() {
     DEBUG_PRINTLN(tc_->INTFLAG.bit.OVF);
     trigger_state_.overflow();
   }
+    DEBUG_PRINT(tc_->INTFLAG.bit.MC0);
+    DEBUG_PRINT(", ");
+    DEBUG_PRINT(tc_->INTFLAG.bit.MC1);
+    DEBUG_PRINT(", ");
+    DEBUG_PRINTLN(tc_->INTFLAG.bit.OVF);
+
+  if (tc_->INTFLAG.bit.MC0 && (getWaveOutPinValue() ^ trigger_state_.invert_)) {
+    DEBUG_PRINT("trigger MC0: ");
+    DEBUG_PRINTLN(tc_->INTFLAG.bit.MC0);
+    trigger_state_.trigger(prescaler_, top_);
+  }
 
   // Clear flags.
   tc_->INTFLAG.reg |= tc_->INTFLAG.bit.MC0;
   tc_->INTFLAG.reg |= tc_->INTFLAG.bit.MC1;
   tc_->INTFLAG.reg |= tc_->INTFLAG.bit.OVF;
+  DEBUG_PRINTLN("Finish");
 }

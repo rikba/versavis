@@ -60,7 +60,7 @@ public:
         *time += duration;
       }
       if (img_num && valid) {
-        *img_num = image_counter_ - 1; // Start counting from 0.
+        *img_num = image_counter_;
       }
       return valid;
     }

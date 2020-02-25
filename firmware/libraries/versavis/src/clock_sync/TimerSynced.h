@@ -48,12 +48,9 @@ public:
     inline void syncRtc() { trigger_.syncRtc(); }
     inline void overflow() { trigger_.overflow(); }
     inline void trigger(const uint8_t prescaler, const uint32_t top) {
-      // Compute time stamp based on trigger number.
-      const uint16_t trigger_in_second = trigger_counter_ % rate_hz_;
-      const uint32_t cc = (trigger_in_second * 2 + 1) * (top + 1);
-      trigger_.setTicks(cc);
-      is_triggered_ = trigger_.computeTime(prescaler, top, &trigger_time_);
       trigger_counter_++;
+      trigger_.setTicks(0);
+      is_triggered_ = trigger_.computeTime(prescaler, top, &trigger_time_);
     }
 
     inline bool getTime(ros::Time *time, uint32_t *trigger_num) {
@@ -61,7 +58,7 @@ public:
         *time = trigger_time_;
       }
       if (is_triggered_ && trigger_num) {
-        *trigger_num = trigger_counter_ - 1; // Start counting from 0.
+        *trigger_num = trigger_counter_;
       }
 
       bool success = is_triggered_;
@@ -70,7 +67,6 @@ public:
     }
 
     bool invert_ = false;
-    uint16_t rate_hz_ = 0;
 
   private:
     Timestamp trigger_;

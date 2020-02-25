@@ -9,7 +9,6 @@ TimerSynced::TimerSynced(const MfrqPin &mfrq_pin) : mfrq_pin_(mfrq_pin) {
 
 void TimerSynced::setupMfrq(const uint16_t rate_hz, const bool invert) {
   // Set parameters.
-  trigger_state_.rate_hz_ = rate_hz;
   trigger_state_.invert_ = invert;
   prescaler_ = RtcSync::getInstance().findMinPrescalerFrq(rate_hz, top_);
   RtcSync::getInstance().computeFrq(rate_hz, kPrescalers[prescaler_], &top_);

@@ -61,7 +61,8 @@ void TccSynced::setupMfrqWaveform() const {
   while (tcc_->SYNCBUSY.bit.ENABLE) {
   }
 
-  if (trigger_state_.invert_) {
+  // Negate to emit the first pulse at the first tick.
+  if (!trigger_state_.invert_) {
     tcc_->DRVCTRL.reg |= TCC_DRVCTRL_INVEN0;
     while (tcc_->SYNCBUSY.bit.ENABLE) {
     }
@@ -150,7 +151,8 @@ void TccSynced::handleInterrupt() {
   }
 
   // Handle wave generator trigger.
-  if (tcc_->INTFLAG.bit.MC0 && (getWaveOutPinValue() ^ trigger_state_.invert_)) {
+  if (tcc_->INTFLAG.bit.MC0 &&
+      (getWaveOutPinValue() ^ trigger_state_.invert_)) {
     trigger_state_.trigger(prescaler_, top_);
     tcc_->INTFLAG.reg |= tcc_->INTFLAG.bit.MC0;
   }
