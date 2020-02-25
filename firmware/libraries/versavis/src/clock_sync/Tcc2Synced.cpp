@@ -17,8 +17,8 @@ Tcc2Synced::Tcc2Synced()
                         .drvstr = TCC2_MFRQ_DRVSTR},
                 ExposurePin{.group = TCC2_EXP_GROUP, .pin = TCC2_EXP_PIN},
                 (Tcc *)TCC2) {
-  // Enable interrupts. Highest priority to immediately update time stamps.
-  NVIC_SetPriority(TCC2_IRQn, 0);
+  // Enable interrupts.
+  NVIC_SetPriority(TCC2_IRQn, 1);
   NVIC_EnableIRQ(TCC2_IRQn);
 }
 

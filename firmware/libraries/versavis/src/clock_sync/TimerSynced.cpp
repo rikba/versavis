@@ -131,7 +131,7 @@ void TimerSynced::setupInterruptPin(const uint8_t port_group, const uint8_t pin,
   } // Wait for synchronization
 
   if (enable_interrupt) {
-    NVIC_SetPriority(EIC_IRQn, 0x00);
+    NVIC_SetPriority(EIC_IRQn, 2);
     NVIC_EnableIRQ(EIC_IRQn);
   }
 }

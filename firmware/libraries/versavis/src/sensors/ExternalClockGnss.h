@@ -2,26 +2,26 @@
 //  February 2020
 //  Author: Rik Bähnemann <brik@ethz.ch>
 ////////////////////////////////////////////////////////////////////////////////
-//  ExternalClock.h
+//  ExternalClockGnss.h
 ////////////////////////////////////////////////////////////////////////////////
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef Sensors_ExternalClock_h
-#define Sensors_ExternalClock_h
+#ifndef Sensors_ExternalClockGnss_h
+#define Sensors_ExternalClockGnss_h
 
-#include "sensors/SensorSynced.h"
-#include <versavis/ExtClk.h>
+#include "nmea_parser/NmeaParser.h"
+#include "sensors/ExternalClock.h"
 
-class ExternalClock : public SensorSynced {
+class ExternalClockGnss : public ExternalClock {
 public:
-  ExternalClock();
-  void setupRos(ros::NodeHandle *nh, const char *topic) override;
-  void publish() override;
+  ExternalClockGnss(Uart *uart, const uint32_t baud_rate);
 
 protected:
-  virtual bool setRemoteTime() = 0;
-  versavis::ExtClk *clock_msg_ = NULL;
+  bool setRemoteTime() override;
+
+  Uart* uart_ = NULL;
+  NmeaParser nmea_parser_;
 };
 
 #endif

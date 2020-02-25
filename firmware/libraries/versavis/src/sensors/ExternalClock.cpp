@@ -11,11 +11,11 @@ ExternalClock::ExternalClock() : SensorSynced(&Tcc0Synced::getInstance()) {
 void ExternalClock::setupRos(ros::NodeHandle *nh, const char *topic) {
   if (nh) {
     // Create static ROS message.
-    static versavis::ExtClkFilterState filter_state_msg;
-    filter_state_msg_ = &filter_state_msg;
+    static versavis::ExtClk clock_msg;
+    clock_msg_ = &clock_msg;
 
     // Create static ROS publisher.
-    static ros::Publisher pub(topic, filter_state_msg_);
+    static ros::Publisher pub(topic, clock_msg_);
     publisher_ = &pub;
 
     // Advertise.
@@ -24,11 +24,11 @@ void ExternalClock::setupRos(ros::NodeHandle *nh, const char *topic) {
 }
 
 void ExternalClock::publish() {
-  if (timer_ && filter_state_msg_ &&
+  if (setRemoteTime() && timer_ && clock_msg_ &&
       static_cast<TccSynced *>(timer_)->getTimeLastPps(
-          &filter_state_msg_->stamp.data, &filter_state_msg_->pps_cnt)) {
+          &clock_msg_->receive_time, &clock_msg_->pps_cnt)) {
     if (publisher_) {
-      publisher_->publish(filter_state_msg_);
+      publisher_->publish(clock_msg_);
     }
   }
 }

@@ -55,6 +55,7 @@ public:
   void computeFrq(const uint16_t rate_hz, const uint16_t prescaler,
                   uint32_t *top) const;
   inline ros::Time getTimeSecs() const { return ros::Time(secs_, 0); }
+  ros::Time getTimeNow() const;
 
   // Setters
   inline uint32_t setSecs(const uint32_t secs) { secs_ = secs; }

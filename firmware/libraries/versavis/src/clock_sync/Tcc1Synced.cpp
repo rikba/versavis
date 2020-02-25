@@ -18,8 +18,8 @@ Tcc1Synced::Tcc1Synced()
                 (Tcc *)TCC1) {
   // This is a 32 bit counter.
   top_ = 0xFFFFFFFF;
-  // Enable interrupts. Highest priority to immediately update time stamps.
-  NVIC_SetPriority(TCC1_IRQn, 0);
+  // Enable interrupts.
+  NVIC_SetPriority(TCC1_IRQn, 1);
   NVIC_EnableIRQ(TCC1_IRQn);
 }
 

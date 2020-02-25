@@ -181,9 +181,9 @@ void RtcSync::setupRtc() const {
   while (RTC->MODE0.STATUS.bit.SYNCBUSY) {
   }
 
-  // Enable RTC interrupt in controller at lowest priority.
-  // Ensures that time stamps are read before RTC seconds are incremented.
-  NVIC_SetPriority(RTC_IRQn, 3);
+  // Enable RTC interrupt in controller at highest priority.
+  // Makes sure that seconds are updated before anyone is accessing it.
+  NVIC_SetPriority(RTC_IRQn, 0);
   NVIC_EnableIRQ(RTC_IRQn);
 
   DEBUG_PRINTLN("[RtcSync]: Enable continuous synchronization.");
@@ -207,10 +207,9 @@ void RtcSync::setComp0(const uint32_t comp_0) const {
 
 ros::Time RtcSync::computeTime(const uint32_t secs, const uint32_t ticks,
                                uint16_t prescaler) const {
-  uint32_t sec = secs;
-  uint32_t nsec = ticks * prescaler * ns_per_tick_;
-  ros::normalizeSecNSec(sec, nsec);
-  return ros::Time(sec, nsec);
+  ros::Time time(secs, ticks * prescaler * ns_per_tick_);
+  ros::normalizeSecNSec(time.sec, time.nsec);
+  return time;
 }
 
 ros::Time RtcSync::computeTime(const uint32_t ticks, uint16_t prescaler) const {
@@ -259,6 +258,18 @@ uint8_t RtcSync::findMinPrescalerPwm(const uint16_t rate_hz,
   }
 
   return prescaler;
+}
+
+ros::Time RtcSync::getTimeNow() const {
+  // TODO(rikba): Find a non blocking alternative.
+  while (RTC->MODE0.STATUS.bit.SYNCBUSY) {
+  }
+  ros::Time now(secs_, RTC->MODE0.COUNT.reg * ns_per_tick_);
+  while (RTC->MODE0.STATUS.bit.SYNCBUSY) {
+  }
+  ros::normalizeSecNSec(now.sec, now.nsec);
+
+  return now;
 }
 
 uint8_t RtcSync::findMinPrescalerFrq(const uint16_t rate_hz,

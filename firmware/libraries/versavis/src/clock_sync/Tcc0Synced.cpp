@@ -26,8 +26,8 @@ Tcc0Synced::Tcc0Synced()
       pps_pin_{.group = PPS_GROUP, .pin = PPS_PIN} {
   // This is a 32 bit counter.
   top_ = 0xFFFFFFFF;
-  // Enable interrupts. Highest priority to immediately update time stamps.
-  NVIC_SetPriority(TCC0_IRQn, 0);
+  // Enable interrupts.
+  NVIC_SetPriority(TCC0_IRQn, 1);
   NVIC_EnableIRQ(TCC0_IRQn);
 }
 
@@ -92,6 +92,4 @@ void Tcc0Synced::setupPpsEvsys() const {
   }
 }
 
-void TCC0_Handler() {
-  Tcc0Synced::getInstance().handleInterrupt();
-}
+void TCC0_Handler() { Tcc0Synced::getInstance().handleInterrupt(); }
