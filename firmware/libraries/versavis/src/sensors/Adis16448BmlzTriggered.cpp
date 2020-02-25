@@ -56,23 +56,35 @@ void Adis16448BmlzTriggered::setupRos(ros::NodeHandle *nh,
 }
 
 void Adis16448BmlzTriggered::publish() {
-  if (imu_msg_ && timer_ && timer_->isTriggered()) {
-    imu_msg_->time.data = timer_->computeTimeLastTrigger();
+  if (timer_ && imu_msg_) {
+    timer_->computeTimeLastTrigger(&imu_msg_->time.data, &imu_msg_->number);
   }
 
-  if (timer_ && timer_->hasDataReady()) {
+  if (imu_msg_ && timer_ && timer_->hasDataReady()) {
     int16_t *imu_data = imu_.sensorReadAllCRC();
 
     if ((imu_.checksum(imu_data) == imu_data[12])) {
+
       // MAG and baro update every 16th trigger.
-      // https://ez.analog.com/mems/w/documents/4122/adis16448-data-sampling
-      // 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, -->15<--
-      bool has_mag_and_baro = ((timer_->getTriggerNumber() + 1) % 16) == 0;
+      // We are not quite sure when the first trigger happens, so we calibrate
+      // the offset.
+      bool has_mag_and_baro = (mag_baro_offset_ != 0xFF);
+      if (!has_mag_and_baro) {
+        if (prev_pressure == 0xFFFF) {
+          prev_pressure = imu_data[10];
+        } else if (prev_pressure != imu_data[10]) {
+          mag_baro_offset_ = imu_msg_->number % 16;
+        }
+      } else {
+        // https://ez.analog.com/mems/w/documents/4122/adis16448-data-sampling
+        // 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, -->15<--
+        has_mag_and_baro &= ((imu_msg_->number - mag_baro_offset_) % 16) == 0;
+      }
 
       // BARO.
       if (has_mag_and_baro && baro_msg_) {
         baro_msg_->time.data = imu_msg_->time.data;
-        baro_msg_->number = timer_->getTriggerNumber();
+        baro_msg_->number = imu_msg_->number;
         baro_msg_->pressure = imu_data[10];
 
         if (baro_pub_) {
@@ -82,7 +94,6 @@ void Adis16448BmlzTriggered::publish() {
 
       // IMU.
       if (imu_msg_) {
-        imu_msg_->number = timer_->getTriggerNumber();
         imu_msg_->gx = imu_data[1];
         imu_msg_->gy = imu_data[2];
         imu_msg_->gz = imu_data[3];
@@ -98,7 +109,7 @@ void Adis16448BmlzTriggered::publish() {
       // MAG.
       if (has_mag_and_baro && mag_msg_) {
         mag_msg_->time.data = imu_msg_->time.data;
-        mag_msg_->number = timer_->getTriggerNumber();
+        mag_msg_->number = imu_msg_->number;
         mag_msg_->mx = imu_data[7];
         mag_msg_->my = imu_data[8];
         mag_msg_->mz = imu_data[9];
@@ -111,7 +122,7 @@ void Adis16448BmlzTriggered::publish() {
       // TEMP.
       if (temp_msg_) {
         temp_msg_->time.data = imu_msg_->time.data;
-        temp_msg_->number = timer_->getTriggerNumber();
+        temp_msg_->number = imu_msg_->number;
         temp_msg_->temperature = imu_data[11];
 
         if (temp_pub_) {

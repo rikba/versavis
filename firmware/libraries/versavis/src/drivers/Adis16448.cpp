@@ -52,7 +52,7 @@ void Adis16448::setup() {
   // Configure SPI.
   SPI.begin(); // Initialize SPI bus
 
-  regWrite(GLOB_CMD, 0x80); // Perform an IMU reset.
+  regWrite(GLOB_CMD, 0xBE80); // Perform an IMU reset.
   delay(300);
   regWrite(MSC_CTRL, 0x16); // DR with active HIGH on DIO1, activate CRC
   delay(20);
@@ -62,6 +62,10 @@ void Adis16448::setup() {
   delay(20);
   regWrite(SENS_AVG, 0x40); // +-1000 dps range, no digital filter.
   delay(20);
+  regWrite(GLOB_CMD, 0xBE08); // Save settings to flash.
+  delay(20);
+  regWrite(GLOB_CMD, 0xBE80); // Perform another IMU reset.
+  delay(300);
 }
 
 ////////////////////////////////////////////////////////////////////////////

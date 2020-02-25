@@ -22,6 +22,7 @@
 
 #include <ros.h>
 
+#include "clock_sync/Timestamp.h"
 #include "versavis_configuration.h"
 
 enum class InterruptLogic {
@@ -42,6 +43,43 @@ public:
     bool drvstr;
   };
 
+  class TriggerState {
+  public:
+    inline void syncRtc() { trigger_.syncRtc(); }
+    inline void overflow() { trigger_.overflow(); }
+    inline void trigger(const uint8_t prescaler, const uint32_t top) {
+      // Compute time stamp based on trigger number.
+      const uint16_t trigger_in_second = trigger_counter_ % rate_hz_;
+      const uint32_t cc = (trigger_in_second * 2 + 1) * (top + 1);
+      trigger_.setTicks(cc);
+      is_triggered_ = trigger_.computeTime(prescaler, top, &trigger_time_);
+      trigger_counter_++;
+    }
+
+    inline bool getTime(ros::Time *time, uint32_t *trigger_num) {
+      if (is_triggered_ && time) {
+        *time = trigger_time_;
+      }
+      if (is_triggered_ && trigger_num) {
+        *trigger_num = trigger_counter_ - 1; // Start counting from 0.
+      }
+
+      bool success = is_triggered_;
+      is_triggered_ = false;
+      return success;
+    }
+
+    bool invert_ = false;
+    uint16_t rate_hz_ = 0;
+
+  private:
+    Timestamp trigger_;
+    ros::Time trigger_time_;
+    bool is_triggered_ = false;
+
+    uint32_t trigger_counter_ = 0xFFFFFFFF;
+  };
+
   TimerSynced(const MfrqPin &mfrq_pin);
 
   // Setup the timer.
@@ -52,16 +90,14 @@ public:
   virtual void handleInterrupt() = 0;
   void handleEic();
 
-  inline bool isTriggered() const { return is_triggered_; }
-  inline uint32_t getTriggerNumber() const { return trigger_num_; }
-  bool hasDataReady();                // resets data_ready_ flag.
-  ros::Time computeTimeLastTrigger(); // resets is_triggered_ flag.
+  // Returns true only once per trigger.
+  inline bool computeTimeLastTrigger(ros::Time *time, uint32_t *trigger_num) {
+    return trigger_state_.getTime(time, trigger_num);
+  }
+
+  bool hasDataReady(); // resets data_ready_ flag.
 
 protected:
-  void syncRtc();
-  void overflow();
-  void trigger();
-
   void setupWaveOutPin() const;
   bool getPinValue(const uint8_t group, const uint8_t pin) const;
   bool getWaveOutPinValue() const;
@@ -76,11 +112,7 @@ protected:
   uint32_t top_ = 0xFFFF; // Default 16 bit counter.
 
   // Trigger state.
-  uint16_t rate_hz_ = 0;
-  bool invert_trigger_ = false;
-  uint32_t trigger_secs_ = 0xFFFFFFFF;
-  uint32_t trigger_num_ = 0xFFFFFFFF;
-  bool is_triggered_ = false;
+  TriggerState trigger_state_;
 
   // Trigger pin.
   const MfrqPin mfrq_pin_;

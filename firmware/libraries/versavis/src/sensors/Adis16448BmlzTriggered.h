@@ -40,6 +40,10 @@ private:
   versavis::MagneticMicro *mag_msg_ = NULL;
   versavis::PressureMicro *baro_msg_ = NULL;
   versavis::TemperatureMicro *temp_msg_ = NULL;
+
+  // State.
+  uint8_t mag_baro_offset_ = 0xFF;
+  uint16_t prev_pressure = 0xFFFF;
 };
 
 #endif

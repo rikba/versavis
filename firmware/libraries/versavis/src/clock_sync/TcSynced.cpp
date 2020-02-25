@@ -69,7 +69,7 @@ void TcSynced::setupMfrqWaveform() const {
   while (tc_->STATUS.bit.SYNCBUSY) {
   }
 
-  if (invert_trigger_) {
+  if (trigger_state_.invert_) {
     tc_->CTRLC.reg |= TC_CTRLC_INVEN0;
     while (tc_->STATUS.bit.SYNCBUSY) {
     }
@@ -103,13 +103,25 @@ void TcSynced::setupDataReady(const uint8_t port_group, const uint8_t pin,
 }
 
 void TcSynced::handleInterrupt() {
-  if (tc_->INTFLAG.bit.MC0 && (getWaveOutPinValue() ^ invert_trigger_)) {
-    trigger();
+  DEBUG_PRINT(tc_->INTFLAG.bit.MC0);
+  DEBUG_PRINT(", ");
+  DEBUG_PRINT(tc_->INTFLAG.bit.MC1);
+  DEBUG_PRINT(", ");
+  DEBUG_PRINTLN(tc_->INTFLAG.bit.OVF);
+
+  if (tc_->INTFLAG.bit.MC0 && (getWaveOutPinValue() ^ trigger_state_.invert_)) {
+    DEBUG_PRINT("trigger MC0: ");
+    DEBUG_PRINTLN(tc_->INTFLAG.bit.MC0);
+    trigger_state_.trigger(prescaler_, top_);
   }
   if (tc_->INTFLAG.bit.MC1) {
-    syncRtc();
+    DEBUG_PRINT("syncRtc MC1: ");
+    DEBUG_PRINTLN(tc_->INTFLAG.bit.MC1);
+    trigger_state_.syncRtc();
   } else if (tc_->INTFLAG.bit.OVF) {
-    overflow();
+    DEBUG_PRINT("overflow OVF: ");
+    DEBUG_PRINTLN(tc_->INTFLAG.bit.OVF);
+    trigger_state_.overflow();
   }
 
   // Clear flags.

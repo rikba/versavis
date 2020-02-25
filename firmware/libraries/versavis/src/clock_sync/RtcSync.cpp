@@ -181,8 +181,9 @@ void RtcSync::setupRtc() const {
   while (RTC->MODE0.STATUS.bit.SYNCBUSY) {
   }
 
-  // Enable RTC interrupt in controller at highest priority.
-  NVIC_SetPriority(RTC_IRQn, 0x00);
+  // Enable RTC interrupt in controller at lowest priority.
+  // Ensures that time stamps are read before RTC seconds are incremented.
+  NVIC_SetPriority(RTC_IRQn, 3);
   NVIC_EnableIRQ(RTC_IRQn);
 
   DEBUG_PRINTLN("[RtcSync]: Enable continuous synchronization.");

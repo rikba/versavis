@@ -61,7 +61,7 @@ void TccSynced::setupMfrqWaveform() const {
   while (tcc_->SYNCBUSY.bit.ENABLE) {
   }
 
-  if (invert_trigger_) {
+  if (trigger_state_.invert_) {
     tcc_->DRVCTRL.reg |= TCC_DRVCTRL_INVEN0;
     while (tcc_->SYNCBUSY.bit.ENABLE) {
     }
@@ -139,19 +139,19 @@ bool TccSynced::getExposurePinValue() const {
 void TccSynced::handleInterrupt() {
   // Handle RTC retrigger.
   if (tcc_->INTFLAG.bit.TRG) {
-    syncRtc();
+    trigger_state_.syncRtc();
     exposure_state_.syncRtc();
     tcc_->INTFLAG.reg |= tcc_->INTFLAG.bit.TRG;
     tcc_->INTFLAG.reg |= tcc_->INTFLAG.bit.OVF;
   } else if (tcc_->INTFLAG.bit.OVF) {
-    overflow();
+    trigger_state_.overflow();
     exposure_state_.overflow();
     tcc_->INTFLAG.reg |= tcc_->INTFLAG.bit.OVF;
   }
 
   // Handle wave generator trigger.
-  if (tcc_->INTFLAG.bit.MC0 && (getWaveOutPinValue() ^ invert_trigger_)) {
-    trigger();
+  if (tcc_->INTFLAG.bit.MC0 && (getWaveOutPinValue() ^ trigger_state_.invert_)) {
+    trigger_state_.trigger(prescaler_, top_);
     tcc_->INTFLAG.reg |= tcc_->INTFLAG.bit.MC0;
   }
 
@@ -159,8 +159,9 @@ void TccSynced::handleInterrupt() {
   if (tcc_->INTFLAG.bit.MC1 &&
       (getExposurePinValue() ^ exposure_state_.invert_)) {
     exposure_state_.startExposure(tcc_->CC[1].reg, prescaler_, top_);
+    tcc_->INTFLAG.reg |= tcc_->INTFLAG.bit.MC1;
   } else if (tcc_->INTFLAG.bit.MC1) {
     exposure_state_.stopExposure(tcc_->CC[1].reg, prescaler_, top_);
+    tcc_->INTFLAG.reg |= tcc_->INTFLAG.bit.MC1;
   }
-  tcc_->INTFLAG.reg |= tcc_->INTFLAG.bit.MC1;
 }

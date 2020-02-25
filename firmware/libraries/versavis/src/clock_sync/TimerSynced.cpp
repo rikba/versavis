@@ -9,8 +9,8 @@ TimerSynced::TimerSynced(const MfrqPin &mfrq_pin) : mfrq_pin_(mfrq_pin) {
 
 void TimerSynced::setupMfrq(const uint16_t rate_hz, const bool invert) {
   // Set parameters.
-  rate_hz_ = rate_hz;
-  invert_trigger_ = invert;
+  trigger_state_.rate_hz_ = rate_hz;
+  trigger_state_.invert_ = invert;
   prescaler_ = RtcSync::getInstance().findMinPrescalerFrq(rate_hz, top_);
   RtcSync::getInstance().computeFrq(rate_hz, kPrescalers[prescaler_], &top_);
 
@@ -132,7 +132,7 @@ void TimerSynced::setupInterruptPin(const uint8_t port_group, const uint8_t pin,
   } // Wait for synchronization
 
   if (enable_interrupt) {
-    NVIC_SetPriority(EIC_IRQn, 0x02);
+    NVIC_SetPriority(EIC_IRQn, 0x00);
     NVIC_EnableIRQ(EIC_IRQn);
   }
 }
@@ -152,30 +152,6 @@ bool TimerSynced::hasDataReady() {
   } else {
     return false;
   }
-}
-
-ros::Time TimerSynced::computeTimeLastTrigger() {
-  is_triggered_ = false;
-  const uint16_t trigger_in_second = trigger_num_ % rate_hz_;
-  const uint32_t ticks = (trigger_in_second * 2 + 1) * (top_ + 1);
-  return RtcSync::getInstance().computeTime(trigger_secs_, ticks,
-                                            kPrescalers[prescaler_]);
-}
-
-void TimerSynced::syncRtc() { ovf_ticks_since_sync_ = 0; }
-
-void TimerSynced::trigger() {
-  // TODO(rikba): If the trigger happens just before the RTC seconds update the
-  // seconds could already be updated here and the trigger time is screwed. One
-  // solution could be DMAC or capturing the total seconds.
-  trigger_secs_ = RtcSync::getInstance().getSecs();
-  trigger_num_++;
-  is_triggered_ = true;
-}
-
-void TimerSynced::overflow() {
-  // +1 to account for setting counter from TOP to ZERO cycle.
-  ovf_ticks_since_sync_ += top_ + 1;
 }
 
 void TimerSynced::handleEic() {
