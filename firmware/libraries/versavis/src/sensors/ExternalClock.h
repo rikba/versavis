@@ -20,8 +20,18 @@ public:
   void publish() override;
 
 protected:
-  virtual bool setRemoteTime() = 0;
+  enum class RemoteTimeStatus { kWaiting, kReceived, kTimeout, kReading };
+  virtual RemoteTimeStatus setRemoteTime() = 0;
   versavis::ExtClk *clock_msg_ = NULL;
+
+private:
+  enum class State {
+    kWaitForPulse,
+    kWaitForRemoteTime,
+    kUpdateFilter,
+    kPublishFilterState
+  };
+  State state_ = State::kWaitForPulse;
 };
 
 #endif

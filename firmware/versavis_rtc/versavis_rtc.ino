@@ -10,7 +10,7 @@
 
 #include "sensors/Adis16448BmlzTriggered.h"
 #include "sensors/CamSyncedExposure.h"
-#include "sensors/ExternalClock.h"
+#include "sensors/ExternalClockGnss.h"
 
 #include <Arduino.h>
 
@@ -42,7 +42,7 @@ void setup() {
   static CamSyncedExposure bfly(&Tcc0Synced::getInstance(), 15, false, true);
   cam0 = &bfly;
 
-  static ExternalClock gnss;
+  static ExternalClockGnss gnss(&Serial, 115200);
   ext_clock = &gnss;
 
   // ROS

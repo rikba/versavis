@@ -18,9 +18,9 @@ public:
   ExternalClockGnss(Uart *uart, const uint32_t baud_rate);
 
 protected:
-  bool setRemoteTime() override;
+  RemoteTimeStatus setRemoteTime() override;
 
-  Uart* uart_ = NULL;
+  Uart *uart_ = NULL;
   NmeaParser nmea_parser_;
 };
 

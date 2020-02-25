@@ -24,11 +24,31 @@ void ExternalClock::setupRos(ros::NodeHandle *nh, const char *topic) {
 }
 
 void ExternalClock::publish() {
-  if (setRemoteTime() && timer_ && clock_msg_ &&
-      static_cast<TccSynced *>(timer_)->getTimeLastPps(
-          &clock_msg_->receive_time, &clock_msg_->pps_cnt)) {
+  switch (state_) {
+  case State::kWaitForPulse:
+    if (timer_ && clock_msg_ &&
+        static_cast<TccSynced *>(timer_)->getTimeLastPps(
+            &clock_msg_->receive_time, &clock_msg_->pps_cnt)) {
+      state_ = State::kWaitForRemoteTime;
+    }
+    break;
+  case State::kWaitForRemoteTime:
+    if (setRemoteTime() == RemoteTimeStatus::kReceived) {
+      state_ = State::kUpdateFilter;
+    } else if (setRemoteTime() == RemoteTimeStatus::kTimeout) {
+      state_ = State::kWaitForPulse;
+    }
+    break;
+  case State::kUpdateFilter:
+    state_ = State::kPublishFilterState;
+    break;
+  case State::kPublishFilterState:
     if (publisher_) {
       publisher_->publish(clock_msg_);
     }
+    state_ = State::kWaitForPulse;
+  default:
+    state_ = State::kWaitForPulse;
+    break;
   }
 }
