@@ -86,7 +86,7 @@ void TimerSynced::setupInterruptPin(const uint8_t port_group, const uint8_t pin,
 
   uint8_t config_id = pin < 16 ? 1 : 2;
   config_id = pin < 8 ? 0 : config_id;
-  DEBUG_PRINTLN("[TimerSynced]: Configure SENSE.");
+  DEBUG_PRINT("[TimerSynced]: Configure SENSE with CONFIG");
   DEBUG_PRINTLN(config_id);
   uint8_t id = pin % 8;
   uint32_t logic_val = static_cast<uint32_t>(logic);

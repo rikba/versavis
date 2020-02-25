@@ -10,8 +10,8 @@ Tc3Synced::Tc3Synced()
                        .pin = TC3_MFRQ_PIN,
                        .drvstr = TC3_MFRQ_DRVSTR},
                (TcCount16 *)TC3) {
-  // Enable interrupts. Not as high priority as the RTC interrupt.
-  NVIC_SetPriority(TC3_IRQn, 0x01);
+  // Enable interrupts. Highest priority to immediately update time stamps.
+  NVIC_SetPriority(TC3_IRQn, 0);
   NVIC_EnableIRQ(TC3_IRQn);
 }
 

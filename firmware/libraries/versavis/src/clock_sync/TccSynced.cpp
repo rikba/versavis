@@ -128,9 +128,9 @@ void TccSynced::setupExposure(const bool invert) {
   }
 }
 
-uint8_t TccSynced::getExposureEventGeneratorId() const {
+uint8_t TccSynced::getEventGeneratorId(const uint8_t pin) const {
   // https://github.com/ethz-asl/versavis_hw/blob/1e71a3843aefbbec8e6261c0855bd7cad7f38f9e/VersaVIS/bootloaders/mzero/Bootloader_D21/src/ASF/sam0/utils/cmsis/samd21/include/instance/evsys.h
-  return (exposure_pin_.pin % 16) + 12;
+  return (pin % 16) + 12;
 }
 
 bool TccSynced::getExposurePinValue() const {
@@ -142,11 +142,13 @@ void TccSynced::handleInterrupt() {
   if (tcc_->INTFLAG.bit.TRG) {
     trigger_state_.syncRtc();
     exposure_state_.syncRtc();
+    pps_state_.syncRtc();
     tcc_->INTFLAG.reg |= tcc_->INTFLAG.bit.TRG;
     tcc_->INTFLAG.reg |= tcc_->INTFLAG.bit.OVF;
   } else if (tcc_->INTFLAG.bit.OVF) {
     trigger_state_.overflow();
     exposure_state_.overflow();
+    pps_state_.overflow();
     tcc_->INTFLAG.reg |= tcc_->INTFLAG.bit.OVF;
   }
 
@@ -165,5 +167,11 @@ void TccSynced::handleInterrupt() {
   } else if (tcc_->INTFLAG.bit.MC1) {
     exposure_state_.stopExposure(tcc_->CC[1].reg, prescaler_, top_);
     tcc_->INTFLAG.reg |= tcc_->INTFLAG.bit.MC1;
+  }
+
+  // Handle PPS interrupt.
+  if (tcc_->INTFLAG.bit.MC2) {
+    pps_state_.receive(tcc_->CC[2].reg, prescaler_, top_);
+    tcc_->INTFLAG.reg |= tcc_->INTFLAG.bit.MC2;
   }
 }

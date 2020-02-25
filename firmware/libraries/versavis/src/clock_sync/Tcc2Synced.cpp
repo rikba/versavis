@@ -17,8 +17,8 @@ Tcc2Synced::Tcc2Synced()
                         .drvstr = TCC2_MFRQ_DRVSTR},
                 ExposurePin{.group = TCC2_EXP_GROUP, .pin = TCC2_EXP_PIN},
                 (Tcc *)TCC2) {
-  // Enable interrupts. Not as high priority as the RTC interrupt.
-  NVIC_SetPriority(TCC2_IRQn, 0x01);
+  // Enable interrupts. Highest priority to immediately update time stamps.
+  NVIC_SetPriority(TCC2_IRQn, 0);
   NVIC_EnableIRQ(TCC2_IRQn);
 }
 
@@ -28,7 +28,7 @@ void Tcc2Synced::setupExposureEvsys() const {
                     EVSYS_USER_USER(EVSYS_ID_USER_TCC2_MC_1);
   EVSYS->CHANNEL.reg = EVSYS_CHANNEL_EDGSEL_NO_EVT_OUTPUT |
                        EVSYS_CHANNEL_PATH_ASYNCHRONOUS |
-                       EVSYS_CHANNEL_EVGEN(getExposureEventGeneratorId()) |
+                       EVSYS_CHANNEL_EVGEN(getEventGeneratorId(TCC2_EXP_PIN)) |
                        EVSYS_CHANNEL_CHANNEL(TCC2_EXP_CHANNEL);
   while (EVSYS->CHSTATUS.vec.CHBUSY & (1 << TCC2_EXP_CHANNEL)) {
   }

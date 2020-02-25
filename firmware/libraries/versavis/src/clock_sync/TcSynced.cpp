@@ -104,31 +104,14 @@ void TcSynced::setupDataReady(const uint8_t port_group, const uint8_t pin,
 }
 
 void TcSynced::handleInterrupt() {
-  DEBUG_PRINT(tc_->INTFLAG.bit.MC0);
-  DEBUG_PRINT(", ");
-  DEBUG_PRINT(tc_->INTFLAG.bit.MC1);
-  DEBUG_PRINT(", ");
-  DEBUG_PRINTLN(tc_->INTFLAG.bit.OVF);
-
   // Handle overflow before handling trigger event.
   if (tc_->INTFLAG.bit.MC1) {
-    DEBUG_PRINT("syncRtc MC1: ");
-    DEBUG_PRINTLN(tc_->INTFLAG.bit.MC1);
     trigger_state_.syncRtc();
   } else if (tc_->INTFLAG.bit.OVF) {
-    DEBUG_PRINT("overflow OVF: ");
-    DEBUG_PRINTLN(tc_->INTFLAG.bit.OVF);
     trigger_state_.overflow();
   }
-    DEBUG_PRINT(tc_->INTFLAG.bit.MC0);
-    DEBUG_PRINT(", ");
-    DEBUG_PRINT(tc_->INTFLAG.bit.MC1);
-    DEBUG_PRINT(", ");
-    DEBUG_PRINTLN(tc_->INTFLAG.bit.OVF);
 
   if (tc_->INTFLAG.bit.MC0 && (getWaveOutPinValue() ^ trigger_state_.invert_)) {
-    DEBUG_PRINT("trigger MC0: ");
-    DEBUG_PRINTLN(tc_->INTFLAG.bit.MC0);
     trigger_state_.trigger(prescaler_, top_);
   }
 
@@ -136,5 +119,4 @@ void TcSynced::handleInterrupt() {
   tc_->INTFLAG.reg |= tc_->INTFLAG.bit.MC0;
   tc_->INTFLAG.reg |= tc_->INTFLAG.bit.MC1;
   tc_->INTFLAG.reg |= tc_->INTFLAG.bit.OVF;
-  DEBUG_PRINTLN("Finish");
 }

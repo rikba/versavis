@@ -79,6 +79,38 @@ public:
     uint32_t image_counter_ = 0xFFFFFFFF;
   };
 
+  class PpsState {
+  public:
+    inline void syncRtc() { pps_.syncRtc(); }
+    inline void overflow() { pps_.overflow(); }
+    inline void receive(const uint32_t cc, const uint8_t prescaler,
+                        const uint32_t top) {
+      pps_counter_++;
+      pps_.setTicks(cc);
+      has_pps_ = pps_.computeTime(prescaler, top, &pps_time_);
+    }
+
+    inline bool getTime(ros::Time *time, uint32_t *pps_num) {
+      if (has_pps_ && time) {
+        *time = pps_time_;
+      }
+      if (has_pps_ && pps_num) {
+        *pps_num = pps_counter_;
+      }
+
+      bool success = has_pps_;
+      has_pps_ = false;
+      return success;
+    }
+
+  private:
+    Timestamp pps_;
+    ros::Time pps_time_;
+    bool has_pps_ = false;
+
+    uint32_t pps_counter_ = 0xFFFFFFFF;
+  };
+
   TccSynced(const MfrqPin &mfrq_pin, const ExposurePin &exp_pin, Tcc *tcc);
 
   void setupDataReady(const uint8_t port_group, const uint8_t pin,
@@ -94,22 +126,30 @@ public:
     return exposure_state_.getTime(time, exp, img_num);
   }
 
+  // Returns true only once per pps.
+  inline bool getTimeLastPps(ros::Time *time, uint32_t *pps_num) {
+    return pps_state_.getTime(time, pps_num);
+  }
+
 protected:
   virtual void setupExposureEvsys() const = 0;
 
-  uint8_t getExposureEventGeneratorId() const;
-
-private:
-  bool getExposurePinValue() const;
+  uint8_t getEventGeneratorId(const uint8_t pin) const;
 
   // Pointer to the actual timer.
   Tcc *tcc_ = NULL;
 
+private:
+  bool getExposurePinValue() const;
+
   void setup() const;
 
   // Exposure state.
-  const ExposurePin exposure_pin_;
   ExposureState exposure_state_;
+  const ExposurePin exposure_pin_;
+
+  // PPS state.
+  PpsState pps_state_;
 };
 
 #endif

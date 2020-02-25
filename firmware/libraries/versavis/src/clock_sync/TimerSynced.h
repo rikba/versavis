@@ -107,6 +107,7 @@ protected:
   uint8_t prescaler_ = 0;
   uint32_t top_ = 0xFFFF; // Default 16 bit counter.
 
+  // TODO(rikba): Make these states pointers.
   // Trigger state.
   TriggerState trigger_state_;
 

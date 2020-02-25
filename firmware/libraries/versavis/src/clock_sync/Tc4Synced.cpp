@@ -11,8 +11,8 @@ Tc4Synced::Tc4Synced()
                        .pin = TC4_MFRQ_PIN,
                        .drvstr = TC4_MFRQ_DRVSTR},
                (TcCount16 *)TC4) {
-  // Enable interrupts. Not as high priority as the RTC interrupt.
-  NVIC_SetPriority(TC4_IRQn, 0x01);
+  // Enable interrupts. Highest priority to immediately update time stamps.
+  NVIC_SetPriority(TC4_IRQn, 0);
   NVIC_EnableIRQ(TC4_IRQn);
 }
 

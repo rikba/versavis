@@ -12,6 +12,11 @@
 
 class Tcc0Synced : public TccSynced {
 public:
+  struct PpsPin {
+    uint8_t group;
+    uint8_t pin;
+  };
+
   // Singleton implementation.
   inline static Tcc0Synced &getInstance() {
     static Tcc0Synced instance;
@@ -20,10 +25,15 @@ public:
   Tcc0Synced(Tcc0Synced const &) = delete;
   void operator=(Tcc0Synced const &) = delete;
 
+  void setupPps(const bool invert);
+
 private:
   Tcc0Synced();
+  void setupPpsEvsys() const;
 
   void setupExposureEvsys() const override;
+
+  const PpsPin pps_pin_;
 };
 
 #endif

@@ -1,0 +1,26 @@
+////////////////////////////////////////////////////////////////////////////////
+//  February 2020
+//  Author: Rik Bähnemann <brik@ethz.ch>
+////////////////////////////////////////////////////////////////////////////////
+//  ExternalClock.h
+////////////////////////////////////////////////////////////////////////////////
+//
+////////////////////////////////////////////////////////////////////////////////
+
+#ifndef Sensors_ExternalClock_h
+#define Sensors_ExternalClock_h
+
+#include "sensors/SensorSynced.h"
+#include <versavis/ExtClkFilterState.h>
+
+class ExternalClock : public SensorSynced {
+public:
+  ExternalClock();
+  void setupRos(ros::NodeHandle *nh, const char *topic) override;
+  void publish() override;
+
+private:
+  versavis::ExtClkFilterState *filter_state_msg_ = NULL;
+};
+
+#endif

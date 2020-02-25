@@ -10,6 +10,7 @@
 
 #include "sensors/Adis16448BmlzTriggered.h"
 #include "sensors/CamSyncedExposure.h"
+#include "sensors/ExternalClock.h"
 
 #include <Arduino.h>
 
@@ -19,6 +20,7 @@ ros::NodeHandle *nh = NULL;
 // Sensors.
 Adis16448BmlzTriggered *imu = NULL;
 CamSyncedExposure *cam0 = NULL;
+ExternalClock *ext_clock = NULL;
 
 void setup() {
 #ifndef DEBUG
@@ -33,12 +35,15 @@ void setup() {
   DEBUG_PRINTLN("Setup.");
 
   // Sensors
-  static Adis16448BmlzTriggered adis_16448(&Tc3Synced::getInstance(), 500,
+  static Adis16448BmlzTriggered adis_16448(&Tc3Synced::getInstance(), 100,
                                            PORTA, 13, 10);
   imu = &adis_16448;
 
   static CamSyncedExposure bfly(&Tcc0Synced::getInstance(), 15, false, true);
   cam0 = &bfly;
+
+  static ExternalClock gnss;
+  ext_clock = &gnss;
 
   // ROS
   static char *rtc_topic = "/versavis/rtc";
@@ -52,11 +57,15 @@ void setup() {
 
   static char *bfly_topic = "/versavis/bfly/image";
   cam0->setupRos(nh, bfly_topic);
+
+  static char *ext_clock_topic = "/versavis/gnss/time_sync";
+  ext_clock->setupRos(nh, ext_clock_topic);
 }
 
 void loop() {
   imu->publish();
   cam0->publish();
+  ext_clock->publish();
 
   RtcSync::getInstance().publish();
 
