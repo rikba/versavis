@@ -121,9 +121,6 @@ protected:
   bool data_ready_ = false;
   uint8_t dr_port_group_ = 0;
   uint8_t dr_pin_ = 0;
-
-  // Free running state.
-  uint32_t ovf_ticks_since_sync_ = 0;
 };
 
 #endif
