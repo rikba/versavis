@@ -63,13 +63,18 @@
 #define ILLUMINATION_PIN 26
 #endif
 
-/* ----- RTC controle ----- */
+/* ----- RTC control ----- */
 #define RTC_GCLKIN_10MHZ
 #ifdef RTC_GCLKIN_10MHZ
 #define RTC_FREQ 10e6
+#define RTC_FREQ_STABILITY 0.014 // PPM / delta deg C
+#define RTC_MAX_SKEW 5           // PPM
 #else
 #define RTC_FREQ 32768
+#define RTC_FREQ_STABILITY 0.04 // PPM / delta deg C
+#define RTC_MAX_SKEW 20         // PPM
 #endif
+#define RTC_INITIAL_OFFSET 0.5 // [s]
 
 /* ----- GNSS time synchronization ----- */
 // Activation of GNSS time synchronization.
@@ -77,7 +82,8 @@
 #ifdef GNSS_SYNC
 #define GNSS_SYNC_UART Serial
 #define GNSS_SYNC_BAUD 115200
-#define GNSS_SYNC_GCLKIN_10MHZ
+#define GNSS_PPS_ACCURACY 60.0e-9
+//#define GNSS_SYNC_GCLKIN_10MHZ
 //#define GNSS_SYNC_DFLL48M
 #endif
 

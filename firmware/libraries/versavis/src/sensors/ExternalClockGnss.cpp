@@ -3,6 +3,8 @@
 #include "helper.h"
 #include <RTClib.h>
 
+#include "helper.h"
+
 ExternalClockGnss::ExternalClockGnss(Uart *uart, const uint32_t baud_rate)
     : ExternalClock(), uart_(uart) {
   DEBUG_PRINT("[ExternalClockGnss]: Setup serial connection with baud rate ");
@@ -12,16 +14,17 @@ ExternalClockGnss::ExternalClockGnss(Uart *uart, const uint32_t baud_rate)
   }
 }
 
-ExternalClockGnss::RemoteTimeStatus ExternalClockGnss::setRemoteTime() {
+ExternalClock::RemoteTimeStatus ExternalClockGnss::setRemoteTime() {
   RemoteTimeStatus result = RemoteTimeStatus::kWaiting;
 
   // Try to get time 200ms after last PPS and 200ms before next PPS.
   if (clock_msg_) {
-    auto duration_since_pulse = computeDuration(
-        clock_msg_->receive_time, RtcSync::getInstance().getTimeNow());
+    auto now = RtcSync::getInstance().getTimeNow();
+    auto duration_since_pulse = computeDuration(clock_msg_->receive_time, now);
+
     auto duration_sec = duration_since_pulse.toSec();
 
-    if (duration_sec > 0.8) {
+    if (duration_sec < 0.0 || duration_sec > 0.8) {
       result = RemoteTimeStatus::kTimeout;
     } else if (duration_sec > 0.2) {
       result = RemoteTimeStatus::kReading;

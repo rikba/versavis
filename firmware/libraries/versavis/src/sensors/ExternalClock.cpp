@@ -27,33 +27,40 @@ void ExternalClock::setupRos(ros::NodeHandle *nh, const char *topic) {
 
 void ExternalClock::publish() {
   switch (state_) {
-  case State::kWaitForPulse:
+  case State::kWaitForPulse: {
     if (timer_ && clock_msg_ &&
         static_cast<TccSynced *>(timer_)->getTimeLastPps(
             &clock_msg_->receive_time, &clock_msg_->pps_cnt)) {
       state_ = State::kWaitForRemoteTime;
     }
     break;
-  case State::kWaitForRemoteTime:
-    if (setRemoteTime() == RemoteTimeStatus::kReceived) {
+  }
+  case State::kWaitForRemoteTime: {
+    auto remote_time_status = setRemoteTime();
+    if (remote_time_status == RemoteTimeStatus::kReceived) {
       state_ = State::kUpdateFilter;
-    } else if (setRemoteTime() == RemoteTimeStatus::kTimeout) {
+    } else if (remote_time_status == RemoteTimeStatus::kTimeout) {
       state_ = State::kWaitForPulse;
     }
     break;
-  case State::kUpdateFilter:
+  }
+  case State::kUpdateFilter: {
     updateFilter();
     controlClock();
     state_ = State::kPublishFilterState;
     break;
-  case State::kPublishFilterState:
+  }
+  case State::kPublishFilterState: {
     if (publisher_) {
       publisher_->publish(clock_msg_);
     }
     state_ = State::kWaitForPulse;
-  default:
+    break;
+  }
+  default: {
     state_ = State::kWaitForPulse;
     break;
+  }
   }
 }
 
@@ -67,19 +74,39 @@ void ExternalClock::updateFilter() {
   // https://github.com/ethz-asl/cuckoo_time_translator
   // https://github.com/ethz-asl/rosserial/blob/feature/proper-time-sync/rosserial_client/src/ros_lib/ros/node_handle.h#L344-L417
 
-  if (clock_msg_->last_update.sec == 0 && clock_msg_->last_update.nsec == 0) {
+  if (last_update_.sec == 0 && last_update_.nsec == 0) {
     // Initialize filter.
-    clock_msg_->x[0] =
-        computeDuration(clock_msg_->remote_time, clock_msg_->receive_time)
-            .toSec();
+    auto offset =
+        computeDuration(clock_msg_->remote_time, clock_msg_->receive_time);
+    measured_offset_s_ = offset.toSec();
+    clock_msg_->x[0] = toUSec(offset);
     clock_msg_->x[1] = 0.0;
-    clock_msg_->P[0] = pow(RTC_INITIAL_OFFSET, 2.0);
+    clock_msg_->P[0] = pow(RTC_INITIAL_OFFSET * 1.0e6, 2.0);
     clock_msg_->P[1] = 0.0;
     clock_msg_->P[2] = 0.0;
     clock_msg_->P[3] = pow(RTC_MAX_SKEW, 2.0);
   } else {
     // Propagate filter.
     // Prediction.
+    clock_msg_->dt =
+        computeDuration(last_update_, clock_msg_->receive_time).toSec();
+    float x_prev[2];
+    memcpy(x_prev, clock_msg_->x, sizeof(x_prev));
+    float P_prev[4];
+    memcpy(P_prev, clock_msg_->P, sizeof(P_prev));
+
+    // x(k) = F(k) * x(k-1)
+    clock_msg_->x[0] = clock_msg_->dt * x_prev[1] + x_prev[0];
+    clock_msg_->x[1] = x_prev[1];
+
+    // P(k) = F(k) * P(k-1) * F(k).transpose + dt * Q
+    clock_msg_->P[0] =
+        P_prev[0] + P_prev[2] * clock_msg_->dt + Q_[0] * clock_msg_->dt +
+        clock_msg_->dt * (P_prev[1] + P_prev[3] * clock_msg_->dt);
+    clock_msg_->P[1] = P_prev[1] + P_prev[3] * clock_msg_->dt;
+    clock_msg_->P[2] = P_prev[2] + P_prev[3] * clock_msg_->dt;
+    clock_msg_->P[3] = P_prev[3] + Q_[1] * clock_msg_->dt;
+
     // Measurement.
   }
 
@@ -94,16 +121,16 @@ void ExternalClock::updateFilter() {
   // filter_state_.x += K * y;
   // filter_state_.P = (1.0 - K * kH) * filter_state_.P;
 
-  clock_msg_->last_update = clock_msg_->receive_time;
+  last_update_ = clock_msg_->receive_time;
 }
 
 void ExternalClock::controlClock() {
   // Hard reset RTC if more than one second off.
   // TODO(rikba): Replace measurement with offset estimation.
-  if (abs(clock_msg_->x[0]) > 1.0) {
+  if (abs(measured_offset_s_) > 1.0) {
     ros::Time reset_time = RtcSync::getInstance().getTimeNow();
     ros::Duration offset;
-    offset.fromSec(clock_msg_->x[0]);
+    offset.fromSec(measured_offset_s_);
     reset_time -= offset;
     RtcSync::getInstance().setTime(reset_time);
     resetFilter();
@@ -116,4 +143,5 @@ void ExternalClock::resetFilter() {
   if (clock_msg_) {
     *clock_msg_ = versavis::ExtClk();
   }
+  last_update_ = ros::Time();
 }
