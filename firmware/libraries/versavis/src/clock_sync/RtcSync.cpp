@@ -205,6 +205,40 @@ void RtcSync::setComp0(const uint32_t comp_0) const {
   }
 }
 
+void RtcSync::setCount(const uint32_t count) const {
+  while (RTC->MODE0.STATUS.bit.SYNCBUSY) {
+  }
+  RTC->MODE0.COUNT.reg = count;
+  while (RTC->MODE0.STATUS.bit.SYNCBUSY) {
+  }
+  RTC->MODE0.READREQ.reg |=
+      RTC_READREQ_RREQ | RTC_READREQ_RCONT | 0x0010; // Continuous reading
+  while (RTC->MODE0.STATUS.bit.SYNCBUSY) {
+  }
+}
+
+void RtcSync::setNSec(const uint32_t nsec) {
+  uint32_t ticks = nsec / ns_per_tick_;
+  setCount(ticks);
+}
+
+void RtcSync::setTime(const ros::Time &time) {
+  while (RTC->MODE0.STATUS.bit.SYNCBUSY) {
+  }
+  RTC->MODE0.CTRL.reg &= ~RTC_MODE0_CTRL_ENABLE; // Disable RTC.
+  while (RTC->MODE0.STATUS.bit.SYNCBUSY) {
+  }
+
+  setSec(time.sec);
+  setNSec(time.nsec);
+
+  while (RTC->MODE0.STATUS.bit.SYNCBUSY) {
+  }
+  RTC->MODE0.CTRL.reg |= RTC_MODE0_CTRL_ENABLE; // Enable RTC.
+  while (RTC->MODE0.STATUS.bit.SYNCBUSY) {
+  }
+}
+
 ros::Time RtcSync::computeTime(const uint32_t secs, const uint32_t ticks,
                                uint16_t prescaler) const {
   ros::Time time(secs, ticks * prescaler * ns_per_tick_);

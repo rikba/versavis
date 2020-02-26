@@ -58,8 +58,7 @@ public:
   ros::Time getTimeNow() const;
 
   // Setters
-  inline uint32_t setSecs(const uint32_t secs) { secs_ = secs; }
-  void setComp0(const uint32_t comp_0) const;
+  void setTime(const ros::Time &time);
 
   inline void incrementSecs() {
     secs_++;
@@ -79,6 +78,11 @@ private:
   void setupGenericClock4() const;
   void setupEvsys() const;
   void setupRtc() const;
+
+  inline void setSec(const uint32_t sec) { secs_ = sec; }
+  void setNSec(const uint32_t nsec);
+  void setComp0(const uint32_t comp_0) const;
+  void setCount(const uint32_t count) const;
 
   // ROS
   ros::Publisher *rtc_pub_ = NULL;

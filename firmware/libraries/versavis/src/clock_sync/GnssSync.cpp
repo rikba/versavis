@@ -42,7 +42,6 @@ void GnssSync::resetFilterState() {
   const uint16_t jitter = 1.0;       // Jitter per second.
   const float freq_stability = 0.04; // PPM / delta deg C
 #endif
-#
   // Assume temperature changes 1 deg / minute is sigma.
   filter_state_.Q = pow(freq_stability / 60.0, 2.0);
   // Assume jitter + discretization error + interrupt cycles is sigma.
