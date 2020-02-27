@@ -71,8 +71,7 @@ void ExternalClock::updateFilter() {
   // Sommer, Hannes, et al. "A low-cost system for high-rate, high-accuracy
   // temporal calibration for LIDARs and cameras." 2017 IEEE/RSJ International
   // Conference on Intelligent Robots and Systems (IROS). IEEE, 2017.
-  // https://github.com/ethz-asl/cuckoo_time_translator
-  // https://github.com/ethz-asl/rosserial/blob/feature/proper-time-sync/rosserial_client/src/ros_lib/ros/node_handle.h#L344-L417
+  // https://github.com/ethz-asl/cuckoo_time_translator/blob/master/cuckoo_time_translator_algorithms/src/KalmanOwt.cpp#L51-L88
 
   if (last_update_.sec == 0 && last_update_.nsec == 0) {
     // Initialize filter.
@@ -90,36 +89,36 @@ void ExternalClock::updateFilter() {
     // Prediction.
     clock_msg_->dt =
         computeDuration(last_update_, clock_msg_->receive_time).toSec();
-    float x_prev[2];
-    memcpy(x_prev, clock_msg_->x, sizeof(x_prev));
-    float P_prev[4];
-    memcpy(P_prev, clock_msg_->P, sizeof(P_prev));
 
     // x(k) = F(k) * x(k-1)
-    clock_msg_->x[0] = clock_msg_->dt * x_prev[1] + x_prev[0];
-    clock_msg_->x[1] = x_prev[1];
+    clock_msg_->x[0] += clock_msg_->dt * clock_msg_->x[1];
 
     // P(k) = F(k) * P(k-1) * F(k).transpose + dt * Q
-    clock_msg_->P[0] =
-        P_prev[0] + P_prev[2] * clock_msg_->dt + Q_[0] * clock_msg_->dt +
-        clock_msg_->dt * (P_prev[1] + P_prev[3] * clock_msg_->dt);
-    clock_msg_->P[1] = P_prev[1] + P_prev[3] * clock_msg_->dt;
-    clock_msg_->P[2] = P_prev[2] + P_prev[3] * clock_msg_->dt;
-    clock_msg_->P[3] = P_prev[3] + Q_[1] * clock_msg_->dt;
+    clock_msg_->P[0] +=
+        Q_[0] * clock_msg_->dt + clock_msg_->P[2] * clock_msg_->dt +
+        clock_msg_->dt * (clock_msg_->P[1] + clock_msg_->P[3] * clock_msg_->dt);
+    clock_msg_->P[1] += clock_msg_->P[3] * clock_msg_->dt;
+    clock_msg_->P[2] += clock_msg_->P[3] * clock_msg_->dt;
+    clock_msg_->P[3] += Q_[1] * clock_msg_->dt;
 
     // Measurement.
-  }
+    const float S_inv = 1.0 / (R_ + clock_msg_->P[0]);
+    float K[2];
+    K[0] = clock_msg_->P[0] * S_inv;
+    K[1] = clock_msg_->P[2] * S_inv;
 
-  // // Prediction.
-  // float dt = filter_state_.pps_cnt - filter_state_.pps_cnt_prev;
-  // filter_state_.P = filter_state_.P + dt * filter_state_.Q;
-  // // Measurement.
-  // float y = filter_state_.z - kH * filter_state_.x;
-  // float S_inv = 1.0 / (kH * filter_state_.P * kH + filter_state_.R);
-  // float K = filter_state_.P * kH * S_inv;
-  //
-  // filter_state_.x += K * y;
-  // filter_state_.P = (1.0 - K * kH) * filter_state_.P;
+    const float residual = toUSec(computeDuration(clock_msg_->remote_time,
+                                                   clock_msg_->receive_time)) -
+                            clock_msg_->x[0];
+
+    clock_msg_->x[0] += K[0] * residual;
+    clock_msg_->x[1] += K[1] * residual;
+
+    clock_msg_->P[2] -= K[1] * clock_msg_->P[0];
+    clock_msg_->P[3] -= K[1] * clock_msg_->P[1];
+    clock_msg_->P[0] -= K[0] * clock_msg_->P[0];
+    clock_msg_->P[1] -= K[0] * clock_msg_->P[1];
+  }
 
   last_update_ = clock_msg_->receive_time;
 }
