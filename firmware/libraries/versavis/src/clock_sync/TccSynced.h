@@ -45,24 +45,30 @@ public:
 
     inline bool getTime(ros::Time *time, ros::Duration *exp,
                         uint32_t *img_num) {
-      bool valid = has_image_;
-      has_image_ = false; // Invalidate image.
-      ros::Duration duration = computeDuration(start_time_, stop_time_);
-      valid &=
-          ((duration.sec > 0) || ((duration.sec == 0) && (duration.nsec > 0)));
+      if (has_image_) {
+        has_image_ = false;
+        ros::Duration duration = computeDuration(start_time_, stop_time_);
+        bool valid = ((duration.sec > 0) ||
+                      ((duration.sec == 0) && (duration.nsec > 0)));
 
-      if (exp && valid) {
-        *exp = duration;
+        if (exp && valid) {
+          *exp = duration;
+        }
+
+        if (time && valid) {
+          *time = start_time_;
+          duration *= 0.5;
+          *time += duration;
+        }
+
+        if (img_num && valid) {
+          *img_num = image_counter_;
+        }
+
+        return valid;
+      } else {
+        return false;
       }
-      if (time && valid) {
-        *time = start_time_;
-        duration *= 0.5;
-        *time += duration;
-      }
-      if (img_num && valid) {
-        *img_num = image_counter_;
-      }
-      return valid;
     }
 
     bool invert_ = false;
@@ -91,16 +97,16 @@ public:
     }
 
     inline bool getTime(ros::Time *time, uint32_t *pps_num) {
-      if (has_pps_ && time) {
-        *time = pps_time_;
+      if (has_pps_) {
+        has_pps_ = false;
+        if (time)
+          *time = pps_time_;
+        if (pps_num)
+          *pps_num = pps_counter_;
+        return true;
+      } else {
+        return false;
       }
-      if (has_pps_ && pps_num) {
-        *pps_num = pps_counter_;
-      }
-
-      bool success = has_pps_;
-      has_pps_ = false;
-      return success;
     }
 
   private:

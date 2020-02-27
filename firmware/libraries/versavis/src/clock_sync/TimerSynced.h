@@ -54,16 +54,20 @@ public:
     }
 
     inline bool getTime(ros::Time *time, uint32_t *trigger_num) {
-      if (is_triggered_ && time) {
-        *time = trigger_time_;
-      }
-      if (is_triggered_ && trigger_num) {
-        *trigger_num = trigger_counter_;
-      }
+      if (is_triggered_) {
+        is_triggered_ = false;
+        if (time) {
+          *time = trigger_time_;
+        }
 
-      bool success = is_triggered_;
-      is_triggered_ = false;
-      return success;
+        if (trigger_num) {
+          *trigger_num = trigger_counter_;
+        }
+
+        return true;
+      } else {
+        return false;
+      }
     }
 
     bool invert_ = false;
