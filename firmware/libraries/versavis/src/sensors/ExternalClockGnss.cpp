@@ -34,8 +34,19 @@ ExternalClock::RemoteTimeStatus ExternalClockGnss::setRemoteTime() {
   if (result == RemoteTimeStatus::kReading) {
     while (uart_ && uart_->available()) {
       auto nmea_result = nmea_parser_.parseChar(uart_->read());
-      if ((nmea_result == NmeaParser::SentenceType::kGpZda) &&
-          (nmea_parser_.getGpZdaMessage().hundreths == 0)) {
+      bool received_time = (nmea_result == NmeaParser::SentenceType::kGpZda) &&
+                           (nmea_parser_.getGpZdaMessage().hundreths == 0);
+      if (received_time && result == RemoteTimeStatus::kReceived) {
+        // Ensure that the time on the serial is definitly the current time.
+        // Received a second time from the buffer. Clear buffer and reject time.
+        // TODO(rikba): This rejection scheme only works if there definitly is a
+        // second time on the buffer. Could fail if the GNSS receiver outputs
+        // more than GPZDA message.
+        while (uart_->available())
+          uart_->read(); // Clear UART buffer.
+        result = RemoteTimeStatus::kTimeout;
+        return result;
+      } else if (received_time) {
         result = RemoteTimeStatus::kReceived;
       }
     }

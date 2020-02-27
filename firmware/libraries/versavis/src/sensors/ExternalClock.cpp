@@ -73,7 +73,7 @@ void ExternalClock::updateFilter() {
   // Conference on Intelligent Robots and Systems (IROS). IEEE, 2017.
   // https://github.com/ethz-asl/cuckoo_time_translator/blob/master/cuckoo_time_translator_algorithms/src/KalmanOwt.cpp#L51-L88
 
-  if (last_update_.sec == 0 && last_update_.nsec == 0) {
+  if (isInitializing()) {
     // Initialize filter.
     auto offset =
         computeDuration(clock_msg_->remote_time, clock_msg_->receive_time);
@@ -87,8 +87,7 @@ void ExternalClock::updateFilter() {
   } else {
     // Propagate filter.
     // Prediction.
-    clock_msg_->dt =
-        computeDuration(last_update_, clock_msg_->receive_time).toSec();
+    clock_msg_->dt = computeDt();
 
     // x(k) = F(k) * x(k-1)
     clock_msg_->x[0] += clock_msg_->dt * clock_msg_->x[1];
@@ -101,15 +100,15 @@ void ExternalClock::updateFilter() {
     clock_msg_->P[2] += clock_msg_->P[3] * clock_msg_->dt;
     clock_msg_->P[3] += Q_[1] * clock_msg_->dt;
 
-    // Measurement.
+    // Measurement update.
     const float S_inv = 1.0 / (R_ + clock_msg_->P[0]);
     float K[2];
     K[0] = clock_msg_->P[0] * S_inv;
     K[1] = clock_msg_->P[2] * S_inv;
 
     const float residual = toUSec(computeDuration(clock_msg_->remote_time,
-                                                   clock_msg_->receive_time)) -
-                            clock_msg_->x[0];
+                                                  clock_msg_->receive_time)) -
+                           clock_msg_->x[0];
 
     clock_msg_->x[0] += K[0] * residual;
     clock_msg_->x[1] += K[1] * residual;

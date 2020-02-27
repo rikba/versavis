@@ -41,6 +41,18 @@ private:
     ros::Duration duration(sec, nsec);
   };
 
+  inline float computeDt() const {
+    if (clock_msg_) {
+      return computeDuration(last_update_, clock_msg_->receive_time).toSec();
+    } else {
+      return 0.0;
+    }
+  }
+
+  inline bool isInitializing() const {
+    return last_update_.sec == 0 && last_update_.nsec == 0;
+  }
+
   enum class State {
     kWaitForPulse,
     kWaitForRemoteTime,

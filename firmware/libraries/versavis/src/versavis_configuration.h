@@ -82,7 +82,7 @@
 #ifdef GNSS_SYNC
 #define GNSS_SYNC_UART Serial
 #define GNSS_SYNC_BAUD 115200
-#define GNSS_PPS_ACCURACY 60.0e-9
+#define GNSS_PPS_ACCURACY 60.0e-9 // [s]
 //#define GNSS_SYNC_GCLKIN_10MHZ
 //#define GNSS_SYNC_DFLL48M
 #endif
