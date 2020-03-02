@@ -7,3 +7,7 @@ float32[4] P         # [P11, P12, P21, P22]
 float32 dt           # The time since the last filter update.
 
 uint32 pps_cnt       # The sequential number of the PPS signal.
+
+float32 u            # The clock control voltage.
+float32 e            # The clock control error.
+float32 i            # The clock control integrator.

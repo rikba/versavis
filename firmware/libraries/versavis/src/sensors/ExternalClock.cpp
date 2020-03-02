@@ -134,13 +134,20 @@ void ExternalClock::controlClock() {
     RtcSync::getInstance().setTime(reset_time);
     resetFilter();
   } else {
-    // TODO(rikba): Implement clock control.
+    // Skew control.
+    clock_msg_->i += clock_msg_->e * clock_msg_->dt; // Update integrator.
+    clock_msg_->e = -clock_msg_->x[1] * RTC_CTRL_RANGE_INV; // Update error.
+    clock_msg_->u = RTC_CTRL_KP * clock_msg_->e + RTC_CTRL_KI * clock_msg_->i;
+    // Clamp control input.
+    clock_msg_->u = clock_msg_->u > 1.0 ? 1.0 : clock_msg_->u;
+    clock_msg_->u = clock_msg_->u < -1.0 ? -1.0 : clock_msg_->u;
   }
 }
 
 void ExternalClock::resetFilter() {
   if (clock_msg_) {
     *clock_msg_ = versavis::ExtClk();
+    clock_msg_->u = RTC_CTRL_NOM;
   }
   last_update_ = ros::Time();
 }

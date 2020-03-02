@@ -67,8 +67,12 @@
 #define RTC_GCLKIN_10MHZ
 #ifdef RTC_GCLKIN_10MHZ
 #define RTC_FREQ 10e6
-#define RTC_FREQ_STABILITY 0.014 // PPM / delta deg C
-#define RTC_MAX_SKEW 5           // PPM
+#define RTC_FREQ_STABILITY 0.014   // PPM / delta deg C
+#define RTC_MAX_SKEW 5             // PPM
+#define RTC_CTRL_RANGE_INV 1 / 5.0 // 1 / PPM
+#define RTC_CTRL_NOM 1.5           // Nominal control voltage
+#define RTC_CTRL_KP 1.0            // Proportional control gain.
+#define RTC_CTRL_KI 0.0            // Integral control gain.
 #else
 #define RTC_FREQ 32768
 #define RTC_FREQ_STABILITY 0.04 // PPM / delta deg C
@@ -83,8 +87,6 @@
 #define GNSS_SYNC_UART Serial
 #define GNSS_SYNC_BAUD 115200
 #define GNSS_PPS_ACCURACY 60.0e-9 // [s]
-//#define GNSS_SYNC_GCLKIN_10MHZ
-//#define GNSS_SYNC_DFLL48M
 #endif
 
 /* ----- Debug prints. ----- */
