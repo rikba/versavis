@@ -57,10 +57,10 @@ void Adis16448BmlzTriggered::setupRos(ros::NodeHandle *nh,
 
 void Adis16448BmlzTriggered::publish() {
   if (timer_ && imu_msg_) {
-    timer_->computeTimeLastTrigger(&imu_msg_->time.data, &imu_msg_->number);
+    timer_->getTimeLastTrigger(&imu_msg_->time.data, &imu_msg_->number);
   }
 
-  if (imu_msg_ && timer_ && timer_->hasDataReady()) {
+  if (imu_msg_ && timer_ && timer_->getDataReady(NULL)) {
     int16_t *imu_data = imu_.sensorReadAllCRC();
 
     if ((imu_.checksum(imu_data) == imu_data[12])) {

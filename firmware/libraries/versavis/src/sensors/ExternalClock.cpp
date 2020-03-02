@@ -1,3 +1,4 @@
+#include "clock_sync/RtcSync.h"
 #include "clock_sync/Tcc0Synced.h"
 #include "sensors/ExternalClock.h"
 

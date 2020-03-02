@@ -27,7 +27,7 @@ Tcc0Synced::Tcc0Synced()
   // This is a 32 bit counter.
   top_ = 0xFFFFFFFF;
   // Enable interrupts.
-  NVIC_SetPriority(TCC0_IRQn, 1);
+  NVIC_SetPriority(TCC0_IRQn, 0);
   NVIC_EnableIRQ(TCC0_IRQn);
 }
 

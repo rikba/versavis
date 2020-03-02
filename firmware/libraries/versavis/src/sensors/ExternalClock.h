@@ -10,6 +10,7 @@
 #ifndef Sensors_ExternalClock_h
 #define Sensors_ExternalClock_h
 
+#include "clock_sync/MeasurementStateExposure.h"
 #include "sensors/SensorSynced.h"
 #include <versavis/ExtClk.h>
 

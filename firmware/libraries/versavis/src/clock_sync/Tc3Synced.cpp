@@ -11,7 +11,7 @@ Tc3Synced::Tc3Synced()
                        .drvstr = TC3_MFRQ_DRVSTR},
                (TcCount16 *)TC3) {
   // Enable interrupts.
-  NVIC_SetPriority(TC3_IRQn, 1);
+  NVIC_SetPriority(TC3_IRQn, 0);
   NVIC_EnableIRQ(TC3_IRQn);
 }
 

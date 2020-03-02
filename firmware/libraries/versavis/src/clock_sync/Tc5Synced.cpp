@@ -12,7 +12,7 @@ Tc5Synced::Tc5Synced()
                        .drvstr = TC5_MFRQ_DRVSTR},
                (TcCount16 *)TC5) {
   // Enable interrupts.
-  NVIC_SetPriority(TC5_IRQn, 1);
+  NVIC_SetPriority(TC5_IRQn, 0);
   NVIC_EnableIRQ(TC5_IRQn);
 }
 

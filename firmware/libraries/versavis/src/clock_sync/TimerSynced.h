@@ -22,7 +22,8 @@
 
 #include <ros.h>
 
-#include "clock_sync/Timestamp.h"
+#include "clock_sync/MeasurementState.h"
+#include "clock_sync/MeasurementStateStamped.h"
 #include "versavis_configuration.h"
 
 enum class InterruptLogic {
@@ -43,43 +44,6 @@ public:
     bool drvstr;
   };
 
-  class TriggerState {
-  public:
-    inline void syncRtc() { trigger_.syncRtc(); }
-    inline void overflow() { trigger_.overflow(); }
-    inline void trigger(const uint8_t prescaler, const uint32_t top) {
-      trigger_counter_++;
-      trigger_.setTicks(0);
-      is_triggered_ = trigger_.computeTime(prescaler, top, &trigger_time_);
-    }
-
-    inline bool getTime(ros::Time *time, uint32_t *trigger_num) {
-      if (is_triggered_) {
-        is_triggered_ = false;
-        if (time) {
-          *time = trigger_time_;
-        }
-
-        if (trigger_num) {
-          *trigger_num = trigger_counter_;
-        }
-
-        return true;
-      } else {
-        return false;
-      }
-    }
-
-    bool invert_ = false;
-
-  private:
-    Timestamp trigger_;
-    ros::Time trigger_time_;
-    bool is_triggered_ = false;
-
-    uint32_t trigger_counter_ = 0xFFFFFFFF;
-  };
-
   TimerSynced(const MfrqPin &mfrq_pin);
 
   // Setup the timer.
@@ -91,11 +55,9 @@ public:
   void handleEic();
 
   // Returns true only once per trigger.
-  inline bool computeTimeLastTrigger(ros::Time *time, uint32_t *trigger_num) {
-    return trigger_state_.getTime(time, trigger_num);
-  }
+  bool getTimeLastTrigger(ros::Time *time, uint32_t *num);
 
-  bool hasDataReady(); // resets data_ready_ flag.
+  bool getDataReady(uint32_t *num); // Returns true only once per data ready.
 
 protected:
   void setupWaveOutPin() const;
@@ -110,16 +72,17 @@ protected:
   // States
   uint8_t prescaler_ = 0;
   uint32_t top_ = 0xFFFF; // Default 16 bit counter.
+  uint32_t ticks_ = 0;    // Ticks since retrigger.
 
   // TODO(rikba): Make these states pointers.
   // Trigger state.
-  TriggerState trigger_state_;
+  MeasurementStateStamped trigger_state_;
 
   // Trigger pin.
   const MfrqPin mfrq_pin_;
 
   // Data ready state.
-  bool data_ready_ = false;
+  MeasurementState data_ready_;
   uint8_t dr_port_group_ = 0;
   uint8_t dr_pin_ = 0;
 };

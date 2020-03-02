@@ -105,18 +105,19 @@ void TcSynced::setupDataReady(const uint8_t port_group, const uint8_t pin,
 
 void TcSynced::handleInterrupt() {
   // Handle overflow before handling trigger event.
-  if (tc_->INTFLAG.bit.MC1) {
-    trigger_state_.syncRtc();
+  if (tc_->INTFLAG.bit.MC1 && tc_->INTFLAG.bit.OVF) {
+    tc_->INTFLAG.reg |= tc_->INTFLAG.bit.MC1;
+    tc_->INTFLAG.reg |= tc_->INTFLAG.bit.OVF;
+    ticks_ = 0; // Retrigger counter.
   } else if (tc_->INTFLAG.bit.OVF) {
-    trigger_state_.overflow();
+    tc_->INTFLAG.reg |= tc_->INTFLAG.bit.OVF;
+    ticks_ += top_ + 1; // Counter overflow.
+  } else if (tc_->INTFLAG.bit.MC0) {
+    tc_->INTFLAG.reg |= tc_->INTFLAG.bit.MC0;
+    if (getWaveOutPinValue() ^ trigger_state_.invert_) {
+      // Set new trigger timestamp.
+      trigger_state_.setTime(
+          RtcSync::getInstance().computeTime(ticks_, prescaler_));
+    }
   }
-
-  if (tc_->INTFLAG.bit.MC0 && (getWaveOutPinValue() ^ trigger_state_.invert_)) {
-    trigger_state_.trigger(prescaler_, top_);
-  }
-
-  // Clear flags.
-  tc_->INTFLAG.reg |= tc_->INTFLAG.bit.MC0;
-  tc_->INTFLAG.reg |= tc_->INTFLAG.bit.MC1;
-  tc_->INTFLAG.reg |= tc_->INTFLAG.bit.OVF;
 }

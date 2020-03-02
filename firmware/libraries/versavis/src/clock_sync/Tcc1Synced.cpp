@@ -19,7 +19,7 @@ Tcc1Synced::Tcc1Synced()
   // This is a 32 bit counter.
   top_ = 0xFFFFFFFF;
   // Enable interrupts.
-  NVIC_SetPriority(TCC1_IRQn, 1);
+  NVIC_SetPriority(TCC1_IRQn, 0);
   NVIC_EnableIRQ(TCC1_IRQn);
 }
 

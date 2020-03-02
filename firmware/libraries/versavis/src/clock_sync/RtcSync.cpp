@@ -182,7 +182,6 @@ void RtcSync::setupRtc() const {
   }
 
   // Enable RTC interrupt in controller at highest priority.
-  // Makes sure that seconds are updated before anyone is accessing it.
   NVIC_SetPriority(RTC_IRQn, 0);
   NVIC_EnableIRQ(RTC_IRQn);
 
@@ -239,15 +238,11 @@ void RtcSync::setTime(const ros::Time &time) {
   }
 }
 
-ros::Time RtcSync::computeTime(const uint32_t secs, const uint32_t ticks,
-                               uint16_t prescaler) const {
-  ros::Time time(secs, ticks * prescaler * ns_per_tick_);
+ros::Time RtcSync::computeTime(const uint32_t ticks,
+                               const uint8_t prescaler) const {
+  ros::Time time(secs_, ticks * kPrescalers[prescaler] * ns_per_tick_);
   ros::normalizeSecNSec(time.sec, time.nsec);
   return time;
-}
-
-ros::Time RtcSync::computeTime(const uint32_t ticks, uint16_t prescaler) const {
-  return computeTime(secs_, ticks, prescaler);
 }
 
 void RtcSync::computePwm(const uint16_t rate_hz, const uint32_t pulse_us,

@@ -144,19 +144,17 @@ bool TimerSynced::getWaveOutPinValue() const {
   return getPinValue(mfrq_pin_.group, mfrq_pin_.pin);
 }
 
-bool TimerSynced::hasDataReady() {
-  if (data_ready_) {
-    data_ready_ = false; // Reset data ready flag.
-    return true;
-  } else {
-    return false;
-  }
+bool TimerSynced::getTimeLastTrigger(ros::Time *time, uint32_t *num) {
+  return trigger_state_.getTime(time, num);
+}
+
+bool TimerSynced::getDataReady(uint32_t *num) {
+  return data_ready_.getDataReady(num);
 }
 
 void TimerSynced::handleEic() {
   if (EIC->INTFLAG.vec.EXTINT & (1 << (dr_pin_ % 16))) {
-    data_ready_ = true;
+    data_ready_.setMeasurement();
+    EIC->INTFLAG.reg |= EIC_INTFLAG_EXTINT(1 << (dr_pin_ % 16));
   }
-
-  EIC->INTFLAG.reg |= EIC_INTFLAG_EXTINT(1 << (dr_pin_ % 16));
 }
