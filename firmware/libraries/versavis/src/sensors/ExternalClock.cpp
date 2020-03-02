@@ -136,6 +136,9 @@ void ExternalClock::controlClock() {
   } else {
     // Skew control.
     clock_msg_->i += clock_msg_->e * clock_msg_->dt; // Update integrator.
+    clock_msg_->i = clock_msg_->i > 1.0 ? 1.0 : clock_msg_->i;
+    clock_msg_->i = clock_msg_->i < -1.0 ? -1.0 : clock_msg_->i;
+
     clock_msg_->e = -clock_msg_->x[1] * RTC_CTRL_RANGE_INV; // Update error.
     clock_msg_->u = RTC_CTRL_KP * clock_msg_->e + RTC_CTRL_KI * clock_msg_->i;
     // Clamp control input.
