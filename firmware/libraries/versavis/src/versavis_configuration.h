@@ -70,9 +70,10 @@
 #define RTC_FREQ_STABILITY 0.014   // PPM / delta deg C
 #define RTC_MAX_SKEW 5             // PPM
 #define RTC_CTRL_RANGE_INV 1 / 5.0 // 1 / PPM
-#define RTC_CTRL_NOM 1.5           // Nominal control voltage
-#define RTC_CTRL_KP 1.0            // Proportional control gain.
-#define RTC_CTRL_KI 0.0            // Integral control gain.
+#define RTC_CTRL_V_NOM 1.5         // Nominal control voltage
+#define RTC_CTRL_KP 8.0            // Proportional control gain.
+#define RTC_CTRL_KI 0.2            // Integral control gain.
+#define RTC_CTRL_I_MAX 0.3         // Integrator windup
 #else
 #define RTC_FREQ 32768
 #define RTC_FREQ_STABILITY 0.04 // PPM / delta deg C

@@ -11,3 +11,4 @@ uint32 pps_cnt       # The sequential number of the PPS signal.
 float32 u            # The clock control voltage.
 float32 e            # The clock control error.
 float32 i            # The clock control integrator.
+uint16 dac           # DAC command

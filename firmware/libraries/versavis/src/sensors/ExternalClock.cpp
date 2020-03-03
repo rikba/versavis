@@ -3,6 +3,29 @@
 #include "sensors/ExternalClock.h"
 
 ExternalClock::ExternalClock() : SensorSynced(&Tcc0Synced::getInstance()) {
+  // Setup DAC
+  // Connect PA2 pin to peripheral B (VOUT)
+  PORT->Group[PORTA].PMUX[2 >> 1].reg |= PORT_PMUX_PMUXE_B;
+  // Enable pin peripheral multiplexation
+  PORT->Group[PORTA].PINCFG[2].reg |= PORT_PINCFG_PMUXEN;
+
+  while (DAC->STATUS.bit.SYNCBUSY) {
+  }
+  DAC->CTRLA.bit.SWRST = 1; // Reset and disable DAC
+  while (DAC->STATUS.bit.SYNCBUSY) {
+  }
+
+  DAC->CTRLB.reg |= DAC_CTRLB_REFSEL_AVCC; // 3.3V reference.
+  DAC->CTRLB.reg |= DAC_CTRLB_EOEN;        // Enable voltage output.
+
+  DAC->DATA.reg |= computeDacData(RTC_CTRL_V_NOM); // 1.5V nominal current
+  while (DAC->STATUS.bit.SYNCBUSY) {
+  }
+
+  DAC->CTRLA.bit.ENABLE = 1; // Enable DAC
+  while (DAC->STATUS.bit.SYNCBUSY) {
+  }
+
   if (timer_) {
     const bool kInvert = false;
     static_cast<Tcc0Synced *>(timer_)->setupPps(kInvert);
@@ -136,21 +159,30 @@ void ExternalClock::controlClock() {
   } else {
     // Skew control.
     clock_msg_->i += clock_msg_->e * clock_msg_->dt; // Update integrator.
-    clock_msg_->i = clock_msg_->i > 1.0 ? 1.0 : clock_msg_->i;
-    clock_msg_->i = clock_msg_->i < -1.0 ? -1.0 : clock_msg_->i;
+    clock_msg_->i =
+        clock_msg_->i > RTC_CTRL_I_MAX ? RTC_CTRL_I_MAX : clock_msg_->i;
+    clock_msg_->i =
+        clock_msg_->i < -RTC_CTRL_I_MAX ? -RTC_CTRL_I_MAX : clock_msg_->i;
 
     clock_msg_->e = -clock_msg_->x[1] * RTC_CTRL_RANGE_INV; // Update error.
     clock_msg_->u = RTC_CTRL_KP * clock_msg_->e + RTC_CTRL_KI * clock_msg_->i;
     // Clamp control input.
     clock_msg_->u = clock_msg_->u > 1.0 ? 1.0 : clock_msg_->u;
     clock_msg_->u = clock_msg_->u < -1.0 ? -1.0 : clock_msg_->u;
+    clock_msg_->dac = computeDacData(RTC_CTRL_V_NOM + clock_msg_->u);
+  }
+  // Apply control.
+  while (DAC->STATUS.bit.SYNCBUSY) {
+  }
+  DAC->DATA.reg = clock_msg_->dac;
+  while (DAC->STATUS.bit.SYNCBUSY) {
   }
 }
 
 void ExternalClock::resetFilter() {
   if (clock_msg_) {
     *clock_msg_ = versavis::ExtClk();
-    clock_msg_->u = RTC_CTRL_NOM;
+    clock_msg_->dac = computeDacData(clock_msg_->u);
   }
   last_update_ = ros::Time();
 }

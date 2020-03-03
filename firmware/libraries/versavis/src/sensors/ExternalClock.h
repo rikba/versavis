@@ -54,6 +54,10 @@ private:
     return last_update_.sec == 0 && last_update_.nsec == 0;
   }
 
+  inline uint16_t computeDacData(const float v_out) const {
+    return static_cast<uint16_t>((v_out / 3.3) * 0x3FF) & 0x3FF;
+  }
+
   enum class State {
     kWaitForPulse,
     kWaitForRemoteTime,
