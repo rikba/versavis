@@ -156,26 +156,47 @@ void ExternalClock::controlClock() {
     reset_time -= offset;
     RtcSync::getInstance().setTime(reset_time);
     resetFilter();
-  } else {
-    // Skew control.
-    clock_msg_->i += clock_msg_->e * clock_msg_->dt; // Update integrator.
+  } else if (clock_msg_->dt > 0.0) {
+    // Calculate error terms.
+    clock_msg_->e = -clock_msg_->x[0] * RTC_CTRL_RANGE_INV / clock_msg_->dt;
+
+    clock_msg_->i *= RTC_CTRL_I_DECAY;
+    clock_msg_->i += clock_msg_->e * clock_msg_->dt;
     clock_msg_->i =
         clock_msg_->i > RTC_CTRL_I_MAX ? RTC_CTRL_I_MAX : clock_msg_->i;
     clock_msg_->i =
         clock_msg_->i < -RTC_CTRL_I_MAX ? -RTC_CTRL_I_MAX : clock_msg_->i;
 
-    clock_msg_->e = -clock_msg_->x[1] * RTC_CTRL_RANGE_INV; // Update error.
-    clock_msg_->u = RTC_CTRL_KP * clock_msg_->e + RTC_CTRL_KI * clock_msg_->i;
+    clock_msg_->d = -clock_msg_->x[1] * RTC_CTRL_RANGE_INV;
+
+    // Calculate control input.
+    clock_msg_->u = RTC_CTRL_KP * clock_msg_->e + RTC_CTRL_KD * clock_msg_->d +
+                    RTC_CTRL_KI * clock_msg_->i;
     // Clamp control input.
     clock_msg_->u = clock_msg_->u > 1.0 ? 1.0 : clock_msg_->u;
     clock_msg_->u = clock_msg_->u < -1.0 ? -1.0 : clock_msg_->u;
     clock_msg_->dac = computeDacData(RTC_CTRL_V_NOM + clock_msg_->u);
-  }
-  // Apply control.
-  while (DAC->STATUS.bit.SYNCBUSY) {
-  }
-  DAC->DATA.reg = clock_msg_->dac;
-  while (DAC->STATUS.bit.SYNCBUSY) {
+
+    // Apply clock stabilization.
+    while (DAC->STATUS.bit.SYNCBUSY) {
+    }
+    DAC->DATA.reg = clock_msg_->dac;
+    while (DAC->STATUS.bit.SYNCBUSY) {
+    }
+
+    // Control RTC offset.
+    if (fabsf(clock_msg_->x[0]) < RTC_CTRL_CONV_CRIT) {
+      if (counter_converged_ != RTC_CTRL_CONV_WINDOW)
+        counter_converged_++;
+    } else {
+      counter_converged_ = 0;
+    }
+    clock_msg_->sync = (counter_converged_ >= RTC_CTRL_CONV_WINDOW);
+    // if (clock_msg_->sync) {
+    //  RtcSync::getInstance().setOffset(
+    //      static_cast<int32_t>(clock_msg_->x[0] * 1.0e3));
+    //  clock_msg_->x[0] = 0;
+    //}
   }
 }
 
@@ -183,6 +204,7 @@ void ExternalClock::resetFilter() {
   if (clock_msg_) {
     *clock_msg_ = versavis::ExtClk();
     clock_msg_->dac = computeDacData(clock_msg_->u);
+    clock_msg_->sync = false;
   }
   last_update_ = ros::Time();
 }

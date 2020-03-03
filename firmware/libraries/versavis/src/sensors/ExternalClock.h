@@ -75,6 +75,7 @@ private:
 
   float measured_offset_s_ = 0.0;
   ros::Time last_update_;
+  uint8_t counter_converged_ = 0;
 };
 
 #endif
