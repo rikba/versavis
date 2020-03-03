@@ -71,9 +71,13 @@
 #define RTC_MAX_SKEW 5             // PPM
 #define RTC_CTRL_RANGE_INV 1 / 5.0 // 1 / PPM
 #define RTC_CTRL_V_NOM 1.5         // Nominal control voltage
-#define RTC_CTRL_KP 8.0            // Proportional control gain.
-#define RTC_CTRL_KI 0.2            // Integral control gain.
-#define RTC_CTRL_I_MAX 0.3         // Integrator windup
+#define RTC_CTRL_KP 1.0            // Proportional control gain.
+#define RTC_CTRL_KD 0.0            // Differential (skew) control gain.
+#define RTC_CTRL_KI 0.0            // Integral control gain.
+#define RTC_CTRL_I_MAX 1.0         // Integrator windup
+#define RTC_CTRL_I_DECAY 0.99      // Integrator decay
+#define RTC_CTRL_CONV_CRIT 1.0     // Skew convergence criterion [us]
+#define RTC_CTRL_CONV_WINDOW 10    // Window of converged values
 #else
 #define RTC_FREQ 32768
 #define RTC_FREQ_STABILITY 0.04 // PPM / delta deg C
