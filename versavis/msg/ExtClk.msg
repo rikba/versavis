@@ -11,4 +11,6 @@ uint32 pps_cnt       # The sequential number of the PPS signal.
 float32 u            # The clock control voltage.
 float32 e            # The clock control error.
 float32 i            # The clock control integrator.
+float32 d            # The clock control differential error (skew).
 uint16 dac           # DAC command
+bool sync            # True if clock skew is within RTC_CTRL_CONVERGENCE
