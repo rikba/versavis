@@ -308,8 +308,8 @@ uint8_t RtcSync::findMinPrescalerFrq(const uint16_t rate_hz,
 
 void RTC_Handler() {
   if (RTC->MODE0.INTFLAG.bit.CMP0 && RTC->MODE0.INTFLAG.bit.OVF) {
-    RTC->MODE0.INTFLAG.bit.CMP0 = 1;
-    RTC->MODE0.INTFLAG.bit.OVF = 1;
+    RTC->MODE0.INTFLAG.reg = RTC_MODE0_INTFLAG_CMP0;
+    RTC->MODE0.INTFLAG.reg = RTC_MODE0_INTFLAG_OVF;
     RtcSync::getInstance().incrementSecs();
   }
 }
