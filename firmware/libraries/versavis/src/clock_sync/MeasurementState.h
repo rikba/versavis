@@ -12,6 +12,8 @@
 
 #include <cstdint>
 
+#include "clock_sync/atomic.h"
+
 class MeasurementState {
 public:
   MeasurementState() {}
@@ -22,10 +24,14 @@ public:
   }
 
   bool getDataReady(volatile uint32_t *num) {
-    // Savely copy state.
-    auto dr_cpy = dr_;
-    dr_ = false;
-    auto num_cpy = num_;
+    // Savely copy state and invalidate data ready flag.
+    bool dr_cpy;
+    uint32_t num_cpy;
+    ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
+      dr_cpy = dr_;
+      dr_ = false;
+      num_cpy = num_;
+    }
 
     if (dr_cpy) {
       if (num) {

@@ -14,6 +14,7 @@
 #include <ros/time.h>
 
 #include "clock_sync/MeasurementState.h"
+#include "clock_sync/atomic.h"
 
 class MeasurementStateStamped : public MeasurementState {
 public:
@@ -27,7 +28,11 @@ public:
 
   inline bool getTime(ros::Time *time, uint32_t *num) {
     // Savely copy state.
-    ros::Time time_cpy = {time_.sec, time_.nsec};
+    ros::Time time_cpy;
+    ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
+      time_cpy.sec = time_.sec;
+      time_cpy.nsec = time_.nsec;
+    }
 
     if (getDataReady(num)) {
       if (time) {

@@ -15,6 +15,7 @@
 #include <ros/time.h>
 
 #include "clock_sync/MeasurementStateStamped.h"
+#include "clock_sync/atomic.h"
 
 inline ros::Duration computeDuration(const ros::Time &start,
                                      const ros::Time &stop) {
@@ -42,7 +43,11 @@ public:
 
   inline bool getTime(ros::Time *time, uint32_t *num, ros::Duration *exp) {
     // Savely copy state.
-    ros::Duration exposure_cpy = {exposure_.sec, exposure_.nsec};
+    ros::Duration exposure_cpy;
+    ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
+      exposure_cpy.sec = exposure_.sec;
+      exposure_cpy.nsec = exposure_.nsec;
+    }
 
     if (MeasurementStateStamped::getTime(time, num)) {
       if (exp) {
