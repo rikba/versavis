@@ -149,19 +149,19 @@ bool TccSynced::getTimeLastExposure(ros::Time *time, uint32_t *num,
 
 void TccSynced::handleInterrupt() {
   // Handle retrigger.
-  if (tcc_->INTFLAG.bit.TRG && tcc_->INTFLAG.bit.OVF) {
-    tcc_->INTFLAG.reg |= tcc_->INTFLAG.bit.TRG;
-    tcc_->INTFLAG.reg |= tcc_->INTFLAG.bit.OVF;
+  if (tcc_->INTFLAG.bit.TRG) {
+    tcc_->INTFLAG.reg = TCC_INTFLAG_TRG;
+    tcc_->INTFLAG.reg = TCC_INTFLAG_OVF;
     ticks_ = 0; // Reset tick counter.
   }
   // Handle overflow.
   else if (tcc_->INTFLAG.bit.OVF) {
-    tcc_->INTFLAG.reg |= tcc_->INTFLAG.bit.OVF;
+    tcc_->INTFLAG.reg = TCC_INTFLAG_OVF;
     ticks_ += top_ + 1; // Increment tick counter.
   }
   // Handle sensor trigger.
   else if (tcc_->INTFLAG.bit.MC0) { // Handle trigger
-    tcc_->INTFLAG.reg |= tcc_->INTFLAG.bit.MC0;
+    tcc_->INTFLAG.reg = TCC_INTFLAG_MC0;
     if (getWaveOutPinValue() ^ trigger_state_.invert_) {
       // Capture new trigger pulse.
       trigger_state_.setTime(
@@ -170,7 +170,7 @@ void TccSynced::handleInterrupt() {
   }
   // Handle exposure.
   else if (tcc_->INTFLAG.bit.MC1) { // Handle exposure.
-    tcc_->INTFLAG.reg |= tcc_->INTFLAG.bit.MC1;
+    tcc_->INTFLAG.reg = TCC_INTFLAG_MC1;
     if (getExposurePinValue() ^ exposure_state_.invert_) { // Start exposure.
       exposure_state_.setStart(RtcSync::getInstance().computeTime(
           ticks_ + tcc_->CC[1].reg, prescaler_));
@@ -181,7 +181,7 @@ void TccSynced::handleInterrupt() {
   }
   // Handle PPS.
   else if (tcc_->INTFLAG.bit.MC2) { // Handle PPS.
-    tcc_->INTFLAG.reg |= tcc_->INTFLAG.bit.MC2;
+    tcc_->INTFLAG.reg = TCC_INTFLAG_MC2;
     pps_state_.setTime(RtcSync::getInstance().computeTime(
         ticks_ + tcc_->CC[2].reg, prescaler_)); // Capture PPS.
   }
