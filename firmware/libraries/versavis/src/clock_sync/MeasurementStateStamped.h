@@ -18,8 +18,6 @@
 
 class MeasurementStateStamped : public MeasurementState {
 public:
-  MeasurementStateStamped() {}
-
   inline void setTime(const ros::Time &time) {
     setMeasurement();
     time_.sec = time.sec;
@@ -27,20 +25,17 @@ public:
   }
 
   inline bool getTime(ros::Time *time, uint32_t *num) {
-    // Savely copy state.
-    ros::Time time_cpy;
+    // Savely return state.
     ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
-      time_cpy.sec = time_.sec;
-      time_cpy.nsec = time_.nsec;
-    }
-
-    if (getDataReady(num)) {
-      if (time) {
-        *time = time_cpy;
+      if (getDataReady(num)) {
+        if (time) {
+          time->sec = time_.sec;
+          time->nsec = time_.nsec;
+        }
+        return true;
+      } else {
+        return false;
       }
-      return true;
-    } else {
-      return false;
     }
   }
 

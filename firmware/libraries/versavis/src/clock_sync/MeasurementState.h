@@ -16,30 +16,23 @@
 
 class MeasurementState {
 public:
-  MeasurementState() {}
-
   void setMeasurement() {
     dr_ = true;
     num_++;
   }
 
   bool getDataReady(volatile uint32_t *num) {
-    // Savely copy state and invalidate data ready flag.
-    bool dr_cpy;
-    uint32_t num_cpy;
+    // Savely invalidate data ready flag and return state.
     ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
-      dr_cpy = dr_;
-      dr_ = false;
-      num_cpy = num_;
-    }
-
-    if (dr_cpy) {
-      if (num) {
-        *num = num_cpy;
+      if (dr_) {
+        dr_ = false;
+        if (num) {
+          *num = num_;
+        }
+        return true;
+      } else {
+        return false;
       }
-      return true;
-    } else {
-      return false;
     }
   }
 

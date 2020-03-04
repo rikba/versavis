@@ -19,15 +19,11 @@
 
 inline ros::Duration computeDuration(const ros::Time &start,
                                      const ros::Time &stop) {
-  int32_t sec = stop.sec - start.sec;
-  int32_t nsec = stop.nsec - start.nsec;
-  return ros::Duration(sec, nsec);
+  return ros::Duration(stop.sec - start.sec, stop.nsec - start.nsec);
 }
 
 class MeasurementStateExposure : public MeasurementStateStamped {
 public:
-  MeasurementStateExposure() {}
-
   inline void setStart(const ros::Time &time) { start_time_ = time; }
   inline void setEnd(const ros::Time &time) {
     if ((time.sec > start_time_.sec) ||
@@ -42,20 +38,17 @@ public:
   }
 
   inline bool getTime(ros::Time *time, uint32_t *num, ros::Duration *exp) {
-    // Savely copy state.
-    ros::Duration exposure_cpy;
+    // Savely return state.
     ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
-      exposure_cpy.sec = exposure_.sec;
-      exposure_cpy.nsec = exposure_.nsec;
-    }
-
-    if (MeasurementStateStamped::getTime(time, num)) {
-      if (exp) {
-        *exp = exposure_cpy;
+      if (MeasurementStateStamped::getTime(time, num)) {
+        if (exp) {
+          exp->sec = exposure_.sec;
+          exp->nsec = exposure_.nsec;
+        }
+        return true;
+      } else {
+        return false;
       }
-      return true;
-    } else {
-      return false;
     }
   }
 
