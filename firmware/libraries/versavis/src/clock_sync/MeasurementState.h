@@ -21,11 +21,15 @@ public:
     num_++;
   }
 
-  bool getDataReady(uint32_t *num) {
-    if (dr_) {
-      dr_ = false;
+  bool getDataReady(volatile uint32_t *num) {
+    // Savely copy state.
+    auto dr_cpy = dr_;
+    dr_ = false;
+    auto num_cpy = num_;
+
+    if (dr_cpy) {
       if (num) {
-        *num = num_;
+        *num = num_cpy;
       }
       return true;
     } else {
@@ -33,11 +37,11 @@ public:
     }
   }
 
-  bool invert_ = false; // Signals whether the signal is inverted.
+  volatile bool invert_ = false; // Signals whether the signal is inverted.
 
 private:
-  bool dr_ = false;           // Status whether measurement is ready.
-  uint32_t num_ = 0xFFFFFFFF; // Measurement number.
+  volatile bool dr_ = false;           // Status whether measurement is ready.
+  volatile uint32_t num_ = 0xFFFFFFFF; // Measurement number.
 };
 
 #endif

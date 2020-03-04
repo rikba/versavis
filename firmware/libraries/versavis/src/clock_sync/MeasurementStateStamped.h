@@ -21,13 +21,17 @@ public:
 
   inline void setTime(const ros::Time &time) {
     setMeasurement();
-    time_ = time;
+    time_.sec = time.sec;
+    time_.nsec = time.nsec;
   }
 
   inline bool getTime(ros::Time *time, uint32_t *num) {
+    // Savely copy state.
+    ros::Time time_cpy = {time_.sec, time_.nsec};
+
     if (getDataReady(num)) {
       if (time) {
-        *time = time_;
+        *time = time_cpy;
       }
       return true;
     } else {
@@ -36,7 +40,7 @@ public:
   }
 
 private:
-  ros::Time time_;
+  volatile ros::Time time_;
 };
 
 #endif

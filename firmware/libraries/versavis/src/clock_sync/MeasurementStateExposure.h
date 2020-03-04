@@ -31,8 +31,9 @@ public:
   inline void setEnd(const ros::Time &time) {
     if ((time.sec > start_time_.sec) ||
         ((time.sec == start_time_.sec) && (time.nsec >= start_time_.nsec))) {
-      exposure_ = computeDuration(start_time_, time);
-      ros::Duration half_exposure = exposure_;
+      auto half_exposure = computeDuration(start_time_, time);
+      exposure_.sec = half_exposure.sec;
+      exposure_.nsec = half_exposure.nsec;
       half_exposure *= 0.5;
       start_time_ += half_exposure;
       setTime(start_time_);
@@ -40,9 +41,12 @@ public:
   }
 
   inline bool getTime(ros::Time *time, uint32_t *num, ros::Duration *exp) {
+    // Savely copy state.
+    ros::Duration exposure_cpy = {exposure_.sec, exposure_.nsec};
+
     if (MeasurementStateStamped::getTime(time, num)) {
       if (exp) {
-        *exp = exposure_;
+        *exp = exposure_cpy;
       }
       return true;
     } else {
@@ -52,7 +56,7 @@ public:
 
 private:
   ros::Time start_time_;
-  ros::Duration exposure_;
+  volatile ros::Duration exposure_;
 };
 
 #endif
