@@ -152,13 +152,13 @@ void ExternalClock::controlClock() {
   if (abs(measured_offset_s_) > 1.0) {
     ros::Time reset_time = RtcSync::getInstance().getTimeNow();
     ros::Duration offset;
-    offset.fromSec(measured_offset_s_);
+    offset.fromSec(measured_offset_s_ + RTC_CTRL_INITIAL_OFFSET);
     reset_time -= offset;
     RtcSync::getInstance().setTime(reset_time);
     resetFilter();
   } else if (clock_msg_->dt > 0.0) {
     // Calculate error terms.
-    clock_msg_->e = -clock_msg_->x[0] * RTC_CTRL_RANGE_INV / clock_msg_->dt;
+    clock_msg_->e = -clock_msg_->x[0];
 
     clock_msg_->i *= RTC_CTRL_I_DECAY;
     clock_msg_->i += clock_msg_->e * clock_msg_->dt;
@@ -167,7 +167,7 @@ void ExternalClock::controlClock() {
     clock_msg_->i =
         clock_msg_->i < -RTC_CTRL_I_MAX ? -RTC_CTRL_I_MAX : clock_msg_->i;
 
-    clock_msg_->d = -clock_msg_->x[1] * RTC_CTRL_RANGE_INV;
+    clock_msg_->d = -clock_msg_->x[1];
 
     // Calculate control input.
     clock_msg_->u = RTC_CTRL_KP * clock_msg_->e + RTC_CTRL_KD * clock_msg_->d +
@@ -192,11 +192,6 @@ void ExternalClock::controlClock() {
       counter_converged_ = 0;
     }
     clock_msg_->sync = (counter_converged_ >= RTC_CTRL_CONV_WINDOW);
-    // if (clock_msg_->sync) {
-    //  RtcSync::getInstance().setOffset(
-    //      static_cast<int32_t>(clock_msg_->x[0] * 1.0e3));
-    //  clock_msg_->x[0] = 0;
-    //}
   }
 }
 

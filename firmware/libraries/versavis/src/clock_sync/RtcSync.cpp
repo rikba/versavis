@@ -238,10 +238,33 @@ void RtcSync::setTime(const ros::Time &time) {
   }
 }
 
-ros::Time RtcSync::computeTime(const uint32_t ticks,
-                               const uint8_t prescaler) const {
-  ros::Time time(secs_, ticks * kPrescalers[prescaler] * ns_per_tick_);
-  ros::normalizeSecNSec(time.sec, time.nsec);
+ros::Time RtcSync::computeTime(const uint32_t cc, const uint32_t ticks,
+                               const uint8_t prescaler, const uint32_t top,
+                               const bool rtc_handled) const {
+  // In principle time is just
+  // ros::Time time(secs_, ticks * kPrescalers[prescaler] * ns_per_tick_)
+  // But edge cases occur where secs_ has not been incremented, yet or
+  // incremented already. We catch them here.
+  ros::Time time(secs_, (ticks + cc) * kPrescalers[prescaler] * ns_per_tick_);
+
+  // Timestamps that have been captured before RTC was handled need to be
+  // decremented by 1 second.
+  if (rtc_handled && time.nsec > 5e8) {
+    time -= ros::Duration(1, 0);
+  }
+
+  //// Seconds incrementation still pending.
+  // if (RTC->MODE0.INTFLAG.bit.CMP0 && RTC->MODE0.INTFLAG.bit.OVF) {
+  //  if (time.nsec < 5e8) {
+  //    // ticks == 0, cc == capture in new second -> add one second
+  //    time += ros::Duration(1, 0);
+  //  } else if (clock_freq_ / kPrescalers[prescaler] > top) {
+  //    // Timer runs at more than 1 Hz. Ticks have not been correct.
+  //    time.nsec = 0;
+  //    time -= ros::Duration(0, (top + 1 - cc) * kPrescalers[prescaler] *
+  //                                 ns_per_tick_);
+  //  }
+  //}
   return time;
 }
 

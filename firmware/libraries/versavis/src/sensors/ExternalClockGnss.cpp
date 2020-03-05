@@ -3,7 +3,6 @@
 #include <RTClib.h>
 
 #include "clock_sync/RtcSync.h"
-#include "helper.h"
 
 ExternalClockGnss::ExternalClockGnss(Uart *uart, const uint32_t baud_rate)
     : ExternalClock(), uart_(uart) {

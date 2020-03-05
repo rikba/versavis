@@ -148,41 +148,67 @@ bool TccSynced::getTimeLastExposure(ros::Time *time, uint32_t *num,
 }
 
 void TccSynced::handleInterrupt() {
-  // Handle retrigger.
-  if (tcc_->INTFLAG.bit.TRG) {
-    tcc_->INTFLAG.reg = TCC_INTFLAG_TRG;
-    tcc_->INTFLAG.reg = TCC_INTFLAG_OVF;
-    ticks_ = 0; // Reset tick counter.
-  }
+  // Check whether the RTC overflow has been handled already and the RTC seconds
+  // have been incremented.
+  const bool rtc_handled = tcc_->INTFLAG.bit.TRG &&
+                           !RTC->MODE0.INTFLAG.bit.CMP0 &&
+                           !RTC->MODE0.INTFLAG.bit.OVF;
+
   // Handle overflow.
-  else if (tcc_->INTFLAG.bit.OVF) {
+  if (tcc_->INTFLAG.bit.OVF) {
+    DEBUG_PRINT("Handle overflow top:");
+    DEBUG_PRINTLN(top_);
     tcc_->INTFLAG.reg = TCC_INTFLAG_OVF;
-    ticks_ += top_ + 1; // Increment tick counter.
+    if (rtc_handled) {
+      ticks_ = 0;
+    } else {
+      ticks_ += top_ + 1; // Increment tick counter.
+    }
   }
+
   // Handle sensor trigger.
-  else if (tcc_->INTFLAG.bit.MC0) { // Handle trigger
+  if (tcc_->INTFLAG.bit.MC0) { // Handle trigger
+    DEBUG_PRINTLN("Handle trigger.");
     tcc_->INTFLAG.reg = TCC_INTFLAG_MC0;
     if (getWaveOutPinValue() ^ trigger_state_.invert_) {
       // Capture new trigger pulse.
-      trigger_state_.setTime(
-          RtcSync::getInstance().computeTime(ticks_, prescaler_));
+      trigger_state_.setTime(RtcSync::getInstance().computeTime(
+          0, ticks_, prescaler_, top_, rtc_handled));
     }
   }
+
   // Handle exposure.
-  else if (tcc_->INTFLAG.bit.MC1) { // Handle exposure.
+  if (tcc_->INTFLAG.bit.MC1) { // Handle exposure.
+    DEBUG_PRINTLN("Handle exposure.");
     tcc_->INTFLAG.reg = TCC_INTFLAG_MC1;
     if (getExposurePinValue() ^ exposure_state_.invert_) { // Start exposure.
       exposure_state_.setStart(RtcSync::getInstance().computeTime(
-          ticks_ + tcc_->CC[1].reg, prescaler_));
+          tcc_->CC[1].reg, ticks_, prescaler_, top_, rtc_handled));
     } else { // Stop exposure.
       exposure_state_.setEnd(RtcSync::getInstance().computeTime(
-          ticks_ + tcc_->CC[1].reg, prescaler_));
+          tcc_->CC[1].reg, ticks_, prescaler_, top_, rtc_handled));
     }
   }
+
   // Handle PPS.
-  else if (tcc_->INTFLAG.bit.MC2) { // Handle PPS.
+  if (tcc_->INTFLAG.bit.MC2) { // Handle PPS.
+    DEBUG_PRINT("Handle pps cc: ");
+    DEBUG_PRINT(tcc_->CC[2].reg);
+    DEBUG_PRINT(", ticks: ");
+    DEBUG_PRINT(ticks_);
     tcc_->INTFLAG.reg = TCC_INTFLAG_MC2;
-    pps_state_.setTime(RtcSync::getInstance().computeTime(
-        ticks_ + tcc_->CC[2].reg, prescaler_)); // Capture PPS.
+    ros::Time time = RtcSync::getInstance().computeTime(
+        tcc_->CC[2].reg, ticks_, prescaler_, top_, rtc_handled);
+    pps_state_.setTime(time); // Capture PPS.
+    DEBUG_PRINT(", time: ");
+    DEBUG_PRINT(time.sec);
+    DEBUG_PRINT(".");
+    DEBUG_PRINTLN(time.nsec);
+  }
+
+  // Handle retrigger.
+  if (tcc_->INTFLAG.bit.TRG) {
+    DEBUG_PRINTLN("Reset TRG.");
+    tcc_->INTFLAG.reg = TCC_INTFLAG_TRG;
   }
 }
