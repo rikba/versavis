@@ -104,20 +104,33 @@ void TcSynced::setupDataReady(const uint8_t port_group, const uint8_t pin,
 }
 
 void TcSynced::handleInterrupt() {
-  // Handle overflow before handling trigger event.
-  if (tc_->INTFLAG.bit.MC1 && tc_->INTFLAG.bit.OVF) {
-    tc_->INTFLAG.reg |= tc_->INTFLAG.bit.MC1;
-    tc_->INTFLAG.reg |= tc_->INTFLAG.bit.OVF;
-    ticks_ = 0; // Retrigger counter.
-  } else if (tc_->INTFLAG.bit.OVF) {
-    tc_->INTFLAG.reg |= tc_->INTFLAG.bit.OVF;
-    ticks_ += top_ + 1; // Counter overflow.
-  } else if (tc_->INTFLAG.bit.MC0) {
-    tc_->INTFLAG.reg |= tc_->INTFLAG.bit.MC0;
+  const bool rtc_handled = tc_->INTFLAG.bit.MC1 &&
+                           !RTC->MODE0.INTFLAG.bit.CMP0 &&
+                           !RTC->MODE0.INTFLAG.bit.OVF;
+
+  // Handle overflow.
+  if (tc_->INTFLAG.bit.OVF) {
+    tc_->INTFLAG.reg = TC_INTFLAG_OVF;
+
+    if (rtc_handled) {
+      ticks_ = 0;
+    } else {
+      ticks_ += top_ + 1;
+    }
+  }
+
+  if (tc_->INTFLAG.bit.MC0) {
+    tc_->INTFLAG.reg = TC_INTFLAG_MC0;
     if (getWaveOutPinValue() ^ trigger_state_.invert_) {
       // Set new trigger timestamp.
       trigger_state_.setTime(RtcSync::getInstance().computeTime(
-          0, ticks_, prescaler_, top_, false));
+          0, ticks_, prescaler_, rtc_handled));
     }
+  }
+
+  // Handle retrigger.
+  if (tc_->INTFLAG.bit.MC1) {
+    tc_->INTFLAG.reg = TC_INTFLAG_MC1;
+    ticks_ = 0;
   }
 }

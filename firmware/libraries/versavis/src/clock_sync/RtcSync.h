@@ -47,8 +47,7 @@ public:
   inline uint32_t getSecs() const { return secs_; }
   inline uint32_t getComp0() const { return RTC->MODE0.COMP[0].reg; }
   ros::Time computeTime(const uint32_t cc, const uint32_t ticks,
-                        const uint8_t prescaler, const uint32_t top,
-                        const bool rtc_handled) const;
+                        const uint8_t prescaler, const bool rtc_handled) const;
   void computePwm(const uint16_t rate_hz, const uint32_t pulse_us,
                   const uint16_t prescaler, uint32_t *top,
                   uint32_t *duty_cycle) const;

@@ -6,8 +6,6 @@
 
 ExternalClockGnss::ExternalClockGnss(Uart *uart, const uint32_t baud_rate)
     : ExternalClock(), uart_(uart) {
-  DEBUG_PRINT("[ExternalClockGnss]: Setup serial connection with baud rate ");
-  DEBUG_PRINTLN(baud_rate);
   if (uart_) {
     uart_->begin(baud_rate);
   }

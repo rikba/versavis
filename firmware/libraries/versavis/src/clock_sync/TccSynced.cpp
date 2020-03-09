@@ -156,8 +156,6 @@ void TccSynced::handleInterrupt() {
 
   // Handle overflow.
   if (tcc_->INTFLAG.bit.OVF) {
-    DEBUG_PRINT("Handle overflow top:");
-    DEBUG_PRINTLN(top_);
     tcc_->INTFLAG.reg = TCC_INTFLAG_OVF;
     if (rtc_handled) {
       ticks_ = 0;
@@ -168,47 +166,35 @@ void TccSynced::handleInterrupt() {
 
   // Handle sensor trigger.
   if (tcc_->INTFLAG.bit.MC0) { // Handle trigger
-    DEBUG_PRINTLN("Handle trigger.");
     tcc_->INTFLAG.reg = TCC_INTFLAG_MC0;
     if (getWaveOutPinValue() ^ trigger_state_.invert_) {
       // Capture new trigger pulse.
       trigger_state_.setTime(RtcSync::getInstance().computeTime(
-          0, ticks_, prescaler_, top_, rtc_handled));
+          0, ticks_, prescaler_, rtc_handled));
     }
   }
 
   // Handle exposure.
   if (tcc_->INTFLAG.bit.MC1) { // Handle exposure.
-    DEBUG_PRINTLN("Handle exposure.");
     tcc_->INTFLAG.reg = TCC_INTFLAG_MC1;
     if (getExposurePinValue() ^ exposure_state_.invert_) { // Start exposure.
       exposure_state_.setStart(RtcSync::getInstance().computeTime(
-          tcc_->CC[1].reg, ticks_, prescaler_, top_, rtc_handled));
+          tcc_->CC[1].reg, ticks_, prescaler_, rtc_handled));
     } else { // Stop exposure.
       exposure_state_.setEnd(RtcSync::getInstance().computeTime(
-          tcc_->CC[1].reg, ticks_, prescaler_, top_, rtc_handled));
+          tcc_->CC[1].reg, ticks_, prescaler_, rtc_handled));
     }
   }
 
   // Handle PPS.
   if (tcc_->INTFLAG.bit.MC2) { // Handle PPS.
-    DEBUG_PRINT("Handle pps cc: ");
-    DEBUG_PRINT(tcc_->CC[2].reg);
-    DEBUG_PRINT(", ticks: ");
-    DEBUG_PRINT(ticks_);
     tcc_->INTFLAG.reg = TCC_INTFLAG_MC2;
-    ros::Time time = RtcSync::getInstance().computeTime(
-        tcc_->CC[2].reg, ticks_, prescaler_, top_, rtc_handled);
-    pps_state_.setTime(time); // Capture PPS.
-    DEBUG_PRINT(", time: ");
-    DEBUG_PRINT(time.sec);
-    DEBUG_PRINT(".");
-    DEBUG_PRINTLN(time.nsec);
+    pps_state_.setTime(RtcSync::getInstance().computeTime(
+        tcc_->CC[2].reg, ticks_, prescaler_, rtc_handled));
   }
 
   // Handle retrigger.
   if (tcc_->INTFLAG.bit.TRG) {
-    DEBUG_PRINTLN("Reset TRG.");
     tcc_->INTFLAG.reg = TCC_INTFLAG_TRG;
   }
 }
