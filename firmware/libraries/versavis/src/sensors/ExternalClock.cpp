@@ -1,3 +1,4 @@
+#include "clock_sync/ClockEstimator.h"
 #include "clock_sync/RtcSync.h"
 #include "clock_sync/Tcc0Synced.h"
 #include "sensors/ExternalClock.h"
@@ -104,43 +105,55 @@ void ExternalClock::updateFilter() {
     measured_offset_s_ = offset.toSec();
     clock_msg_->x[0] = toUSec(offset);
     clock_msg_->x[1] = 0.0;
+    clock_msg_->x[2] = 1.5;
+    clock_msg_->x[3] = 5.0;
+
     clock_msg_->P[0] = pow(RTC_INITIAL_OFFSET * 1.0e6, 2.0);
     clock_msg_->P[1] = 0.0;
     clock_msg_->P[2] = 0.0;
-    clock_msg_->P[3] = pow(RTC_MAX_SKEW, 2.0);
+    clock_msg_->P[3] = 0.0;
+
+    clock_msg_->P[4] = 0.0;
+    clock_msg_->P[5] = pow(RTC_MAX_SKEW, 2.0);
+    clock_msg_->P[6] = 0.0;
+    clock_msg_->P[7] = 0.0;
+
+    clock_msg_->P[8] = 0.0;
+    clock_msg_->P[9] = 0.0;
+    clock_msg_->P[10] = pow(0.05, 2.0);
+    clock_msg_->P[11] = 0.0;
+
+    clock_msg_->P[12] = 0.0;
+    clock_msg_->P[13] = 0.0;
+    clock_msg_->P[14] = 0.0;
+    clock_msg_->P[15] = pow(0.4, 2.0);
   } else {
     // Propagate filter.
     // Prediction.
     clock_msg_->dt = computeDt();
 
-    // x(k) = F(k) * x(k-1)
-    clock_msg_->x[0] += clock_msg_->dt * clock_msg_->x[1];
-
-    // P(k) = F(k) * P(k-1) * F(k).transpose + dt * Q
-    clock_msg_->P[0] +=
-        Q_[0] * clock_msg_->dt + clock_msg_->P[2] * clock_msg_->dt +
-        clock_msg_->dt * (clock_msg_->P[1] + clock_msg_->P[3] * clock_msg_->dt);
-    clock_msg_->P[1] += clock_msg_->P[3] * clock_msg_->dt;
-    clock_msg_->P[2] += clock_msg_->P[3] * clock_msg_->dt;
-    clock_msg_->P[3] += Q_[1] * clock_msg_->dt;
+    predictX(clock_msg_->dt, clock_msg_->u, clock_msg_->x[0], clock_msg_->x[1],
+             clock_msg_->x[2], clock_msg_->x[3], x_pred_);
+    predictP(clock_msg_->dt, clock_msg_->P[0], clock_msg_->P[1],
+             clock_msg_->P[2], clock_msg_->P[3], clock_msg_->P[4],
+             clock_msg_->P[5], clock_msg_->P[6], clock_msg_->P[7],
+             clock_msg_->P[8], clock_msg_->P[9], clock_msg_->P[10],
+             clock_msg_->P[11], clock_msg_->P[12], clock_msg_->P[13],
+             clock_msg_->P[14], clock_msg_->P[15], clock_msg_->u, Q_[0], Q_[1],
+             Q_[2], Q_[3], clock_msg_->x[2], clock_msg_->x[3], P_pred_);
 
     // Measurement update.
-    const float S_inv = 1.0 / (R_ + clock_msg_->P[0]);
-    float K[2];
-    K[0] = clock_msg_->P[0] * S_inv;
-    K[1] = clock_msg_->P[2] * S_inv;
-
-    const float residual = toUSec(computeDuration(clock_msg_->remote_time,
-                                                  clock_msg_->receive_time)) -
-                           clock_msg_->x[0];
-
-    clock_msg_->x[0] += K[0] * residual;
-    clock_msg_->x[1] += K[1] * residual;
-
-    clock_msg_->P[2] -= K[1] * clock_msg_->P[0];
-    clock_msg_->P[3] -= K[1] * clock_msg_->P[1];
-    clock_msg_->P[0] -= K[0] * clock_msg_->P[0];
-    clock_msg_->P[1] -= K[0] * clock_msg_->P[1];
+    z_[0] = toUSec(
+        computeDuration(clock_msg_->remote_time, clock_msg_->receive_time));
+    computeResidual(x_pred_[0], z_[0], residual_);
+    computeSInverse(P_pred_[0], R_, S_inv_);
+    computeK(P_pred_[0], P_pred_[4], P_pred_[8], P_pred_[12], S_inv_[0], K_);
+    estimateX(K_[0], K_[1], K_[2], K_[3], x_pred_[0], x_pred_[1], x_pred_[2],
+              x_pred_[3], z_[0], clock_msg_->x);
+    estimateP(K_[0], K_[1], K_[2], K_[3], P_pred_[0], P_pred_[1], P_pred_[2],
+              P_pred_[3], P_pred_[4], P_pred_[5], P_pred_[6], P_pred_[7],
+              P_pred_[8], P_pred_[9], P_pred_[10], P_pred_[11], P_pred_[12],
+              P_pred_[13], P_pred_[14], P_pred_[15], clock_msg_->P);
   }
 
   last_update_ = clock_msg_->receive_time;
