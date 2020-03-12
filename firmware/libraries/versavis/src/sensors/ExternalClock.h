@@ -68,18 +68,17 @@ private:
 
   // Filter tuning.
   // Assume temperature drift of 1 deg / minute.
-  const double Q_[4] = {pow(RTC_FREQ_STABILITY / 60.0, 4.0) / 2.0,
+  const float Q_[4] = {pow(RTC_FREQ_STABILITY / 60.0, 4.0) / 2.0,
                        pow(RTC_FREQ_STABILITY / 60.0, 2.0), pow(0.001, 2.0),
                        pow(0.001, 2.0)}; // [Q11, Q22, Q33, Q44]
   // Measurement uncertainty is clock resolution + pps accuracy.
-  const double R_ = pow(1.0e6 / RTC_FREQ + 1.0e6 * GNSS_PPS_ACCURACY, 2);
-  double x_pred_[4];
-  double P_pred_[16];
-  double z_[1];
-  double residual_[1];
-  double S_inv_[1];
-  double K_[4];
-
+  const float R_ = pow(1.0e6 / RTC_FREQ + 1.0e6 * GNSS_PPS_ACCURACY, 2);
+  float x_pred_[4];
+  float P_pred_[16];
+  float z_[1];
+  float residual_[1];
+  float S_inv_[1];
+  float K_[4];
 
   float measured_offset_s_ = 0.0;
   ros::Time last_update_;

@@ -1,10 +1,10 @@
 #ifndef CLOCK_SYNC__CLOCKESTIMATOR__H
 #define CLOCK_SYNC__CLOCKESTIMATOR__H
-void predictX(double dt, double u1, double x1, double x2, double x3, double x4, double *out_856630842665997621);
-void predictP(double dt, double p11, double p12, double p13, double p14, double p21, double p22, double p23, double p24, double p31, double p32, double p33, double p34, double p41, double p42, double p43, double p44, double u1, double var_x1, double var_x2, double var_x3, double var_x4, double x3, double x4, double *out_1737487658341360313);
-void computeResidual(double x1, double z1, double *out_4198750698365820525);
-void computeSInverse(double p11, double var_z1, double *out_4349681001235345741);
-void computeK(double p11, double p21, double p31, double p41, double s_inv11, double *out_7426116661966127333);
-void estimateX(double k1, double k2, double k3, double k4, double x1, double x2, double x3, double x4, double z1, double *out_5254171509282157043);
-void estimateP(double k1, double k2, double k3, double k4, double p11, double p12, double p13, double p14, double p21, double p22, double p23, double p24, double p31, double p32, double p33, double p34, double p41, double p42, double p43, double p44, double *out_4625592411420530874);
+void predictX(float dt, float u1, float x1, float x2, float x3, float x4, float *out_3024619962732513813);
+void predictP(float dt, float p11, float p12, float p13, float p14, float p21, float p22, float p23, float p24, float p31, float p32, float p33, float p34, float p41, float p42, float p43, float p44, float u1, float var_x1, float var_x2, float var_x3, float var_x4, float x3, float x4, float *out_9029288405349647834);
+void computeResidual(float x1, float z1, float *out_6581804215570462109);
+void computeSInverse(float p11, float var_z1, float *out_4710011075268763073);
+void computeK(float p11, float p21, float p31, float p41, float s_inv11, float *out_7808039221083891857);
+void estimateX(float k1, float k2, float k3, float k4, float x1, float x2, float x3, float x4, float z1, float *out_4393592592736541686);
+void estimateP(float k1, float k2, float k3, float k4, float p11, float p12, float p13, float p14, float p21, float p22, float p23, float p24, float p31, float p32, float p33, float p34, float p41, float p42, float p43, float p44, float *out_2655578044031403162);
 #endif
