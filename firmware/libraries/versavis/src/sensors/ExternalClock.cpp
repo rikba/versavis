@@ -104,58 +104,46 @@ void ExternalClock::updateFilter() {
         computeDuration(clock_msg_->remote_time, clock_msg_->receive_time);
     measured_offset_s_ = offset.toSec();
     clock_msg_->x[0] = toUSec(offset);
-    clock_msg_->x[1] = 0.0;
-    clock_msg_->x[2] = 1.5;
-    clock_msg_->x[3] = 5.0;
+    clock_msg_->x[1] = 1.47;
+    clock_msg_->x[2] = 6.6;
 
     clock_msg_->P[0] = pow(RTC_INITIAL_OFFSET * 1.0e6, 2.0);
     clock_msg_->P[1] = 0.0;
     clock_msg_->P[2] = 0.0;
-    clock_msg_->P[3] = 0.0;
 
-    clock_msg_->P[4] = 0.0;
-    clock_msg_->P[5] = pow(RTC_MAX_SKEW, 2.0);
+    clock_msg_->P[3] = 0.0;
+    clock_msg_->P[4] = pow(0.03, 2.0);
+    clock_msg_->P[5] = 0.0;
+
     clock_msg_->P[6] = 0.0;
     clock_msg_->P[7] = 0.0;
-
-    clock_msg_->P[8] = 0.0;
-    clock_msg_->P[9] = 0.0;
-    clock_msg_->P[10] = pow(0.03, 2.0);
-    clock_msg_->P[11] = 0.0;
-
-    clock_msg_->P[12] = 0.0;
-    clock_msg_->P[13] = 0.0;
-    clock_msg_->P[14] = 0.0;
-    clock_msg_->P[15] = pow(1.0, 2.0);
+    clock_msg_->P[8] = pow(1.0, 2.0);
   } else {
     // Propagate filter.
     // Prediction.
     clock_msg_->dt = computeDt();
 
     predictX(clock_msg_->dt, static_cast<float>(clock_msg_->dac),
-             clock_msg_->x[0], clock_msg_->x[1], clock_msg_->x[2],
-             clock_msg_->x[3], x_pred_);
+             clock_msg_->x[0], clock_msg_->x[1], clock_msg_->x[2], x_pred_);
     predictP(clock_msg_->dt, clock_msg_->P[0], clock_msg_->P[1],
              clock_msg_->P[2], clock_msg_->P[3], clock_msg_->P[4],
              clock_msg_->P[5], clock_msg_->P[6], clock_msg_->P[7],
-             clock_msg_->P[8], clock_msg_->P[9], clock_msg_->P[10],
-             clock_msg_->P[11], clock_msg_->P[12], clock_msg_->P[13],
-             clock_msg_->P[14], clock_msg_->P[15],
-             static_cast<float>(clock_msg_->dac), Q_[0], Q_[1], Q_[2], Q_[3],
-             clock_msg_->x[2], clock_msg_->x[3], P_pred_);
+             clock_msg_->P[8], static_cast<float>(clock_msg_->dac), Q_[0],
+             Q_[1], Q_[2], clock_msg_->x[1], clock_msg_->x[2], P_pred_);
 
     // Measurement update.
     z_[0] = toUSec(
         computeDuration(clock_msg_->remote_time, clock_msg_->receive_time));
     computeResidual(x_pred_[0], z_[0], residual_);
     computeSInverse(P_pred_[0], R_, S_inv_);
-    computeK(P_pred_[0], P_pred_[4], P_pred_[8], P_pred_[12], S_inv_[0], K_);
-    estimateX(K_[0], K_[1], K_[2], K_[3], x_pred_[0], x_pred_[1], x_pred_[2],
-              x_pred_[3], z_[0], clock_msg_->x);
-    estimateP(K_[0], K_[1], K_[2], K_[3], P_pred_[0], P_pred_[1], P_pred_[2],
+    computeK(P_pred_[0], P_pred_[3], P_pred_[6], S_inv_[0], K_);
+    estimateX(K_[0], K_[1], K_[2], residual_[0], x_pred_[0], x_pred_[1],
+              x_pred_[2], clock_msg_->x);
+    estimateP(K_[0], K_[1], K_[2], P_pred_[0], P_pred_[1], P_pred_[2],
               P_pred_[3], P_pred_[4], P_pred_[5], P_pred_[6], P_pred_[7],
-              P_pred_[8], P_pred_[9], P_pred_[10], P_pred_[11], P_pred_[12],
-              P_pred_[13], P_pred_[14], P_pred_[15], clock_msg_->P);
+              P_pred_[8], clock_msg_->P);
+    clock_msg_->ppm =
+        (3.3 / 0x3FF * clock_msg_->dac - clock_msg_->x[1]) * clock_msg_->x[2];
   }
 
   last_update_ = clock_msg_->receive_time;
@@ -193,12 +181,12 @@ void ExternalClock::controlClock() {
     clock_msg_->u = clock_msg_->u < -1.0 ? -1.0 : clock_msg_->u;
 
     // LQR control.
-    float dac = -(0.78672263 * clock_msg_->x[0] + 80.36117267 * clock_msg_->x[1]);
-    dac += clock_msg_->x[2] * 0x3FF / 3.3; // Trim.
+    float dac = -(3.0583967 * clock_msg_->x[0]);
+    dac += clock_msg_->x[1] * 0x3FF / 3.3; // Trim.
     dac = dac < 155.0 ? 155.0 : dac;
     dac = dac > 775.0 ? 755.0 : dac;
     clock_msg_->dac = static_cast<uint16_t>(roundf(dac));
-    //clock_msg_->dac = computeDacData(RTC_CTRL_V_NOM + clock_msg_->u);
+    // clock_msg_->dac = computeDacData(RTC_CTRL_V_NOM + clock_msg_->u);
 
     // Apply clock stabilization.
     while (DAC->STATUS.bit.SYNCBUSY) {
