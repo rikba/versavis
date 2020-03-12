@@ -67,27 +67,26 @@
 #define RTC_GCLKIN_10MHZ
 #ifdef RTC_GCLKIN_10MHZ
 #define RTC_FREQ 10e6
-#define RTC_FREQ_STABILITY 0.014   // PPM / delta deg C
-// Max skew controlling from 0.5 to 2.5V
+#define RTC_CLK_SYNC // Activate RTC synchronization
 // https://docs.google.com/spreadsheets/d/1pf0QecrXWwRHv6BMs1xoJcgUBYCmLpuZk2bO-ykS4-I/edit#gid=0
-#define RTC_MAX_SKEW 6.6             // PPM
-#define RTC_CTRL_RANGE_INV 1 / 5.0 // 1 / PPM
-#define RTC_SYNC                   // Activate RTC synchronization
-#define RTC_CTRL_V_NOM 1.5         // Nominal control voltage
-#define RTC_CTRL_KP 0.05           // Proportional offset control gain
-#define RTC_CTRL_KD 6.0            // Proportional skew stabilization gain
-#define RTC_CTRL_KI 0.003          // Integral offset control gain.
-#define RTC_CTRL_I_MAX 60.0        // Integrator windup
-#define RTC_CTRL_I_DECAY 0.99      // Integrator decay
-#define RTC_CTRL_CONV_CRIT 1.0     // Skew convergence criterion [us]
-#define RTC_CTRL_CONV_WINDOW 60    // Window of converged values
-#define RTC_CTRL_INITIAL_OFFSET -100.0e-6 // Hotstart initial offset.
+#define RTC_CLK_SYNC_X1 1.47          // The nominal control offset [V]
+#define RTC_CLK_SYNC_X2 6.55          // The nominal control scale [ppm/V]
+#define RTC_CLK_SYNC_X0_OFFSET -100.0 // Hotstart initial clock offset [us].
+#define RTC_CLK_SYNC_X1_OFFSET 0.1    // Initial offset of control offset [V]
+#define RTC_CLK_SYNC_X2_OFFSET 1.0   // Initial offset of control offset [ppm/V]
+#define RTC_CLK_SYNC_U_REF 3.3       // Reference voltage [V]
+#define RTC_CLK_SYNC_DAC_RANGE 0x3FF // DAC range [1]
+#define RTC_CLK_SYNC_DAC_MAX 0x3FF   // DAC range [1]
+#define RTC_CLK_SYNC_DAC_MIN 155.0   // Max. allowed DAC
+#define RTC_CLK_SYNC_DAC_MAX 775.0   // Min. allowed DAC
+#define RTC_CLK_SYNC_LQR_GAIN 3.0583967
+#define RTC_CLK_SYNC_CONV_CRIT 1.0  // Offset convergence criterion [us]
+#define RTC_CLK_SYNC_CONV_WINDOW 60 // Window of converged values
 #else
 #define RTC_FREQ 32768
 #define RTC_FREQ_STABILITY 0.04 // PPM / delta deg C
 #define RTC_MAX_SKEW 20         // PPM
 #endif
-#define RTC_INITIAL_OFFSET 0.5 // [s]
 
 /* ----- GNSS time synchronization ----- */
 // Activation of GNSS time synchronization.

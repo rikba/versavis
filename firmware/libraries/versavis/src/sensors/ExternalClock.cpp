@@ -3,6 +3,9 @@
 #include "clock_sync/Tcc0Synced.h"
 #include "sensors/ExternalClock.h"
 
+#define DACTOVOLT RTC_CLK_SYNC_U_REF / RTC_CLK_SYNC_DAC_RANGE
+#define VOLTTODAC RTC_CLK_SYNC_DAC_RANGE / RTC_CLK_SYNC_U_REF
+
 ExternalClock::ExternalClock() : SensorSynced(&Tcc0Synced::getInstance()) {
   // Setup DAC
   // Connect PA2 pin to peripheral B (VOUT)
@@ -19,7 +22,8 @@ ExternalClock::ExternalClock() : SensorSynced(&Tcc0Synced::getInstance()) {
   DAC->CTRLB.reg |= DAC_CTRLB_REFSEL_AVCC; // 3.3V reference.
   DAC->CTRLB.reg |= DAC_CTRLB_EOEN;        // Enable voltage output.
 
-  DAC->DATA.reg |= computeDacData(RTC_CTRL_V_NOM); // 1.5V nominal current
+  DAC->DATA.reg |= static_cast<uint16_t>(
+      VOLTTODAC * RTC_CLK_SYNC_X1); // 1.5V nominal current
   while (DAC->STATUS.bit.SYNCBUSY) {
   }
 
@@ -93,31 +97,26 @@ void ExternalClock::updateFilter() {
   if (!clock_msg_)
     return;
 
-  // Sommer, Hannes, et al. "A low-cost system for high-rate, high-accuracy
-  // temporal calibration for LIDARs and cameras." 2017 IEEE/RSJ International
-  // Conference on Intelligent Robots and Systems (IROS). IEEE, 2017.
-  // https://github.com/ethz-asl/cuckoo_time_translator/blob/master/cuckoo_time_translator_algorithms/src/KalmanOwt.cpp#L51-L88
-
-  if (isInitializing()) {
+  if (last_update_.sec == 0 && last_update_.nsec == 0) {
     // Initialize filter.
     auto offset =
         computeDuration(clock_msg_->remote_time, clock_msg_->receive_time);
     measured_offset_s_ = offset.toSec();
     clock_msg_->x[0] = toUSec(offset);
-    clock_msg_->x[1] = 1.47;
-    clock_msg_->x[2] = 6.6;
+    clock_msg_->x[1] = RTC_CLK_SYNC_X1;
+    clock_msg_->x[2] = RTC_CLK_SYNC_X2;
 
-    clock_msg_->P[0] = pow(RTC_INITIAL_OFFSET * 1.0e6, 2.0);
+    clock_msg_->P[0] = pow(RTC_CLK_SYNC_X0_OFFSET / 3.0, 2.0);
     clock_msg_->P[1] = 0.0;
     clock_msg_->P[2] = 0.0;
 
     clock_msg_->P[3] = 0.0;
-    clock_msg_->P[4] = pow(0.03, 2.0);
+    clock_msg_->P[4] = pow(RTC_CLK_SYNC_X1_OFFSET / 3.0, 2.0);
     clock_msg_->P[5] = 0.0;
 
     clock_msg_->P[6] = 0.0;
     clock_msg_->P[7] = 0.0;
-    clock_msg_->P[8] = pow(1.0, 2.0);
+    clock_msg_->P[8] = pow(RTC_CLK_SYNC_X2_OFFSET / 3.0, 2.0);
   } else {
     // Propagate filter.
     // Prediction.
@@ -143,7 +142,7 @@ void ExternalClock::updateFilter() {
               P_pred_[3], P_pred_[4], P_pred_[5], P_pred_[6], P_pred_[7],
               P_pred_[8], clock_msg_->P);
     clock_msg_->ppm =
-        (3.3 / 0x3FF * clock_msg_->dac - clock_msg_->x[1]) * clock_msg_->x[2];
+        (DACTOVOLT * clock_msg_->dac - clock_msg_->x[1]) * clock_msg_->x[2];
   }
 
   last_update_ = clock_msg_->receive_time;
@@ -151,42 +150,21 @@ void ExternalClock::updateFilter() {
 
 void ExternalClock::controlClock() {
   // Hard reset RTC if more than one second off.
-  // TODO(rikba): Replace measurement with offset estimation.
   if (abs(measured_offset_s_) > 1.0) {
     ros::Time reset_time = RtcSync::getInstance().getTimeNow();
     ros::Duration offset;
-    offset.fromSec(measured_offset_s_ + RTC_CTRL_INITIAL_OFFSET);
+    offset.fromSec(measured_offset_s_ + RTC_CLK_SYNC_X0_OFFSET * 1.0e-6);
     reset_time -= offset;
     RtcSync::getInstance().setTime(reset_time);
     resetFilter();
   } else if (clock_msg_->dt > 0.0) {
-#ifdef RTC_SYNC
-    // Calculate error terms.
-    clock_msg_->e = -clock_msg_->x[0];
-
-    clock_msg_->i *= RTC_CTRL_I_DECAY;
-    clock_msg_->i += clock_msg_->e * clock_msg_->dt;
-    clock_msg_->i =
-        clock_msg_->i > RTC_CTRL_I_MAX ? RTC_CTRL_I_MAX : clock_msg_->i;
-    clock_msg_->i =
-        clock_msg_->i < -RTC_CTRL_I_MAX ? -RTC_CTRL_I_MAX : clock_msg_->i;
-
-    clock_msg_->d = -clock_msg_->x[1];
-
-    // Calculate control input.
-    clock_msg_->u = RTC_CTRL_KP * clock_msg_->e + RTC_CTRL_KD * clock_msg_->d +
-                    RTC_CTRL_KI * clock_msg_->i;
-    // Clamp control input.
-    clock_msg_->u = clock_msg_->u > 1.0 ? 1.0 : clock_msg_->u;
-    clock_msg_->u = clock_msg_->u < -1.0 ? -1.0 : clock_msg_->u;
-
+#ifdef RTC_CLK_SYNC
     // LQR control.
-    float dac = -(3.0583967 * clock_msg_->x[0]);
-    dac += clock_msg_->x[1] * 0x3FF / 3.3; // Trim.
-    dac = dac < 155.0 ? 155.0 : dac;
-    dac = dac > 775.0 ? 755.0 : dac;
+    float dac = -(RTC_CLK_SYNC_LQR_GAIN * clock_msg_->x[0]);
+    dac += clock_msg_->x[1] * VOLTTODAC; // Trim.
+    dac = dac < RTC_CLK_SYNC_DAC_MIN ? RTC_CLK_SYNC_DAC_MIN : dac;
+    dac = dac > RTC_CLK_SYNC_DAC_MAX ? RTC_CLK_SYNC_DAC_MAX : dac;
     clock_msg_->dac = static_cast<uint16_t>(roundf(dac));
-    // clock_msg_->dac = computeDacData(RTC_CTRL_V_NOM + clock_msg_->u);
 
     // Apply clock stabilization.
     while (DAC->STATUS.bit.SYNCBUSY) {
@@ -196,13 +174,13 @@ void ExternalClock::controlClock() {
     }
 
     // Control RTC offset.
-    if (fabsf(clock_msg_->x[0]) < RTC_CTRL_CONV_CRIT) {
-      if (counter_converged_ != RTC_CTRL_CONV_WINDOW)
+    if (fabsf(clock_msg_->x[0]) < RTC_CLK_SYNC_CONV_CRIT) {
+      if (counter_converged_ != RTC_CLK_SYNC_CONV_WINDOW)
         counter_converged_++;
     } else {
       counter_converged_ = 0;
     }
-    clock_msg_->sync = (counter_converged_ >= RTC_CTRL_CONV_WINDOW);
+    clock_msg_->sync = (counter_converged_ >= RTC_CLK_SYNC_CONV_WINDOW);
 #endif
   }
 }
@@ -210,7 +188,7 @@ void ExternalClock::controlClock() {
 void ExternalClock::resetFilter() {
   if (clock_msg_) {
     *clock_msg_ = versavis::ExtClk();
-    clock_msg_->dac = computeDacData(RTC_CTRL_V_NOM);
+    clock_msg_->dac = static_cast<uint16_t>(VOLTTODAC * RTC_CLK_SYNC_X1);
     clock_msg_->sync = false;
   }
   last_update_ = ros::Time();

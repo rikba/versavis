@@ -50,14 +50,6 @@ private:
     }
   }
 
-  inline bool isInitializing() const {
-    return last_update_.sec == 0 && last_update_.nsec == 0;
-  }
-
-  inline uint16_t computeDacData(const float v_out) const {
-    return static_cast<uint16_t>((v_out / 3.3) * 0x3FF) & 0x3FF;
-  }
-
   enum class State {
     kWaitForPulse,
     kWaitForRemoteTime,
@@ -67,10 +59,10 @@ private:
   State state_ = State::kWaitForPulse;
 
   // Filter tuning.
-  // Assume temperature drift of 1 deg / minute.
-  const float Q_[3] = {pow(RTC_FREQ_STABILITY / 60.0, 4.0) / 2.0,
-                       pow(1.0e-4, 2.0),
-                       pow(1.0e-4, 2.0)}; // [Q11, Q22, Q33, Q44]
+  // [Q11, Q22, Q33]
+  const float Q_[3] = {
+      pow(RTC_CLK_SYNC_U_REF / RTC_CLK_SYNC_DAC_RANGE * RTC_CLK_SYNC_X2, 2.0),
+      pow(1.0e-4, 2.0), pow(1.0e-4, 2.0)};
   // Measurement uncertainty is clock resolution + pps accuracy.
   const float R_ = pow(1.0e6 / RTC_FREQ + 1.0e6 * GNSS_PPS_ACCURACY, 2);
   float x_pred_[3];
