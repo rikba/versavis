@@ -68,8 +68,11 @@
 #ifdef RTC_GCLKIN_10MHZ
 #define RTC_FREQ 10e6
 #define RTC_FREQ_STABILITY 0.014   // PPM / delta deg C
-#define RTC_MAX_SKEW 5             // PPM
+// Max skew controlling from 0.5 to 2.5V
+// https://docs.google.com/spreadsheets/d/1pf0QecrXWwRHv6BMs1xoJcgUBYCmLpuZk2bO-ykS4-I/edit#gid=0
+#define RTC_MAX_SKEW 6.6             // PPM
 #define RTC_CTRL_RANGE_INV 1 / 5.0 // 1 / PPM
+#define RTC_SYNC                   // Activate RTC synchronization
 #define RTC_CTRL_V_NOM 1.5         // Nominal control voltage
 #define RTC_CTRL_KP 0.05           // Proportional offset control gain
 #define RTC_CTRL_KD 6.0            // Proportional skew stabilization gain
@@ -78,7 +81,7 @@
 #define RTC_CTRL_I_DECAY 0.99      // Integrator decay
 #define RTC_CTRL_CONV_CRIT 1.0     // Skew convergence criterion [us]
 #define RTC_CTRL_CONV_WINDOW 60    // Window of converged values
-#define RTC_CTRL_INITIAL_OFFSET -120.0e-6 // Hotstart initial offset.
+#define RTC_CTRL_INITIAL_OFFSET -100.0e-6 // Hotstart initial offset.
 #else
 #define RTC_FREQ 32768
 #define RTC_FREQ_STABILITY 0.04 // PPM / delta deg C

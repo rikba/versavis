@@ -69,8 +69,8 @@ private:
   // Filter tuning.
   // Assume temperature drift of 1 deg / minute.
   const float Q_[4] = {pow(RTC_FREQ_STABILITY / 60.0, 4.0) / 2.0,
-                       pow(RTC_FREQ_STABILITY / 60.0, 2.0), pow(0.001, 2.0),
-                       pow(0.001, 2.0)}; // [Q11, Q22, Q33, Q44]
+                       pow(RTC_FREQ_STABILITY / 60.0, 2.0), pow(1.0e-4, 2.0),
+                       pow(1.0e-4, 2.0)}; // [Q11, Q22, Q33, Q44]
   // Measurement uncertainty is clock resolution + pps accuracy.
   const float R_ = pow(1.0e6 / RTC_FREQ + 1.0e6 * GNSS_PPS_ACCURACY, 2);
   float x_pred_[4];

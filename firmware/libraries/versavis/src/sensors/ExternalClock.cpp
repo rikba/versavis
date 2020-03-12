@@ -120,27 +120,29 @@ void ExternalClock::updateFilter() {
 
     clock_msg_->P[8] = 0.0;
     clock_msg_->P[9] = 0.0;
-    clock_msg_->P[10] = pow(0.05, 2.0);
+    clock_msg_->P[10] = pow(0.03, 2.0);
     clock_msg_->P[11] = 0.0;
 
     clock_msg_->P[12] = 0.0;
     clock_msg_->P[13] = 0.0;
     clock_msg_->P[14] = 0.0;
-    clock_msg_->P[15] = pow(0.4, 2.0);
+    clock_msg_->P[15] = pow(1.0, 2.0);
   } else {
     // Propagate filter.
     // Prediction.
     clock_msg_->dt = computeDt();
 
-    predictX(clock_msg_->dt, clock_msg_->u, clock_msg_->x[0], clock_msg_->x[1],
-             clock_msg_->x[2], clock_msg_->x[3], x_pred_);
+    predictX(clock_msg_->dt, static_cast<float>(clock_msg_->dac),
+             clock_msg_->x[0], clock_msg_->x[1], clock_msg_->x[2],
+             clock_msg_->x[3], x_pred_);
     predictP(clock_msg_->dt, clock_msg_->P[0], clock_msg_->P[1],
              clock_msg_->P[2], clock_msg_->P[3], clock_msg_->P[4],
              clock_msg_->P[5], clock_msg_->P[6], clock_msg_->P[7],
              clock_msg_->P[8], clock_msg_->P[9], clock_msg_->P[10],
              clock_msg_->P[11], clock_msg_->P[12], clock_msg_->P[13],
-             clock_msg_->P[14], clock_msg_->P[15], clock_msg_->u, Q_[0], Q_[1],
-             Q_[2], Q_[3], clock_msg_->x[2], clock_msg_->x[3], P_pred_);
+             clock_msg_->P[14], clock_msg_->P[15],
+             static_cast<float>(clock_msg_->dac), Q_[0], Q_[1], Q_[2], Q_[3],
+             clock_msg_->x[2], clock_msg_->x[3], P_pred_);
 
     // Measurement update.
     z_[0] = toUSec(
@@ -170,6 +172,7 @@ void ExternalClock::controlClock() {
     RtcSync::getInstance().setTime(reset_time);
     resetFilter();
   } else if (clock_msg_->dt > 0.0) {
+#ifdef RTC_SYNC
     // Calculate error terms.
     clock_msg_->e = -clock_msg_->x[0];
 
@@ -188,7 +191,14 @@ void ExternalClock::controlClock() {
     // Clamp control input.
     clock_msg_->u = clock_msg_->u > 1.0 ? 1.0 : clock_msg_->u;
     clock_msg_->u = clock_msg_->u < -1.0 ? -1.0 : clock_msg_->u;
-    clock_msg_->dac = computeDacData(RTC_CTRL_V_NOM + clock_msg_->u);
+
+    // LQR control.
+    float dac = -(0.78672263 * clock_msg_->x[0] + 80.36117267 * clock_msg_->x[1]);
+    dac += clock_msg_->x[2] * 0x3FF / 3.3; // Trim.
+    dac = dac < 155.0 ? 155.0 : dac;
+    dac = dac > 775.0 ? 755.0 : dac;
+    clock_msg_->dac = static_cast<uint16_t>(roundf(dac));
+    //clock_msg_->dac = computeDacData(RTC_CTRL_V_NOM + clock_msg_->u);
 
     // Apply clock stabilization.
     while (DAC->STATUS.bit.SYNCBUSY) {
@@ -205,13 +215,14 @@ void ExternalClock::controlClock() {
       counter_converged_ = 0;
     }
     clock_msg_->sync = (counter_converged_ >= RTC_CTRL_CONV_WINDOW);
+#endif
   }
 }
 
 void ExternalClock::resetFilter() {
   if (clock_msg_) {
     *clock_msg_ = versavis::ExtClk();
-    clock_msg_->dac = computeDacData(clock_msg_->u);
+    clock_msg_->dac = computeDacData(RTC_CTRL_V_NOM);
     clock_msg_->sync = false;
   }
   last_update_ = ros::Time();
