@@ -29,9 +29,9 @@ void Adis16448BmlzTriggered::setupRos(ros::NodeHandle *nh,
 
   if (nh) {
     // Create static ROS msgs.
-    static versavis::MagneticMicro mag_msg;
-    static versavis::PressureMicro baro_msg;
-    static versavis::TemperatureMicro temp_msg;
+    static sensor_msgs::FluidPressure baro_msg;
+    static sensor_msgs::MagneticField mag_msg;
+    static sensor_msgs::Temperature temp_msg;
 
     // Assign topic pointers.
     mag_msg_ = &mag_msg;
@@ -57,7 +57,7 @@ void Adis16448BmlzTriggered::setupRos(ros::NodeHandle *nh,
 
 void Adis16448BmlzTriggered::publish() {
   if (timer_ && imu_msg_) {
-    timer_->getTimeLastTrigger(&imu_msg_->time.data, &imu_msg_->number);
+    timer_->getTimeLastTrigger(&imu_msg_->header.stamp, &imu_msg_->header.seq);
   }
 
   if (imu_msg_ && timer_ && timer_->getDataReady(NULL)) {
@@ -73,19 +73,20 @@ void Adis16448BmlzTriggered::publish() {
         if (prev_pressure == 0xFFFF) {
           prev_pressure = imu_data[10];
         } else if (prev_pressure != imu_data[10]) {
-          mag_baro_offset_ = imu_msg_->number % 16;
+          mag_baro_offset_ = imu_msg_->header.seq % 16;
         }
       } else {
         // https://ez.analog.com/mems/w/documents/4122/adis16448-data-sampling
         // 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, -->15<--
-        has_mag_and_baro &= ((imu_msg_->number - mag_baro_offset_) % 16) == 0;
+        has_mag_and_baro &=
+            ((imu_msg_->header.seq - mag_baro_offset_) % 16) == 0;
       }
 
       // BARO.
       if (has_mag_and_baro && baro_msg_) {
-        baro_msg_->time.data = imu_msg_->time.data;
-        baro_msg_->number = imu_msg_->number;
-        baro_msg_->pressure = imu_data[10];
+        baro_msg_->header = imu_msg_->header;
+        baro_msg_->fluid_pressure = imu_.pressureScale(imu_data[10]);
+        baro_msg_->variance = -1.0;
 
         if (baro_pub_) {
           baro_pub_->publish(baro_msg_);
@@ -94,12 +95,18 @@ void Adis16448BmlzTriggered::publish() {
 
       // IMU.
       if (imu_msg_) {
-        imu_msg_->gx = imu_data[1];
-        imu_msg_->gy = imu_data[2];
-        imu_msg_->gz = imu_data[3];
-        imu_msg_->ax = imu_data[4];
-        imu_msg_->ay = imu_data[5];
-        imu_msg_->az = imu_data[6];
+        // TODO(rikba): Implement simple orientation filter.
+        imu_msg_->orientation_covariance[0] = -1.0;
+
+        imu_msg_->angular_velocity.x = imu_.gyroScale(imu_data[1]);
+        imu_msg_->angular_velocity.y = imu_.gyroScale(imu_data[2]);
+        imu_msg_->angular_velocity.z = imu_.gyroScale(imu_data[3]);
+        imu_msg_->angular_velocity_covariance[0] = -1.0;
+
+        imu_msg_->linear_acceleration.x = imu_.accelScale(imu_data[4]);
+        imu_msg_->linear_acceleration.y = imu_.accelScale(imu_data[5]);
+        imu_msg_->linear_acceleration.z = imu_.accelScale(imu_data[6]);
+        imu_msg_->linear_acceleration_covariance[0] = -1.0;
 
         if (publisher_) {
           publisher_->publish(imu_msg_);
@@ -108,11 +115,12 @@ void Adis16448BmlzTriggered::publish() {
 
       // MAG.
       if (has_mag_and_baro && mag_msg_) {
-        mag_msg_->time.data = imu_msg_->time.data;
-        mag_msg_->number = imu_msg_->number;
-        mag_msg_->mx = imu_data[7];
-        mag_msg_->my = imu_data[8];
-        mag_msg_->mz = imu_data[9];
+        mag_msg_->header = imu_msg_->header;
+
+        mag_msg_->magnetic_field.x = imu_.magnetometerScale(imu_data[7]);
+        mag_msg_->magnetic_field.y = imu_.magnetometerScale(imu_data[8]);
+        mag_msg_->magnetic_field.z = imu_.magnetometerScale(imu_data[9]);
+        mag_msg_->magnetic_field_covariance[0] = -1.0;
 
         if (mag_pub_) {
           mag_pub_->publish(mag_msg_);
@@ -121,9 +129,9 @@ void Adis16448BmlzTriggered::publish() {
 
       // TEMP.
       if (temp_msg_) {
-        temp_msg_->time.data = imu_msg_->time.data;
-        temp_msg_->number = imu_msg_->number;
-        temp_msg_->temperature = imu_data[11];
+        temp_msg_->header = imu_msg_->header;
+        temp_msg_->temperature = imu_.magnetometerScale(imu_data[11]);
+        temp_msg_->variance = -1.0;
 
         if (temp_pub_) {
           temp_pub_->publish(temp_msg_);

@@ -15,9 +15,9 @@
 #include "drivers/Adis16448.h"
 #include "sensors/ImuSynced.h"
 
-#include <versavis/MagneticMicro.h>
-#include <versavis/PressureMicro.h>
-#include <versavis/TemperatureMicro.h>
+#include <sensor_msgs/FluidPressure.h>
+#include <sensor_msgs/MagneticField.h>
+#include <sensor_msgs/Temperature.h>
 
 class Adis16448BmlzTriggered : public ImuSynced {
 public:
@@ -37,9 +37,9 @@ private:
   ros::Publisher *baro_pub_ = NULL;
   ros::Publisher *temp_pub_ = NULL;
 
-  versavis::MagneticMicro *mag_msg_ = NULL;
-  versavis::PressureMicro *baro_msg_ = NULL;
-  versavis::TemperatureMicro *temp_msg_ = NULL;
+  sensor_msgs::FluidPressure *baro_msg_ = NULL;
+  sensor_msgs::MagneticField *mag_msg_ = NULL;
+  sensor_msgs::Temperature *temp_msg_ = NULL;
 
   // State.
   uint8_t mag_baro_offset_ = 0xFF;

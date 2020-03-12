@@ -5,7 +5,7 @@ ImuSynced::ImuSynced(TimerSynced *timer) : SensorSynced(timer) {}
 void ImuSynced::setupRos(ros::NodeHandle *nh, const char *topic) {
   if (nh) {
     // Create static ROS message.
-    static versavis::ImuMicro imu_msg;
+    static sensor_msgs::Imu imu_msg;
     imu_msg_ = &imu_msg;
 
     // Create static ROS publisher.

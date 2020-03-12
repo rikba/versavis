@@ -28,6 +28,7 @@
 #define Drivers_Adis16448_h
 #include "Arduino.h"
 #include <SPI.h>
+#include <math.h>
 
 // User Register Memory Map from Table 6
 #define FLASH_CNT 0x00  // Flash memory write count
@@ -70,6 +71,16 @@
 #define LOT_ID2 0x54    // Lot identification number
 #define PROD_ID 0x56    // Product identifier
 #define SERIAL_NUM 0x58 // Lot-specific serial number
+
+#define GRAVITY 9.81;
+#define DEGTORAD M_PI / 180.0;
+#define GAUSSTOTESLA 1.0e-4;
+#define MILLBARTOPASCAL 1.0e2;
+
+#define ACCELSCALE 0.000833 * GRAVITY
+#define GYROSCALE 0.04 * DEGTORAD
+#define PRESSURESCALE 0.02 * MILLBARTOPASCAL
+#define MAGSCALE 0.0001429 * GAUSSTOTESLA
 
 // Adis16448 Class Definition
 class Adis16448 {

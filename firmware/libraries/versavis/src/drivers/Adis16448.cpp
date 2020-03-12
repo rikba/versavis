@@ -420,15 +420,7 @@ void Adis16448::updateCRC(unsigned int *crc, unsigned int *data,
 // return - (float) signed/scaled accelerometer in g's
 ////////////////////////////////////////////////////////////////////////////////
 float Adis16448::accelScale(int16_t sensorData) {
-  int signedData = 0;
-  int isNeg = sensorData & 0x8000;
-  if (isNeg == 0x8000) // If the number is negative, scale and sign the output
-    signedData = sensorData - 0xFFFF;
-  else
-    signedData = sensorData; // Else return the raw number
-  float finalData =
-      signedData * 0.000833; // Multiply by accel sensitivity (0.833 mg/LSB)
-  return finalData;
+  return sensorData * ACCELSCALE;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -439,15 +431,7 @@ float Adis16448::accelScale(int16_t sensorData) {
 // return - (float) signed/scaled gyro in degrees/sec
 ////////////////////////////////////////////////////////////////////////////////
 float Adis16448::gyroScale(int16_t sensorData) {
-  int signedData = 0;
-  int isNeg = sensorData & 0x8000;
-  if (isNeg == 0x8000) // If the number is negative, scale and sign the output
-    signedData = sensorData - 0xFFFF;
-  else
-    signedData = sensorData;
-  float finalData =
-      signedData * 0.04; // Multiply by gyro sensitivity (0.04 dps/LSB)
-  return finalData;
+  return sensorData * 0.04 * DEGTORAD;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -458,16 +442,7 @@ float Adis16448::gyroScale(int16_t sensorData) {
 // return - (float) signed/scaled temperature in degrees Celcius
 ////////////////////////////////////////////////////////////////////////////////
 float Adis16448::tempScale(int16_t sensorData) {
-  int signedData = 0;
-  int isNeg = sensorData & 0x8000;
-  if (isNeg == 0x8000) // If the number is negative, scale and sign the output
-    signedData = sensorData - 0xFFFF;
-  else
-    signedData = sensorData;
-  float finalData =
-      (signedData * 0.07386) +
-      31; // Multiply by temperature scale and add 31 to equal 0x0000
-  return finalData;
+  return (sensorData * 0.07386) + 31;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -478,15 +453,7 @@ float Adis16448::tempScale(int16_t sensorData) {
 // return - (float) signed/scaled pressure in mBar
 ////////////////////////////////////////////////////////////////////////////////
 float Adis16448::pressureScale(int16_t sensorData) {
-  int signedData = 0;
-  int isNeg = sensorData & 0x8000;
-  if (isNeg == 0x8000) // If the number is negative, scale and sign the output
-    signedData = sensorData - 0xFFFF;
-  else
-    signedData = sensorData;
-  float finalData =
-      (signedData * 0.02); // Multiply by barometer sensitivity (0.02 mBar/LSB)
-  return finalData;
+  return sensorData * PRESSURESCALE;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -497,13 +464,5 @@ float Adis16448::pressureScale(int16_t sensorData) {
 // return - (float) signed/scaled magnetometer data in gauss
 ////////////////////////////////////////////////////////////////////////////////
 float Adis16448::magnetometerScale(int16_t sensorData) {
-  int signedData = 0;
-  int isNeg = sensorData & 0x8000;
-  if (isNeg == 0x8000) // If the number is negative, scale and sign the output
-    signedData = sensorData - 0xFFFF;
-  else
-    signedData = sensorData;
-  float finalData =
-      (signedData * 0.0001429); // Multiply by sensor resolution (142.9 uGa/LSB)
-  return finalData;
+  return sensorData * MAGSCALE;
 }
