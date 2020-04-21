@@ -17,8 +17,9 @@
 
 class CamSyncedExposure : public CamSynced {
 public:
-  CamSyncedExposure(TccSynced *timer, const uint16_t rate_hz,
-                    const bool invert_trigger, const bool invert_exposure);
+  CamSyncedExposure(ros::NodeHandle *nh, TccSynced *timer,
+                    const uint16_t rate_hz, const bool invert_trigger,
+                    const bool invert_exposure);
   void publish() override;
 };
 

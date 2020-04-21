@@ -1,9 +1,10 @@
 #include "sensors/ImuSynced.h"
 
-ImuSynced::ImuSynced(TimerSynced *timer) : SensorSynced(timer) {}
+ImuSynced::ImuSynced(ros::NodeHandle *nh, TimerSynced *timer)
+    : SensorSynced(nh, timer) {}
 
-void ImuSynced::setupRos(ros::NodeHandle *nh, const char *topic) {
-  if (nh) {
+void ImuSynced::setupRos(const char *topic) {
+  if (nh_) {
     // Create static ROS message.
     static sensor_msgs::Imu imu_msg;
     imu_msg_ = &imu_msg;
@@ -13,6 +14,6 @@ void ImuSynced::setupRos(ros::NodeHandle *nh, const char *topic) {
     publisher_ = &pub;
 
     // Advertise.
-    nh->advertise(pub);
+    nh_->advertise(pub);
   }
 }

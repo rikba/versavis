@@ -1,9 +1,10 @@
 #include "sensors/CamSyncedExposure.h"
 
-CamSyncedExposure::CamSyncedExposure(TccSynced *timer, const uint16_t rate_hz,
+CamSyncedExposure::CamSyncedExposure(ros::NodeHandle *nh, TccSynced *timer,
+                                     const uint16_t rate_hz,
                                      const bool invert_trigger,
                                      const bool invert_exposure)
-    : CamSynced(timer, rate_hz, invert_trigger) {
+    : CamSynced(nh, timer, rate_hz, invert_trigger) {
 
   // Setup timers.
   if (timer) {

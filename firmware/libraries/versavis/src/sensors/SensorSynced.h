@@ -19,12 +19,14 @@
 
 class SensorSynced {
 public:
-  inline SensorSynced(TimerSynced *timer) : timer_(timer) {}
+  inline SensorSynced(ros::NodeHandle *nh, TimerSynced *timer)
+      : nh_(nh), timer_(timer) {}
   inline virtual void publish() = 0;
-  inline virtual void setupRos(ros::NodeHandle *nh, const char *topic) = 0;
+  inline virtual void setupRos(const char *topic) = 0;
 
 protected:
   // ROS
+  ros::NodeHandle *nh_ = NULL;
   ros::Publisher *publisher_ = NULL;
 
   // Timer

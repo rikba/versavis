@@ -1,11 +1,12 @@
 #include "sensors/Adis16448BmlzTriggered.h"
 
-Adis16448BmlzTriggered::Adis16448BmlzTriggered(TimerSynced *timer,
+Adis16448BmlzTriggered::Adis16448BmlzTriggered(ros::NodeHandle *nh,
+                                               TimerSynced *timer,
                                                const uint16_t rate_hz,
                                                const uint8_t dr_port_group,
                                                const uint8_t dr_pin,
                                                const uint8_t chip_select)
-    : ImuSynced(timer), imu_(chip_select) {
+    : ImuSynced(nh, timer), imu_(chip_select) {
 
   // Setup ADIS.
   imu_.setup();
@@ -20,14 +21,13 @@ Adis16448BmlzTriggered::Adis16448BmlzTriggered(TimerSynced *timer,
   }
 }
 
-void Adis16448BmlzTriggered::setupRos(ros::NodeHandle *nh,
-                                      const char *baro_topic,
+void Adis16448BmlzTriggered::setupRos(const char *baro_topic,
                                       const char *imu_topic,
                                       const char *mag_topic,
                                       const char *temp_topic) {
-  ImuSynced::setupRos(nh, imu_topic);
+  ImuSynced::setupRos(imu_topic);
 
-  if (nh) {
+  if (nh_) {
     // Create static ROS msgs.
     static sensor_msgs::FluidPressure baro_msg;
     static sensor_msgs::MagneticField mag_msg;
@@ -49,9 +49,9 @@ void Adis16448BmlzTriggered::setupRos(ros::NodeHandle *nh,
     temp_pub_ = &temp_pub;
 
     // Advertise.
-    nh->advertise(*mag_pub_);
-    nh->advertise(*baro_pub_);
-    nh->advertise(*temp_pub_);
+    nh_->advertise(*mag_pub_);
+    nh_->advertise(*baro_pub_);
+    nh_->advertise(*temp_pub_);
   }
 }
 

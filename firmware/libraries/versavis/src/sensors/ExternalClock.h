@@ -18,8 +18,8 @@
 
 class ExternalClock : public SensorSynced {
 public:
-  ExternalClock();
-  void setupRos(ros::NodeHandle *nh, const char *topic) override;
+  ExternalClock(ros::NodeHandle *nh);
+  void setupRos(const char *topic) override;
   void publish() override;
 
 protected:

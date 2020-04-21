@@ -6,7 +6,8 @@
 #define DACTOVOLT RTC_CLK_SYNC_U_REF / RTC_CLK_SYNC_DAC_RANGE
 #define VOLTTODAC RTC_CLK_SYNC_DAC_RANGE / RTC_CLK_SYNC_U_REF
 
-ExternalClock::ExternalClock() : SensorSynced(&Tcc0Synced::getInstance()) {
+ExternalClock::ExternalClock(ros::NodeHandle *nh)
+    : SensorSynced(nh, &Tcc0Synced::getInstance()) {
   // Setup DAC
   // Connect PA2 pin to peripheral B (VOUT)
   PORT->Group[PORTA].PMUX[2 >> 1].reg |= PORT_PMUX_PMUXE_B;
@@ -38,19 +39,19 @@ ExternalClock::ExternalClock() : SensorSynced(&Tcc0Synced::getInstance()) {
   resetFilter();
 }
 
-void ExternalClock::setupRos(ros::NodeHandle *nh, const char *topic) {
+void ExternalClock::setupRos(const char *topic) {
   // Create static ROS message.
   static versavis::ExtClk clock_msg;
   clock_msg_ = &clock_msg;
 
-  if (nh) {
+  if (nh_) {
 
     // Create static ROS publisher.
     static ros::Publisher pub(topic, clock_msg_);
     publisher_ = &pub;
 
     // Advertise.
-    nh->advertise(pub);
+    nh_->advertise(pub);
   }
 }
 

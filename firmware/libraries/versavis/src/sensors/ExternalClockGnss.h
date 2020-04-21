@@ -15,7 +15,7 @@
 
 class ExternalClockGnss : public ExternalClock {
 public:
-  ExternalClockGnss(Uart *uart, const uint32_t baud_rate);
+  ExternalClockGnss(ros::NodeHandle *nh, Uart *uart, const uint32_t baud_rate);
 
 protected:
   RemoteTimeStatus setRemoteTime() override;

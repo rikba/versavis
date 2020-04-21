@@ -1,16 +1,16 @@
 #include "sensors/CamSynced.h"
 
-CamSynced::CamSynced(TimerSynced *timer, const uint16_t rate_hz,
-                     const bool invert)
-    : SensorSynced(timer) {
+CamSynced::CamSynced(ros::NodeHandle *nh, TimerSynced *timer,
+                     const uint16_t rate_hz, const bool invert)
+    : SensorSynced(nh, timer) {
   // Setup trigger.
   if (timer) {
     timer->setupMfrq(rate_hz, invert);
   }
 }
 
-void CamSynced::setupRos(ros::NodeHandle *nh, const char *topic) {
-  if (nh) {
+void CamSynced::setupRos(const char *topic) {
+  if (nh_) {
     // Create static ROS message.
     static versavis::TimeNumbered time_msg;
     time_msg_ = &time_msg;
@@ -20,6 +20,6 @@ void CamSynced::setupRos(ros::NodeHandle *nh, const char *topic) {
     publisher_ = &pub;
 
     // Advertise.
-    nh->advertise(pub);
+    nh_->advertise(pub);
   }
 }

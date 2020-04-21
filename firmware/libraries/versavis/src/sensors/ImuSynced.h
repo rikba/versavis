@@ -18,8 +18,8 @@
 
 class ImuSynced : public SensorSynced {
 public:
-  ImuSynced(TimerSynced *timer);
-  void setupRos(ros::NodeHandle *nh, const char *topic) override;
+  ImuSynced(ros::NodeHandle *nh, TimerSynced *timer);
+  void setupRos(const char *topic) override;
 
 protected:
   sensor_msgs::Imu *imu_msg_ = NULL;

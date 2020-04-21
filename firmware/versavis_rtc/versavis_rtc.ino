@@ -35,14 +35,15 @@ void setup() {
   DEBUG_PRINTLN("Setup.");
 
   // Sensors
-  static Adis16448BmlzTriggered adis_16448(&Tc3Synced::getInstance(), 100,
+  static Adis16448BmlzTriggered adis_16448(nh, &Tc3Synced::getInstance(), 500,
                                            PORTA, 13, 10);
   imu = &adis_16448;
 
-  static CamSyncedExposure bfly(&Tcc0Synced::getInstance(), 15, false, true);
+  static CamSyncedExposure bfly(nh, &Tcc0Synced::getInstance(), 15, false,
+                                true);
   cam0 = &bfly;
 
-  static ExternalClockGnss gnss(&Serial, 115200);
+  static ExternalClockGnss gnss(nh, &Serial, 115200);
   ext_clock = &gnss;
 
   // ROS
@@ -53,13 +54,13 @@ void setup() {
   static char *imu_topic = "/versavis/adis16448/imu";
   static char *mag_topic = "/versavis/adis16448/mag";
   static char *temp_topic = "/versavis/adis16448/temp";
-  imu->setupRos(nh, baro_topic, imu_topic, mag_topic, temp_topic);
+  imu->setupRos(baro_topic, imu_topic, mag_topic, temp_topic);
 
   static char *bfly_topic = "/versavis/bfly/image";
-  cam0->setupRos(nh, bfly_topic);
+  cam0->setupRos(bfly_topic);
 
   static char *ext_clock_topic = "/versavis/gnss/time_sync";
-  ext_clock->setupRos(nh, ext_clock_topic);
+  ext_clock->setupRos(ext_clock_topic);
 }
 
 void loop() {
