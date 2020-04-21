@@ -47,7 +47,7 @@ void TccSynced::setupMfrqWaveform() const {
   }
 
   DEBUG_PRINT("[TccSynced]: Prescaling timer by ");
-  DEBUG_PRINTLN(prescaler_);
+  DEBUG_PRINTLN(kPrescalers[prescaler_]);
   tcc_->CTRLA.reg |= TCC_CTRLA_PRESCALER(prescaler_);
   while (tcc_->SYNCBUSY.bit.ENABLE) {
   }
