@@ -278,7 +278,8 @@ void RtcSync::computePwm(const uint16_t rate_hz, const uint32_t pulse_us,
 void RtcSync::computeFrq(const uint16_t rate_hz, const uint16_t prescaler,
                          uint32_t *top) const {
   if (top) {
-    *top = (clock_freq_ / prescaler / rate_hz) / 2 - 1;
+    *top = (clock_freq_ / prescaler / rate_hz) / 2 +
+           (clock_freq_ / prescaler % rate_hz != 0) - 1;
   }
 }
 
