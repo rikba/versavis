@@ -162,7 +162,7 @@ void RtcSync::setupRtc() const {
   }
 
   DEBUG_PRINTLN("[RtcSync]: Set CMP0.");
-  RTC->MODE0.COMP[0].reg = RTC_FREQ - 1;
+  RTC->MODE0.COMP[0].reg = RTC_FREQ / 2 - 1;
   while (RTC->MODE0.STATUS.bit.SYNCBUSY) {
   }
 
@@ -216,7 +216,15 @@ void RtcSync::setCount(const uint32_t count) const {
   }
 }
 
+void RtcSync::setSec(const uint32_t sec) { secs_ = sec; }
+
 void RtcSync::setNSec(const uint32_t nsec) {
+  if (nsec > 5e8) {
+    secs_500_ = secs_;
+  } else {
+    secs_500_ = secs_ - 1;
+  }
+
   uint32_t ticks = nsec / ns_per_tick_;
   setCount(ticks);
 }
@@ -239,17 +247,17 @@ void RtcSync::setTime(const ros::Time &time) {
 }
 
 ros::Time RtcSync::computeTime(const uint32_t cc, const uint32_t ticks,
-                               const uint8_t prescaler,
-                               const bool rtc_handled) const {
-  // In principle time is just
-  // ros::Time time(secs_, ticks * kPrescalers[prescaler] * ns_per_tick_)
-  ros::Time time(secs_, (ticks + cc) * kPrescalers[prescaler] * ns_per_tick_);
+                               const uint8_t prescaler) const {
+  // Calculate nanoseconds.
+  ros::Duration residual(0,
+                         (ticks + cc) * kPrescalers[prescaler] * ns_per_tick_);
 
-  // But timestamps that have been captured before RTC was handled need to be
-  // decremented by 1 second.
-  if (rtc_handled && time.nsec > 5e8) {
-    time -= ros::Duration(1, 0);
-  }
+  // Find the corresponding seconds. We differentiate between secs_ and
+  // secs_500_ in order to handle captures during timing overflow.
+  // https://e2e.ti.com/support/microcontrollers/msp430/f/166/t/225035
+  auto time =
+      residual.nsec > 5e8 ? ros::Time(secs_500_, 0) : ros::Time(secs_, 0);
+  time += residual;
 
   return time;
 }
@@ -302,10 +310,12 @@ ros::Time RtcSync::getTimeNow() const {
   // TODO(rikba): Find a non blocking alternative.
   while (RTC->MODE0.STATUS.bit.SYNCBUSY) {
   }
-  ros::Time now(secs_, RTC->MODE0.COUNT.reg * ns_per_tick_);
+  ros::Duration nsec(0, RTC->MODE0.COUNT.reg * ns_per_tick_);
   while (RTC->MODE0.STATUS.bit.SYNCBUSY) {
   }
-  ros::normalizeSecNSec(now.sec, now.nsec);
+
+  auto now = secs_ == secs_500_ ? ros::Time(secs_, 5e8) : ros::Time(secs_, 0);
+  now += nsec;
 
   return now;
 }
@@ -313,6 +323,28 @@ ros::Time RtcSync::getTimeNow() const {
 uint8_t RtcSync::findMinPrescalerFrq(const uint16_t rate_hz,
                                      const uint32_t counter_max) const {
   return findMinPrescalerPwm(2 * rate_hz, counter_max);
+}
+
+void RtcSync::incrementSecs() {
+  if (secs_ == secs_500_) {
+    // Start of a new second.
+    secs_++;
+    has_stamp_ = true;
+    // Disable retrigger.
+    EVSYS->CHANNEL.reg = EVSYS_CHANNEL_EDGSEL_NO_EVT_OUTPUT |
+                         EVSYS_CHANNEL_PATH_ASYNCHRONOUS |
+                         EVSYS_CHANNEL_EVGEN(0) | EVSYS_CHANNEL_CHANNEL(0);
+    while (EVSYS->CHSTATUS.bit.CHBUSY0) {
+    }
+  } else {
+    secs_500_++;
+    // Enable retrigger.
+    EVSYS->CHANNEL.reg =
+        EVSYS_CHANNEL_EDGSEL_NO_EVT_OUTPUT | EVSYS_CHANNEL_PATH_ASYNCHRONOUS |
+        EVSYS_CHANNEL_EVGEN(EVSYS_ID_GEN_RTC_CMP_0) | EVSYS_CHANNEL_CHANNEL(0);
+    while (EVSYS->CHSTATUS.bit.CHBUSY0) {
+    }
+  }
 }
 
 void RTC_Handler() {

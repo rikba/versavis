@@ -44,25 +44,19 @@ public:
   void publish(); // Resets has_stamp_ flag.
 
   // Accessors
-  inline uint32_t getSecs() const { return secs_; }
-  inline uint32_t getComp0() const { return RTC->MODE0.COMP[0].reg; }
   ros::Time computeTime(const uint32_t cc, const uint32_t ticks,
-                        const uint8_t prescaler, const bool rtc_handled) const;
+                        const uint8_t prescaler) const;
   void computePwm(const uint16_t rate_hz, const uint32_t pulse_us,
                   const uint16_t prescaler, uint32_t *top,
                   uint32_t *duty_cycle) const;
   void computeFrq(const uint16_t rate_hz, const uint16_t prescaler,
                   uint32_t *top) const;
-  inline ros::Time getTimeSecs() const { return ros::Time(secs_, 0); }
   ros::Time getTimeNow() const;
 
   // Setters
   void setTime(const ros::Time &time);
 
-  inline void incrementSecs() {
-    secs_++;
-    has_stamp_ = true;
-  }
+  void incrementSecs();
 
   uint8_t findMinPrescalerPwm(const uint16_t rate_hz,
                               const uint32_t counter_max) const;
@@ -78,7 +72,7 @@ private:
   void setupEvsys() const;
   void setupRtc() const;
 
-  inline void setSec(const uint32_t sec) { secs_ = sec; }
+  void setSec(const uint32_t sec);
   void setNSec(const uint32_t nsec);
   void setComp0(const uint32_t comp_0) const;
   void setCount(const uint32_t count) const;
@@ -90,6 +84,8 @@ private:
 
   // State
   volatile uint32_t secs_ = 0;
+  // The same as secs_, but evaluated at 0.5 secs.
+  volatile uint32_t secs_500_ = 0xFFFFFFFF;
   uint32_t clock_freq_ = RTC_FREQ;
   double ns_per_tick_ = 1.0e9 / clock_freq_;
 };
