@@ -16,13 +16,14 @@ class TcSynced : public TimerSynced {
 public:
   TcSynced(const MfrqPin &mfrq_pin, TcCount16 *tc);
 
-  void setupMfrqWaveform() const override;
+  void setupMfrqWaveform() override;
   void setupDataReady(const uint8_t port_group, const uint8_t pin,
                       const InterruptLogic &logic) override;
 
   void handleInterrupt() override;
 
 private:
+  void updateTopCompare() override;
   // Pointer to the actual timer.
   TcCount16 *tc_ = NULL;
 

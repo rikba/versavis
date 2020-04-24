@@ -21,23 +21,16 @@ void TccSynced::setup() const {
   while (tcc_->SYNCBUSY.bit.ENABLE) {
   }
 
-  DEBUG_PRINTLN("[TccSynced]: Setup EVCTRL to retrigger on RTC overflow.");
-  tcc_->EVCTRL.reg |= TCC_EVCTRL_TCEI0 | TCC_EVCTRL_EVACT0_RETRIGGER;
+  DEBUG_PRINTLN("[TccSynced]: Setup EVCTRL to start on RTC overflow.");
+  tcc_->EVCTRL.reg |= TCC_EVCTRL_TCEI0 | TCC_EVCTRL_EVACT0_START;
 
   DEBUG_PRINTLN("[TccSynced]: Enabling event interrupts.");
   tcc_->INTENSET.reg |= TCC_INTENSET_TRG | TCC_INTENSET_OVF;
   DEBUG_PRINTLN("[TccSynced]: Clearing interrupt flags.");
   tcc_->INTFLAG.reg |= TCC_INTFLAG_TRG | TCC_INTFLAG_OVF;
-
-  DEBUG_PRINTLN("[TccSynced]: Enable timer.");
-  while (tcc_->SYNCBUSY.bit.ENABLE) {
-  }
-  tcc_->CTRLA.reg |= TCC_CTRLA_ENABLE;
-  while (tcc_->SYNCBUSY.bit.ENABLE) {
-  }
 }
 
-void TccSynced::setupMfrqWaveform() const {
+void TccSynced::setupMfrqWaveform() {
   // Setup wavegen.
   DEBUG_PRINTLN("[TccSynced]: Disabling timer.");
   while (tcc_->SYNCBUSY.bit.ENABLE) {
@@ -69,19 +62,14 @@ void TccSynced::setupMfrqWaveform() const {
     }
   }
 
-  DEBUG_PRINT("[TccSynced]: Set FRQ top: ");
-  DEBUG_PRINTLN(top_);
-  while (tcc_->SYNCBUSY.bit.CC0) {
-  }
-  tcc_->CC[0].reg = top_;
-  while (tcc_->SYNCBUSY.bit.CC0) {
-  }
+  DEBUG_PRINT("[TccSynced]: Set FRQ top.");
+  updateTopCompare();
 
   DEBUG_PRINT("[TccSynced]: Set CC3 value to half top: ");
-  DEBUG_PRINTLN((top_ + 1) / 2);
+  DEBUG_PRINTLN(top_ / 2);
   while (tcc_->SYNCBUSY.bit.CC3) {
   }
-  tcc_->CC[3].reg = (top_ + 1) / 2;
+  tcc_->CC[3].reg = top_ / 2;
   while (tcc_->SYNCBUSY.bit.CC3) {
   }
 
@@ -155,10 +143,23 @@ bool TccSynced::getTimeLastExposure(ros::Time *time, uint32_t *num,
   return exposure_state_.getTime(time, num, exp);
 }
 
+void TccSynced::updateTopCompare() {
+  r_ += mod_;
+  auto leap_ticks = r_ / freq_;
+  r_ %= freq_;
+  while (tcc_->SYNCBUSY.bit.CC0) {
+  }
+  tcc_->CC[0].reg = top_ + leap_ticks - 1;
+  while (tcc_->SYNCBUSY.bit.CC0) {
+  }
+}
+
 void TccSynced::handleInterrupt() {
   if (tcc_->INTFLAG.bit.OVF) { // Handle overflow.
     tcc_->INTFLAG.reg = TCC_INTFLAG_OVF;
-    time_ += RtcSync::getInstance().computeDuration(top_ + 1, prescaler_);
+    time_ +=
+        RtcSync::getInstance().computeDuration(tcc_->CC[0].reg + 1, prescaler_);
+    updateTopCompare();
   } else if (tcc_->INTFLAG.bit.MC3) { // Handle half a cycle update.
     tcc_->INTFLAG.reg = TCC_INTFLAG_MC3;
     time_2_ = time_;
@@ -174,7 +175,7 @@ void TccSynced::handleInterrupt() {
     // TODO(rikba): Find a way to solve half cycle ambiguity for TCC1 and TCC2.
     // https://e2e.ti.com/support/microcontrollers/msp430/f/166/t/225035
     tcc_->INTFLAG.reg = TCC_INTFLAG_MC1;
-    auto time = tcc_->CC[1].reg < (top_ + 1) / 2 ? time_ : time_2_;
+    auto time = time_;
     time += RtcSync::getInstance().computeDuration(tcc_->CC[1].reg, prescaler_);
     if (getExposurePinValue() ^ exposure_state_.invert_) { // Start exposure.
       exposure_state_.setStart(time);
@@ -183,7 +184,7 @@ void TccSynced::handleInterrupt() {
     }
   } else if (tcc_->INTFLAG.bit.MC2) { // Handle PPS.
     tcc_->INTFLAG.reg = TCC_INTFLAG_MC2;
-    auto time = tcc_->CC[2].reg < (top_ + 1) / 2 ? time_ : time_2_;
+    auto time = time_;
     time += RtcSync::getInstance().computeDuration(tcc_->CC[2].reg, prescaler_);
     pps_state_.setTime(time);
   } // Handle retrigger. Sync RTC time.

@@ -23,8 +23,8 @@ void TcSynced::setup() const {
   while (tc_->STATUS.bit.SYNCBUSY) {
   }
 
-  DEBUG_PRINTLN("[TcSynced]: Setup EVCTRL to retrigger on RTC overflow.");
-  tc_->EVCTRL.reg |= TC_EVCTRL_TCEI | TC_EVCTRL_EVACT_RETRIGGER;
+  DEBUG_PRINTLN("[TcSynced]: Setup EVCTRL to start on RTC overflow.");
+  tc_->EVCTRL.reg |= TC_EVCTRL_TCEI | TC_EVCTRL_EVACT_START;
 
   DEBUG_PRINTLN("[TcSynced]: Capture channel 1.");
   tc_->CTRLC.reg |= TC_CTRLC_CPTEN1;
@@ -35,16 +35,9 @@ void TcSynced::setup() const {
   tc_->INTENSET.reg |= TC_INTENSET_MC1 | TC_INTENSET_OVF;
   DEBUG_PRINTLN("[TcSynced]: Clearing interrupt flags.");
   tc_->INTFLAG.reg |= TC_INTFLAG_MC1 | TC_INTFLAG_OVF;
-
-  DEBUG_PRINTLN("[TcSynced]: Enable timer.");
-  while (tc_->STATUS.bit.SYNCBUSY) {
-  }
-  tc_->CTRLA.reg |= TC_CTRLA_ENABLE;
-  while (tc_->STATUS.bit.SYNCBUSY) {
-  }
 }
 
-void TcSynced::setupMfrqWaveform() const {
+void TcSynced::setupMfrqWaveform() {
   // Setup wavegen.
   DEBUG_PRINTLN("[TcSynced]: Disabling timer.");
   while (tc_->STATUS.bit.SYNCBUSY) {
@@ -76,11 +69,8 @@ void TcSynced::setupMfrqWaveform() const {
     }
   }
 
-  DEBUG_PRINT("[TcSynced]: Set FRQ top: ");
-  DEBUG_PRINTLN(top_);
-  tc_->CC[0].reg = top_;
-  while (tc_->STATUS.bit.SYNCBUSY) {
-  }
+  DEBUG_PRINT("[TcSynced]: Set FRQ top.");
+  updateTopCompare();
 
   DEBUG_PRINTLN("[TcSynced]: Enabling MFRQ interrupts.");
   tc_->INTENSET.reg |= TC_INTENSET_MC0;
@@ -103,12 +93,25 @@ void TcSynced::setupDataReady(const uint8_t port_group, const uint8_t pin,
   setupInterruptPin(port_group, pin, logic, true);
 }
 
+void TcSynced::updateTopCompare() {
+  r_ += mod_;
+  auto leap_ticks = r_ / freq_;
+  r_ %= freq_;
+  while (tc_->STATUS.bit.SYNCBUSY) {
+  }
+  tc_->CC[0].reg = top_ + leap_ticks - 1;
+  while (tc_->STATUS.bit.SYNCBUSY) {
+  }
+}
+
 void TcSynced::handleInterrupt() {
 
   // Handle overflow.
   if (tc_->INTFLAG.bit.OVF) {
     tc_->INTFLAG.reg = TC_INTFLAG_OVF;
-    time_ += RtcSync::getInstance().computeDuration(top_ + 1, prescaler_);
+    time_ +=
+        RtcSync::getInstance().computeDuration(tc_->CC[0].reg + 1, prescaler_);
+    updateTopCompare();
   }
   // Handle trigger which comes at the same time as overflow.
   else if (tc_->INTFLAG.bit.MC0) {

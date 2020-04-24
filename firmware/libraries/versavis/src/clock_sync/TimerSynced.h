@@ -64,15 +64,19 @@ protected:
   bool getPinValue(const uint8_t group, const uint8_t pin) const;
   bool getWaveOutPinValue() const;
 
-  virtual void setupMfrqWaveform() const = 0;
+  virtual void setupMfrqWaveform() = 0;
   void setupInterruptPin(const uint8_t port_group, const uint8_t pin,
                          const InterruptLogic &logic,
                          const bool enable_interrupt) const;
+  virtual void updateTopCompare() = 0;
 
   // States
   uint8_t prescaler_ = 0;
   uint32_t top_ = 0xFFFF; // Default 16 bit counter.
-  ros::Time time_; // Time at last overflow.
+  uint16_t mod_ = 0;      // The fraction each nominal cycle counts to few.
+  uint16_t r_ = 0; // The remainder missing in a cycle to calculate leap ticks.
+  uint16_t freq_ = 1; // The rate of the counter.
+  ros::Time time_;    // Time since start at overflow.
 
   // TODO(rikba): Make these states pointers.
   // Trigger state.

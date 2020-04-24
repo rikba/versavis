@@ -10,8 +10,10 @@ TimerSynced::TimerSynced(const MfrqPin &mfrq_pin) : mfrq_pin_(mfrq_pin) {
 void TimerSynced::setupMfrq(const uint16_t rate_hz, const bool invert) {
   // Set parameters.
   trigger_state_.invert_ = invert;
+  freq_ = 2 * rate_hz;
   prescaler_ = RtcSync::getInstance().findMinPrescalerFrq(rate_hz, top_);
-  RtcSync::getInstance().computeFrq(rate_hz, kPrescalers[prescaler_], &top_);
+  top_ = RTC_FREQ / kPrescalers[prescaler_] / freq_;
+  mod_ = static_cast<uint32_t>((RTC_FREQ / kPrescalers[prescaler_])) % freq_;
 
   // Setup timer specific match frequency configuration.
   setupMfrqWaveform();

@@ -247,7 +247,7 @@ void RtcSync::setTime(const ros::Time &time) {
 }
 
 ros::Duration RtcSync::computeDuration(const uint32_t ticks,
-                              const uint8_t prescaler) const {
+                                       const uint8_t prescaler) const {
   return ros::Duration(0, ticks * kPrescalers[prescaler] * ns_per_tick_);
 }
 
@@ -262,12 +262,6 @@ void RtcSync::computePwm(const uint16_t rate_hz, const uint32_t pulse_us,
     uint32_t mega_pulses = pulse_us * clock_freq_;
     *duty_cycle = mega_pulses / 1e6 +
                   (mega_pulses % static_cast<uint32_t>(1e6) != 0); // Ceil.
-  }
-}
-void RtcSync::computeFrq(const uint16_t rate_hz, const uint16_t prescaler,
-                         uint32_t *top) const {
-  if (top) {
-    *top = (clock_freq_ / prescaler / rate_hz) / 2 - 1;
   }
 }
 

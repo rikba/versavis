@@ -25,7 +25,7 @@ public:
 
   void setupDataReady(const uint8_t port_group, const uint8_t pin,
                       const InterruptLogic &logic) override {}
-  void setupMfrqWaveform() const override;
+  void setupMfrqWaveform() override;
   void setupExposure(const bool invert);
 
   void handleInterrupt() override;
@@ -48,6 +48,7 @@ private:
   bool getExposurePinValue() const;
 
   void setup() const;
+  void updateTopCompare() override;
 
   // Exposure state.
   MeasurementStateExposure exposure_state_;
