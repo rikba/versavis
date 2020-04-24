@@ -55,6 +55,9 @@ private:
 
   // PPS state.
   MeasurementStateStamped pps_state_;
+
+  // Wrap around state after half a clock cycle to handle ambiguities.
+  uint32_t ticks_2_ = ticks_;
 };
 
 #endif

@@ -26,6 +26,7 @@ Tcc0Synced::Tcc0Synced()
       pps_pin_{.group = PPS_GROUP, .pin = PPS_PIN} {
   // This is a 32 bit counter.
   top_ = 0xFFFFFFFF;
+  setupAmbiguityComparison();
   // Enable interrupts.
   NVIC_SetPriority(TCC0_IRQn, 0);
   NVIC_EnableIRQ(TCC0_IRQn);
@@ -89,6 +90,31 @@ void Tcc0Synced::setupPpsEvsys() const {
                        EVSYS_CHANNEL_EVGEN(getEventGeneratorId(PPS_PIN)) |
                        EVSYS_CHANNEL_CHANNEL(PPS_CHANNEL);
   while (EVSYS->CHSTATUS.vec.CHBUSY & (1 << PPS_CHANNEL)) {
+  }
+}
+
+void Tcc0Synced::setupAmbiguityComparison() const {
+  DEBUG_PRINTLN("[Tcc0Synced]: Disabling timer.");
+  while (tcc_->SYNCBUSY.bit.ENABLE) {
+  }
+  tcc_->CTRLA.reg &= ~TCC_CTRLA_ENABLE;
+  while (tcc_->SYNCBUSY.bit.ENABLE) {
+  }
+
+  DEBUG_PRINTLN("[Tcc0Synced]: Make CC3 compare register.");
+  tcc_->CTRLA.reg &= ~TCC_CTRLA_CPTEN3;
+  while (tcc_->SYNCBUSY.bit.ENABLE) {
+  }
+
+  DEBUG_PRINTLN("[Tcc0Synced]: Enabling half top interrupts.");
+  tcc_->INTENSET.reg |= TCC_INTENSET_MC3;
+  tcc_->INTFLAG.reg |= TCC_INTFLAG_MC3;
+
+  DEBUG_PRINTLN("[Tcc0Synced]: Enable timer.");
+  while (tcc_->SYNCBUSY.bit.ENABLE) {
+  }
+  tcc_->CTRLA.reg |= TCC_CTRLA_ENABLE;
+  while (tcc_->SYNCBUSY.bit.ENABLE) {
   }
 }
 

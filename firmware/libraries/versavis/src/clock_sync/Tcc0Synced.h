@@ -33,6 +33,8 @@ private:
 
   void setupExposureEvsys() const override;
 
+  void setupAmbiguityComparison() const;
+
   const PpsPin pps_pin_;
 };
 
