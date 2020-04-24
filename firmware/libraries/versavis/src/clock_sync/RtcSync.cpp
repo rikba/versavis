@@ -246,20 +246,9 @@ void RtcSync::setTime(const ros::Time &time) {
   }
 }
 
-ros::Time RtcSync::computeTime(const uint32_t cc, const uint32_t ticks,
-                               const uint8_t prescaler) const {
-  // Calculate nanoseconds.
-  ros::Duration residual(0,
-                         (ticks + cc) * kPrescalers[prescaler] * ns_per_tick_);
-
-  // Find the corresponding seconds. We differentiate between secs_ and
-  // secs_500_ in order to handle captures during timing overflow.
-  // https://e2e.ti.com/support/microcontrollers/msp430/f/166/t/225035
-  auto time =
-      residual.nsec > 5e8 ? ros::Time(secs_500_, 0) : ros::Time(secs_, 0);
-  time += residual;
-
-  return time;
+ros::Duration RtcSync::computeDuration(const uint32_t ticks,
+                              const uint8_t prescaler) const {
+  return ros::Duration(0, ticks * kPrescalers[prescaler] * ns_per_tick_);
 }
 
 void RtcSync::computePwm(const uint16_t rate_hz, const uint32_t pulse_us,
@@ -278,7 +267,7 @@ void RtcSync::computePwm(const uint16_t rate_hz, const uint32_t pulse_us,
 void RtcSync::computeFrq(const uint16_t rate_hz, const uint16_t prescaler,
                          uint32_t *top) const {
   if (top) {
-    *top = (clock_freq_ / prescaler / rate_hz) / 2  - 1;
+    *top = (clock_freq_ / prescaler / rate_hz) / 2 - 1;
   }
 }
 

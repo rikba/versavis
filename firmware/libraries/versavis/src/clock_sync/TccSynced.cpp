@@ -158,38 +158,38 @@ bool TccSynced::getTimeLastExposure(ros::Time *time, uint32_t *num,
 void TccSynced::handleInterrupt() {
   if (tcc_->INTFLAG.bit.OVF) { // Handle overflow.
     tcc_->INTFLAG.reg = TCC_INTFLAG_OVF;
-    ticks_ += top_ + 1;               // Increment tick counter.
+    time_ += RtcSync::getInstance().computeDuration(top_ + 1, prescaler_);
   } else if (tcc_->INTFLAG.bit.MC3) { // Handle half a cycle update.
     tcc_->INTFLAG.reg = TCC_INTFLAG_MC3;
-    ticks_2_ = ticks_;
-  } // Handle retrigger once RTC has been incremented.
-  else if (tcc_->INTFLAG.bit.TRG && !RTC->MODE0.INTFLAG.bit.CMP0 &&
-           !RTC->MODE0.INTFLAG.bit.OVF) {
-    tcc_->INTFLAG.reg = TCC_INTFLAG_TRG;
-    ticks_ = 0;
+    time_2_ = time_;
   }
   // Handle trigger which comes at the same time as overflow.
   else if (tcc_->INTFLAG.bit.MC0) {
     tcc_->INTFLAG.reg = TCC_INTFLAG_MC0;
     if (getWaveOutPinValue() ^ trigger_state_.invert_) {
       // Capture new trigger pulse.
-      trigger_state_.setTime(
-          RtcSync::getInstance().computeTime(0, ticks_, prescaler_));
+      trigger_state_.setTime(time_);
     }
   } else if (tcc_->INTFLAG.bit.MC1) { // Capture exposure.
+    // TODO(rikba): Find a way to solve half cycle ambiguity for TCC1 and TCC2.
+    // https://e2e.ti.com/support/microcontrollers/msp430/f/166/t/225035
     tcc_->INTFLAG.reg = TCC_INTFLAG_MC1;
-    auto ticks = tcc_->CC[1].reg >= (top_ + 1) / 2 ? ticks_2_ : ticks_;
+    auto time = tcc_->CC[1].reg < (top_ + 1) / 2 ? time_ : time_2_;
+    time += RtcSync::getInstance().computeDuration(tcc_->CC[1].reg, prescaler_);
     if (getExposurePinValue() ^ exposure_state_.invert_) { // Start exposure.
-      exposure_state_.setStart(RtcSync::getInstance().computeTime(
-          tcc_->CC[1].reg, ticks, prescaler_));
+      exposure_state_.setStart(time);
     } else { // Stop exposure.
-      exposure_state_.setEnd(RtcSync::getInstance().computeTime(
-          tcc_->CC[1].reg, ticks, prescaler_));
+      exposure_state_.setEnd(time);
     }
   } else if (tcc_->INTFLAG.bit.MC2) { // Handle PPS.
     tcc_->INTFLAG.reg = TCC_INTFLAG_MC2;
-    auto ticks = tcc_->CC[2].reg >= (top_ + 1) / 2 ? ticks_2_ : ticks_;
-    pps_state_.setTime(RtcSync::getInstance().computeTime(tcc_->CC[2].reg,
-                                                          ticks_, prescaler_));
+    auto time = tcc_->CC[2].reg < (top_ + 1) / 2 ? time_ : time_2_;
+    time += RtcSync::getInstance().computeDuration(tcc_->CC[2].reg, prescaler_);
+    pps_state_.setTime(time);
+  } // Handle retrigger. Sync RTC time.
+  else if (tcc_->INTFLAG.bit.TRG && !RTC->MODE0.INTFLAG.bit.CMP0 &&
+           !RTC->MODE0.INTFLAG.bit.OVF) {
+    tcc_->INTFLAG.reg = TCC_INTFLAG_TRG;
+    time_ = RtcSync::getInstance().getSec();
   }
 }

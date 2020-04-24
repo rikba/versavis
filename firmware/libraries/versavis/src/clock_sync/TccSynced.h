@@ -57,7 +57,7 @@ private:
   MeasurementStateStamped pps_state_;
 
   // Wrap around state after half a clock cycle to handle ambiguities.
-  uint32_t ticks_2_ = ticks_;
+  ros::Time time_2_ = time_;
 };
 
 #endif

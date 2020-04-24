@@ -72,7 +72,7 @@ protected:
   // States
   uint8_t prescaler_ = 0;
   uint32_t top_ = 0xFFFF; // Default 16 bit counter.
-  uint32_t ticks_ = 0;    // Ticks since retrigger.
+  ros::Time time_; // Time at last overflow.
 
   // TODO(rikba): Make these states pointers.
   // Trigger state.

@@ -104,33 +104,24 @@ void TcSynced::setupDataReady(const uint8_t port_group, const uint8_t pin,
 }
 
 void TcSynced::handleInterrupt() {
-  const bool rtc_handled = tc_->INTFLAG.bit.MC1 &&
-                           !RTC->MODE0.INTFLAG.bit.CMP0 &&
-                           !RTC->MODE0.INTFLAG.bit.OVF;
 
   // Handle overflow.
   if (tc_->INTFLAG.bit.OVF) {
     tc_->INTFLAG.reg = TC_INTFLAG_OVF;
-
-    if (rtc_handled) {
-      ticks_ = 0;
-    } else {
-      ticks_ += top_ + 1;
-    }
+    time_ += RtcSync::getInstance().computeDuration(top_ + 1, prescaler_);
   }
-
-  if (tc_->INTFLAG.bit.MC0) {
+  // Handle trigger which comes at the same time as overflow.
+  else if (tc_->INTFLAG.bit.MC0) {
     tc_->INTFLAG.reg = TC_INTFLAG_MC0;
     if (getWaveOutPinValue() ^ trigger_state_.invert_) {
       // Set new trigger timestamp.
-      trigger_state_.setTime(RtcSync::getInstance().computeTime(
-          0, ticks_, prescaler_, rtc_handled));
+      trigger_state_.setTime(time_);
     }
   }
-
-  // Handle retrigger.
-  if (tc_->INTFLAG.bit.MC1) {
+  // Handle retrigger. Sync RTC time.
+  else if (tc_->INTFLAG.bit.MC1 && !RTC->MODE0.INTFLAG.bit.CMP0 &&
+           !RTC->MODE0.INTFLAG.bit.OVF) {
     tc_->INTFLAG.reg = TC_INTFLAG_MC1;
-    ticks_ = 0;
+    time_ = RtcSync::getInstance().getSec();
   }
 }
