@@ -152,11 +152,16 @@ void ExternalClock::updateFilter() {
 void ExternalClock::controlClock() {
   // Hard reset RTC if more than one second off.
   if (abs(measured_offset_s_) > 1.0) {
-    ros::Time reset_time = RtcSync::getInstance().getTimeNow();
-    ros::Duration offset;
-    offset.fromSec(measured_offset_s_ + RTC_CLK_SYNC_X0_OFFSET * 1.0e-6);
-    reset_time -= offset;
-    RtcSync::getInstance().setTime(reset_time);
+    auto initial_time_ = clock_msg_->remote_time;
+    auto now = RtcSync::getInstance().getTimeNow();
+    initial_time_ += computeDuration(clock_msg_->receive_time, now);
+    RtcSync::getInstance().setTime(initial_time_);
+
+    char info[255];
+    sprintf(info, "Resetting RTC. Sec: %u, NSec: %u", initial_time_.sec,
+            initial_time_.nsec);
+    nh_->loginfo(info);
+
     resetFilter();
   } else if (clock_msg_->dt > 0.0) {
 #ifdef RTC_CLK_SYNC
