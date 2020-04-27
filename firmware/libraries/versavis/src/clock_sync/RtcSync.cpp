@@ -163,8 +163,8 @@ void RtcSync::setupRtc() const {
   while (RTC->MODE0.STATUS.bit.SYNCBUSY) {
   }
 
-  DEBUG_PRINTLN("[RtcSync]: Set CMP0 to trigger every us.");
-  RTC->MODE0.COMP[0].reg = 999999;
+  DEBUG_PRINTLN("[RtcSync]: Set CMP0 to trigger once per ms.");
+  RTC->MODE0.COMP[0].reg = RTC_FREQ / 1000 - 1;
   while (RTC->MODE0.STATUS.bit.SYNCBUSY) {
   }
 
@@ -258,6 +258,12 @@ void RtcSync::incrementMicros() {
   if (time_.nsec == 0) {
     has_stamp_ = true;
   }
+}
+
+ros::Time RtcSync::getTimerStartTime() const {
+  ros::Time start;
+  start += ros_resolution_;
+  return start;
 }
 
 void RtcSync::handleEic() {

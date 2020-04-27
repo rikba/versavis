@@ -160,6 +160,7 @@ void TccSynced::handleInterrupt() {
     time_ +=
         RtcSync::getInstance().computeDuration(tcc_->CC[0].reg + 1, prescaler_);
     updateTopCompare();
+    syncRtc();
   } else if (tcc_->INTFLAG.bit.MC3) { // Handle half a cycle update.
     tcc_->INTFLAG.reg = TCC_INTFLAG_MC3;
     time_2_ = time_;

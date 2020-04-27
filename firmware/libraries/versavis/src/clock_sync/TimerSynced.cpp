@@ -160,3 +160,13 @@ void TimerSynced::handleEic() {
     EIC->INTFLAG.reg |= EIC_INTFLAG_EXTINT(1 << (dr_pin_ % 16));
   }
 }
+
+void TimerSynced::syncRtc() {
+  // Do not sync exactly at second wrap around.
+  if (time_.nsec > 2e8 && time_.nsec < 8e8) {
+    auto now = RtcSync::getInstance().getTimeNow();
+    if (now.sec != time_.sec) {
+      time_.sec = now.sec;
+    }
+  }
+}

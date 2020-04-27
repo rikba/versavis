@@ -112,6 +112,7 @@ void TcSynced::handleInterrupt() {
     time_ +=
         RtcSync::getInstance().computeDuration(tc_->CC[0].reg + 1, prescaler_);
     updateTopCompare();
+    syncRtc();
   }
   // Handle trigger which comes at the same time as overflow.
   else if (tc_->INTFLAG.bit.MC0) {

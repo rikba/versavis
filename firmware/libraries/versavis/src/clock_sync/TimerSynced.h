@@ -24,6 +24,7 @@
 
 #include "clock_sync/MeasurementState.h"
 #include "clock_sync/MeasurementStateStamped.h"
+#include "clock_sync/RtcSync.h"
 #include "versavis_configuration.h"
 
 enum class InterruptLogic {
@@ -69,6 +70,7 @@ protected:
                          const InterruptLogic &logic,
                          const bool enable_interrupt) const;
   virtual void updateTopCompare() = 0;
+  void syncRtc();
 
   // States
   uint8_t prescaler_ = 0;
@@ -76,7 +78,8 @@ protected:
   uint16_t mod_ = 0;      // The fraction each nominal cycle counts to few.
   uint16_t r_ = 0; // The remainder missing in a cycle to calculate leap ticks.
   uint16_t freq_ = 1; // The rate of the counter.
-  ros::Time time_;    // Time since start at overflow.
+  // Time since start at overflow.
+  ros::Time time_ = RtcSync::getInstance().getTimerStartTime();
 
   // TODO(rikba): Make these states pointers.
   // Trigger state.
