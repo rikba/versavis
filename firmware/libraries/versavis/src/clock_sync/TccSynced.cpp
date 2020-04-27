@@ -25,9 +25,9 @@ void TccSynced::setup() const {
   tcc_->EVCTRL.reg |= TCC_EVCTRL_TCEI0 | TCC_EVCTRL_EVACT0_START;
 
   DEBUG_PRINTLN("[TccSynced]: Enabling event interrupts.");
-  tcc_->INTENSET.reg |= TCC_INTENSET_TRG | TCC_INTENSET_OVF;
+  tcc_->INTENSET.reg |= TCC_INTENSET_OVF;
   DEBUG_PRINTLN("[TccSynced]: Clearing interrupt flags.");
-  tcc_->INTFLAG.reg |= TCC_INTFLAG_TRG | TCC_INTFLAG_OVF;
+  tcc_->INTFLAG.reg |= TCC_INTFLAG_OVF;
 }
 
 void TccSynced::setupMfrqWaveform() {
@@ -187,10 +187,5 @@ void TccSynced::handleInterrupt() {
     auto time = time_;
     time += RtcSync::getInstance().computeDuration(tcc_->CC[2].reg, prescaler_);
     pps_state_.setTime(time);
-  } // Handle retrigger. Sync RTC time.
-  else if (tcc_->INTFLAG.bit.TRG && !RTC->MODE0.INTFLAG.bit.CMP0 &&
-           !RTC->MODE0.INTFLAG.bit.OVF) {
-    tcc_->INTFLAG.reg = TCC_INTFLAG_TRG;
-    time_ = RtcSync::getInstance().getSec();
   }
 }

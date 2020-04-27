@@ -32,9 +32,9 @@ void TcSynced::setup() const {
   }
 
   DEBUG_PRINTLN("[TcSynced]: Enabling event interrupts.");
-  tc_->INTENSET.reg |= TC_INTENSET_MC1 | TC_INTENSET_OVF;
+  tc_->INTENSET.reg |= TC_INTENSET_OVF;
   DEBUG_PRINTLN("[TcSynced]: Clearing interrupt flags.");
-  tc_->INTFLAG.reg |= TC_INTFLAG_MC1 | TC_INTFLAG_OVF;
+  tc_->INTFLAG.reg |= TC_INTFLAG_OVF;
 }
 
 void TcSynced::setupMfrqWaveform() {
@@ -120,11 +120,5 @@ void TcSynced::handleInterrupt() {
       // Set new trigger timestamp.
       trigger_state_.setTime(time_);
     }
-  }
-  // Handle retrigger. Sync RTC time.
-  else if (tc_->INTFLAG.bit.MC1 && !RTC->MODE0.INTFLAG.bit.CMP0 &&
-           !RTC->MODE0.INTFLAG.bit.OVF) {
-    tc_->INTFLAG.reg = TC_INTFLAG_MC1;
-    time_ = RtcSync::getInstance().getSec();
   }
 }

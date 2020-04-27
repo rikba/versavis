@@ -2,6 +2,7 @@
 
 #include <ros/time.h>
 
+#include "clock_sync/atomic.h"
 #include "helper.h"
 #include "versavis_configuration.h"
 
@@ -29,7 +30,8 @@ void RtcSync::setupRos(ros::NodeHandle *nh, const char *topic) {
 
 void RtcSync::publish() {
   if (rtc_pub_ && rtc_msg_ && has_stamp_) {
-    rtc_msg_->data = ros::Time(secs_, 0);
+    rtc_msg_->data.sec = time_.sec;
+    rtc_msg_->data.nsec = time_.nsec;
     rtc_pub_->publish(rtc_msg_);
     has_stamp_ = false;
   }
@@ -100,28 +102,28 @@ void RtcSync::setupEvsys() const {
 
   DEBUG_PRINTLN("[RtcSync]: Connect all timers to this event on channel 0.");
   // TCC0
-  EVSYS->USER.reg = EVSYS_USER_CHANNEL(1) |
-                    EVSYS_USER_USER(EVSYS_ID_USER_TCC0_EV_0); // Retrigger
+  EVSYS->USER.reg =
+      EVSYS_USER_CHANNEL(1) | EVSYS_USER_USER(EVSYS_ID_USER_TCC0_EV_0); // Start
 
   // TCC1
-  EVSYS->USER.reg = EVSYS_USER_CHANNEL(1) |
-                    EVSYS_USER_USER(EVSYS_ID_USER_TCC1_EV_0); // Retrigger
+  EVSYS->USER.reg =
+      EVSYS_USER_CHANNEL(1) | EVSYS_USER_USER(EVSYS_ID_USER_TCC1_EV_0); // Start
 
   // TCC2
-  EVSYS->USER.reg = EVSYS_USER_CHANNEL(1) |
-                    EVSYS_USER_USER(EVSYS_ID_USER_TCC2_EV_0); // Retrigger
+  EVSYS->USER.reg =
+      EVSYS_USER_CHANNEL(1) | EVSYS_USER_USER(EVSYS_ID_USER_TCC2_EV_0); // Start
 
   // TC3
-  EVSYS->USER.reg = EVSYS_USER_CHANNEL(1) |
-                    EVSYS_USER_USER(EVSYS_ID_USER_TC3_EVU); // Retrigger
+  EVSYS->USER.reg =
+      EVSYS_USER_CHANNEL(1) | EVSYS_USER_USER(EVSYS_ID_USER_TC3_EVU); // Start
 
   // TC4
-  EVSYS->USER.reg = EVSYS_USER_CHANNEL(1) |
-                    EVSYS_USER_USER(EVSYS_ID_USER_TC4_EVU); // Retrigger
+  EVSYS->USER.reg =
+      EVSYS_USER_CHANNEL(1) | EVSYS_USER_USER(EVSYS_ID_USER_TC4_EVU); // Start
 
   // TC5
-  EVSYS->USER.reg = EVSYS_USER_CHANNEL(1) |
-                    EVSYS_USER_USER(EVSYS_ID_USER_TC5_EVU); // Retrigger
+  EVSYS->USER.reg =
+      EVSYS_USER_CHANNEL(1) | EVSYS_USER_USER(EVSYS_ID_USER_TC5_EVU); // Start
 
   DEBUG_PRINTLN("[RtcSync]: Configuring EVSYS channel.");
   EVSYS->CHANNEL.reg =
@@ -161,8 +163,8 @@ void RtcSync::setupRtc() const {
   while (RTC->MODE0.STATUS.bit.SYNCBUSY) {
   }
 
-  DEBUG_PRINTLN("[RtcSync]: Set CMP0.");
-  RTC->MODE0.COMP[0].reg = RTC_FREQ / 2 - 1;
+  DEBUG_PRINTLN("[RtcSync]: Set CMP0 to trigger every us.");
+  RTC->MODE0.COMP[0].reg = 999999;
   while (RTC->MODE0.STATUS.bit.SYNCBUSY) {
   }
 
@@ -173,11 +175,6 @@ void RtcSync::setupRtc() const {
 
   DEBUG_PRINTLN("[RtcSync]: Enabling CMPEO0 event.");
   RTC->MODE0.EVCTRL.reg |= RTC_MODE0_EVCTRL_CMPEO0;
-  while (RTC->MODE0.STATUS.bit.SYNCBUSY) {
-  }
-
-  DEBUG_PRINTLN("[RtcSync]: Enabling RTC.");
-  RTC->MODE0.CTRL.reg |= RTC_MODE0_CTRL_ENABLE; // Enable RTC.
   while (RTC->MODE0.STATUS.bit.SYNCBUSY) {
   }
 
@@ -192,55 +189,11 @@ void RtcSync::setupRtc() const {
   }
 }
 
-void RtcSync::setComp0(const uint32_t comp_0) const {
-  while (RTC->MODE0.STATUS.bit.SYNCBUSY) {
-  }
-  RTC->MODE0.COMP[0].reg = comp_0;
-  while (RTC->MODE0.STATUS.bit.SYNCBUSY) {
-  }
-  RTC->MODE0.READREQ.reg |=
-      RTC_READREQ_RREQ | RTC_READREQ_RCONT | 0x0010; // Continuous reading
-  while (RTC->MODE0.STATUS.bit.SYNCBUSY) {
-  }
-}
+void RtcSync::setSec(const uint32_t sec) { time_.sec = sec; }
 
-void RtcSync::setCount(const uint32_t count) const {
-  while (RTC->MODE0.STATUS.bit.SYNCBUSY) {
-  }
-  RTC->MODE0.COUNT.reg = count;
-  while (RTC->MODE0.STATUS.bit.SYNCBUSY) {
-  }
-  RTC->MODE0.READREQ.reg |=
-      RTC_READREQ_RREQ | RTC_READREQ_RCONT | 0x0010; // Continuous reading
-  while (RTC->MODE0.STATUS.bit.SYNCBUSY) {
-  }
-}
+void RtcSync::start() const {
 
-void RtcSync::setSec(const uint32_t sec) { secs_ = sec; }
-
-void RtcSync::setNSec(const uint32_t nsec) {
-  if (nsec > 5e8) {
-    secs_500_ = secs_;
-  } else {
-    secs_500_ = secs_ - 1;
-  }
-
-  uint32_t ticks = nsec / ns_per_tick_;
-  setCount(ticks);
-}
-
-void RtcSync::setTime(const ros::Time &time) {
-  while (RTC->MODE0.STATUS.bit.SYNCBUSY) {
-  }
-  RTC->MODE0.CTRL.reg &= ~RTC_MODE0_CTRL_ENABLE; // Disable RTC.
-  while (RTC->MODE0.STATUS.bit.SYNCBUSY) {
-  }
-
-  setSec(time.sec);
-  setNSec(time.nsec);
-
-  while (RTC->MODE0.STATUS.bit.SYNCBUSY) {
-  }
+  DEBUG_PRINTLN("[RtcSync]: Enabling RTC.");
   RTC->MODE0.CTRL.reg |= RTC_MODE0_CTRL_ENABLE; // Enable RTC.
   while (RTC->MODE0.STATUS.bit.SYNCBUSY) {
   }
@@ -290,16 +243,8 @@ uint8_t RtcSync::findMinPrescalerPwm(const uint16_t rate_hz,
 }
 
 ros::Time RtcSync::getTimeNow() const {
-  // TODO(rikba): Find a non blocking alternative.
-  while (RTC->MODE0.STATUS.bit.SYNCBUSY) {
-  }
-  ros::Duration nsec(0, RTC->MODE0.COUNT.reg * ns_per_tick_);
-  while (RTC->MODE0.STATUS.bit.SYNCBUSY) {
-  }
-
-  auto now = secs_ == secs_500_ ? ros::Time(secs_, 5e8) : ros::Time(secs_, 0);
-  now += nsec;
-
+  ros::Time now;
+  ATOMIC_BLOCK(ATOMIC_RESTORESTATE) { now = time_; }
   return now;
 }
 
@@ -308,25 +253,19 @@ uint8_t RtcSync::findMinPrescalerFrq(const uint16_t rate_hz,
   return findMinPrescalerPwm(2 * rate_hz, counter_max);
 }
 
-void RtcSync::incrementSecs() {
-  if (secs_ == secs_500_) {
-    // Start of a new second.
-    secs_++;
+void RtcSync::incrementMicros() {
+  time_ += ros_resolution_;
+  if (time_.nsec == 0) {
     has_stamp_ = true;
-    // Disable retrigger.
-    EVSYS->CHANNEL.reg = EVSYS_CHANNEL_EDGSEL_NO_EVT_OUTPUT |
-                         EVSYS_CHANNEL_PATH_ASYNCHRONOUS |
-                         EVSYS_CHANNEL_EVGEN(0) | EVSYS_CHANNEL_CHANNEL(0);
-    while (EVSYS->CHSTATUS.bit.CHBUSY0) {
+  }
+}
+
+void RtcSync::handleEic() {
+  if (EIC->INTFLAG.vec.EXTINT & (1 << (pps_pin_ % 16))) {
+    if (!RTC->MODE0.CTRL.bit.ENABLE) {
+      start();
     }
-  } else {
-    secs_500_++;
-    // Enable retrigger.
-    EVSYS->CHANNEL.reg =
-        EVSYS_CHANNEL_EDGSEL_NO_EVT_OUTPUT | EVSYS_CHANNEL_PATH_ASYNCHRONOUS |
-        EVSYS_CHANNEL_EVGEN(EVSYS_ID_GEN_RTC_CMP_0) | EVSYS_CHANNEL_CHANNEL(0);
-    while (EVSYS->CHSTATUS.bit.CHBUSY0) {
-    }
+    EIC->INTFLAG.reg |= EIC_INTFLAG_EXTINT(1 << (pps_pin_ % 16));
   }
 }
 
@@ -334,6 +273,6 @@ void RTC_Handler() {
   if (RTC->MODE0.INTFLAG.bit.CMP0 && RTC->MODE0.INTFLAG.bit.OVF) {
     RTC->MODE0.INTFLAG.reg = RTC_MODE0_INTFLAG_CMP0;
     RTC->MODE0.INTFLAG.reg = RTC_MODE0_INTFLAG_OVF;
-    RtcSync::getInstance().incrementSecs();
+    RtcSync::getInstance().incrementMicros();
   }
 }

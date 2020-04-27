@@ -74,4 +74,7 @@ void loop() {
     nh->spinOnce();
 }
 
-void EIC_Handler() { Tc3Synced::getInstance().handleEic(); }
+void EIC_Handler() {
+  RtcSync::getInstance().handleEic();
+  Tc3Synced::getInstance().handleEic();
+}

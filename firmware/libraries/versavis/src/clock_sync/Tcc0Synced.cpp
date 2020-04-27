@@ -52,7 +52,7 @@ void Tcc0Synced::setupPps(const bool invert) {
 
   DEBUG_PRINTLN("[Tcc0Synced]: Setup pps interrupt pin.");
   const auto logic = invert ? InterruptLogic::kFall : InterruptLogic::kRise;
-  setupInterruptPin(pps_pin_.group, pps_pin_.pin, logic, false);
+  setupInterruptPin(pps_pin_.group, pps_pin_.pin, logic, true);
   setupPpsEvsys();
 
   // Setup interrupt
@@ -85,6 +85,7 @@ void Tcc0Synced::setupPpsEvsys() const {
   REG_PM_APBCMASK |= PM_APBCMASK_EVSYS;
   EVSYS->USER.reg = EVSYS_USER_CHANNEL(PPS_CHANNEL + 1) |
                     EVSYS_USER_USER(EVSYS_ID_USER_TCC0_MC_2);
+
   EVSYS->CHANNEL.reg = EVSYS_CHANNEL_EDGSEL_NO_EVT_OUTPUT |
                        EVSYS_CHANNEL_PATH_ASYNCHRONOUS |
                        EVSYS_CHANNEL_EVGEN(getEventGeneratorId(PPS_PIN)) |

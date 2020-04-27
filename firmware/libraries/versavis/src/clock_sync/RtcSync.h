@@ -48,12 +48,13 @@ public:
                   const uint16_t prescaler, uint32_t *top,
                   uint32_t *duty_cycle) const;
   ros::Time getTimeNow() const;
-  inline ros::Time getSec() const { return ros::Time(secs_, 0); }
 
   // Setters
-  void setTime(const ros::Time &time);
+  void setSec(const uint32_t sec);
+  void start() const;
+  void handleEic();
 
-  void incrementSecs();
+  void incrementMicros();
 
   uint8_t findMinPrescalerPwm(const uint16_t rate_hz,
                               const uint32_t counter_max) const;
@@ -72,22 +73,17 @@ private:
   void setupEvsys() const;
   void setupRtc() const;
 
-  void setSec(const uint32_t sec);
-  void setNSec(const uint32_t nsec);
-  void setComp0(const uint32_t comp_0) const;
-  void setCount(const uint32_t count) const;
-
   // ROS
   ros::Publisher *rtc_pub_ = NULL;
   std_msgs::Time *rtc_msg_ = NULL;
   bool has_stamp_ = true;
 
   // State
-  volatile uint32_t secs_ = 0;
-  // The same as secs_, but evaluated at 0.5 secs.
-  volatile uint32_t secs_500_ = 0xFFFFFFFF;
-  uint32_t clock_freq_ = RTC_FREQ;
-  double ns_per_tick_ = 1.0e9 / clock_freq_;
+  ros::Time time_;
+  const uint32_t clock_freq_ = RTC_FREQ;
+  const double ns_per_tick_ = 1.0e9 / clock_freq_;
+  const ros::Duration ros_resolution_ = ros::Duration(0, 100000000);
+  const uint8_t pps_pin_ = 11;
 };
 
 #endif
