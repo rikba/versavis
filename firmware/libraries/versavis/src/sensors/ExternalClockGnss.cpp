@@ -22,12 +22,13 @@ ExternalClock::RemoteTimeStatus ExternalClockGnss::setRemoteTime() {
 
     auto duration_sec = duration_since_pulse.toSec();
 
-    if (duration_sec < 0.0 || duration_sec > 0.8) {
+    if (duration_sec < -RtcSync::getInstance().getTimeResolution().toSec() ||
+        duration_sec > 0.8) {
       if (nh_) {
         char warning[255];
         sprintf(warning,
-                "Timeout waiting for GNSS time. Now: %.3f, Received: %.3f, "
-                "Duration: %.3f",
+                "Timeout waiting for GNSS time. Now: %.9f, Received: %.9f, "
+                "Duration: %.9f",
                 now.toSec(), clock_msg_->receive_time.toSec(), duration_sec);
         nh_->logwarn(warning);
       }
