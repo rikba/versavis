@@ -55,7 +55,7 @@ public:
   void handleEic();
 
   void incrementMicros();
-  ros::Time getTimerStartTime() const;
+  void startTimers() const;
   inline ros::Duration getTimeResolution() const { return ros_resolution_; }
 
   uint8_t findMinPrescalerPwm(const uint16_t rate_hz,
@@ -85,6 +85,7 @@ private:
   const uint32_t clock_freq_ = RTC_FREQ;
   const double ns_per_tick_ = 1.0e9 / clock_freq_;
   const ros::Duration ros_resolution_ = ros::Duration(0, 1000000);
+  ros::Time timer_start_ = {1, 0};
   const uint8_t pps_pin_ = 11;
 };
 

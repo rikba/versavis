@@ -7,6 +7,7 @@
 #include "versavis_configuration.h"
 
 RtcSync::RtcSync() {
+  timer_start_ -= ros_resolution_;
   setupPort();
   setupGenericClock4();
   setupEvsys();
@@ -124,13 +125,6 @@ void RtcSync::setupEvsys() const {
   // TC5
   EVSYS->USER.reg =
       EVSYS_USER_CHANNEL(1) | EVSYS_USER_USER(EVSYS_ID_USER_TC5_EVU); // Start
-
-  DEBUG_PRINTLN("[RtcSync]: Configuring EVSYS channel.");
-  EVSYS->CHANNEL.reg =
-      EVSYS_CHANNEL_EDGSEL_NO_EVT_OUTPUT | EVSYS_CHANNEL_PATH_ASYNCHRONOUS |
-      EVSYS_CHANNEL_EVGEN(EVSYS_ID_GEN_RTC_CMP_0) | EVSYS_CHANNEL_CHANNEL(0);
-  while (EVSYS->CHSTATUS.bit.CHBUSY0) {
-  }
 }
 
 void RtcSync::setupRtc() const {
@@ -181,12 +175,6 @@ void RtcSync::setupRtc() const {
   // Enable RTC interrupt in controller at highest priority.
   NVIC_SetPriority(RTC_IRQn, 0);
   NVIC_EnableIRQ(RTC_IRQn);
-
-  DEBUG_PRINTLN("[RtcSync]: Enable continuous synchronization.");
-  RTC->MODE0.READREQ.reg |=
-      RTC_READREQ_RREQ | RTC_READREQ_RCONT | 0x0010; // Continuous reading
-  while (RTC->MODE0.STATUS.bit.SYNCBUSY) {
-  }
 }
 
 void RtcSync::setSec(const uint32_t sec) { time_.sec = sec; }
@@ -260,10 +248,16 @@ void RtcSync::incrementMicros() {
   }
 }
 
-ros::Time RtcSync::getTimerStartTime() const {
-  ros::Time start;
-  start += ros_resolution_;
-  return start;
+void RtcSync::startTimers() const {
+  // Start timers at next overflow (1 second).
+  if ((time_.sec == timer_start_.sec) && (time_.nsec == timer_start_.nsec)) {
+    DEBUG_PRINTLN("[RtcSync]: Configuring EVSYS channel.");
+    EVSYS->CHANNEL.reg =
+        EVSYS_CHANNEL_EDGSEL_NO_EVT_OUTPUT | EVSYS_CHANNEL_PATH_ASYNCHRONOUS |
+        EVSYS_CHANNEL_EVGEN(EVSYS_ID_GEN_RTC_CMP_0) | EVSYS_CHANNEL_CHANNEL(0);
+    while (EVSYS->CHSTATUS.bit.CHBUSY0) {
+    }
+  }
 }
 
 void RtcSync::handleEic() {
@@ -280,5 +274,6 @@ void RTC_Handler() {
     RTC->MODE0.INTFLAG.reg = RTC_MODE0_INTFLAG_CMP0;
     RTC->MODE0.INTFLAG.reg = RTC_MODE0_INTFLAG_OVF;
     RtcSync::getInstance().incrementMicros();
+    RtcSync::getInstance().startTimers();
   }
 }
