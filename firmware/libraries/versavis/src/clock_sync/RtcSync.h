@@ -56,6 +56,7 @@ public:
 
   void incrementMicros();
   ros::Time getTimerStartTime() const;
+  inline ros::Duration getTimeResolution() const { return ros_resolution_; }
 
   uint8_t findMinPrescalerPwm(const uint16_t rate_hz,
                               const uint32_t counter_max) const;
