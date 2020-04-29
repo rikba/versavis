@@ -60,6 +60,8 @@ public:
 
   bool getDataReady(uint32_t *num); // Returns true only once per data ready.
 
+  inline void activateLogging(ros::NodeHandle *nh) { nh_ = nh; }
+
 protected:
   void setupWaveOutPin() const;
   bool getPinValue(const uint8_t group, const uint8_t pin) const;
@@ -77,7 +79,7 @@ protected:
   uint32_t top_ = 0xFFFF; // Default 16 bit counter.
   uint16_t mod_ = 0;      // The fraction each nominal cycle counts to few.
   uint16_t r_ = 0; // The remainder missing in a cycle to calculate leap ticks.
-  uint16_t freq_ = 1; // The rate of the counter.
+  uint16_t freq_ = 1;       // The rate of the counter.
   ros::Time time_ = {1, 0}; // Timers are started by RTC at first second.
 
   // TODO(rikba): Make these states pointers.
@@ -91,6 +93,9 @@ protected:
   MeasurementState data_ready_;
   uint8_t dr_port_group_ = 0;
   uint8_t dr_pin_ = 0;
+
+  // Logging.
+  ros::NodeHandle *nh_ = NULL;
 };
 
 #endif
