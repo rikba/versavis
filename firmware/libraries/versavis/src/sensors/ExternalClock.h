@@ -44,7 +44,7 @@ private:
 
   inline float computeDt() const {
     if (clock_msg_) {
-      return computeDuration(last_update_, clock_msg_->receive_time).toSec();
+      return (clock_msg_->receive_time - last_update_).toSec();
     } else {
       return 0.0;
     }

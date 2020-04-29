@@ -100,8 +100,7 @@ void ExternalClock::updateFilter() {
 
   if (last_update_.sec == 0 && last_update_.nsec == 0) {
     // Initialize filter.
-    auto offset =
-        computeDuration(clock_msg_->remote_time, clock_msg_->receive_time);
+    auto offset = clock_msg_->receive_time - clock_msg_->remote_time;
     measured_offset_s_ = offset.toSec();
     clock_msg_->x[0] = toUSec(offset);
     clock_msg_->x[1] = RTC_CLK_SYNC_X1;
@@ -132,8 +131,7 @@ void ExternalClock::updateFilter() {
              Q_[1], Q_[2], clock_msg_->x[1], clock_msg_->x[2], P_pred_);
 
     // Measurement update.
-    z_[0] = toUSec(
-        computeDuration(clock_msg_->remote_time, clock_msg_->receive_time));
+    z_[0] = toUSec(clock_msg_->receive_time - clock_msg_->remote_time);
     computeResidual(x_pred_[0], z_[0], residual_);
     computeSInverse(P_pred_[0], R_, S_inv_);
     computeK(P_pred_[0], P_pred_[3], P_pred_[6], S_inv_[0], K_);

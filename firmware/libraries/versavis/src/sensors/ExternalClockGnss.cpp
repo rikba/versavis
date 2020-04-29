@@ -18,7 +18,7 @@ ExternalClock::RemoteTimeStatus ExternalClockGnss::setRemoteTime() {
   // Try to get time 200ms after last PPS and 200ms before next PPS.
   if (clock_msg_) {
     auto now = RtcSync::getInstance().getTimeNow();
-    auto duration_since_pulse = computeDuration(clock_msg_->receive_time, now);
+    auto duration_since_pulse = now - clock_msg_->receive_time;
 
     auto duration_sec = duration_since_pulse.toSec();
 
