@@ -18,40 +18,49 @@ LidarLite::LidarLite(ros::NodeHandle *nh, TimerSynced *timer,
     last_msg_ = range_msg_->header.seq;
   }
 
-  // // Configure I2C sensor.
-  // Wire.begin();
-  // write(0x00, 0x00); // Default reset.
+  // Configure I2C sensor.
+  nh_->loginfo("Configure LidarLite.");
+  Wire.begin();
+  write(0x00, 0x00); // Default reset.
 }
 
 void LidarLite::publish() {
   // Obtain new stamp after triggering.
   if (timer_ && range_msg_) {
-    timer_->getTimeLastTrigger(&range_msg_->header.stamp,
-                               &range_msg_->header.seq);
+    if (timer_->getTimeLastTrigger(&range_msg_->header.stamp,
+                                   &range_msg_->header.seq)) {
+      nh_->loginfo("Triggered LidarLite.");
+    }
   }
 
-  // if (busy()) {
-  //   nh_->loginfo("busy");
-  // } else {
-  //   nh_->loginfo("not busy");
-  // }
+  if (!busy()) {
+    uint16_t range_cm = 0xFFFF;
+    auto nack = readDistance(&range_cm);
+    if (last_rng_ != range_cm) {
+      char buffer[250];
+      sprintf(buffer, "nack: %d, range: %d", nack, range_cm);
+      nh_->loginfo(buffer);
+      last_rng_ = range_cm;
+    }
+  }
 
   // If we have a new message number, try to obtain range message from I2C.
   if (range_msg_ && (last_msg_ != range_msg_->header.seq) && !busy()) {
-    // // Read range measurement.
-    // uint16_t range_cm;
-    // auto nack = readDistance(&range_cm);
-
-    // if (nack == 0) {
     //
-    //   range_msg_->range = static_cast<float>(range_cm / 100);
-    //   range_msg_->range += static_cast<float>(range_cm % 100) * 0.01;
+    // Read range measurement.
+    uint16_t range_cm = 0xFFFF;
+    auto nack = readDistance(&range_cm);
 
-    // ROS publish.
-    if (publisher_) {
-      publisher_->publish(range_msg_);
+    if (nack == 0) {
+      range_msg_->range = static_cast<float>(range_cm / 100);
+      range_msg_->range += static_cast<float>(range_cm % 100) * 0.01;
+
+      // ROS publish.
+      if (publisher_) {
+        nh_->loginfo("Publish LidarLite.");
+        publisher_->publish(range_msg_);
+      }
     }
-    // }
 
     // Update state.
     last_msg_ = range_msg_->header.seq;

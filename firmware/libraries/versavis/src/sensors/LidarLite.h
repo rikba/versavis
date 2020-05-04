@@ -21,6 +21,7 @@ public:
 
 private:
   uint16_t last_msg_ = 0xFFFF;
+  uint16_t last_rng_ = 0xFFFF;
 
   // I2C interface.
   uint8_t readDistance(uint16_t *distance) const;
