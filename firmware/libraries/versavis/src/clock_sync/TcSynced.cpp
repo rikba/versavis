@@ -26,11 +26,6 @@ void TcSynced::setup() const {
   DEBUG_PRINTLN("[TcSynced]: Setup EVCTRL to start on RTC overflow.");
   tc_->EVCTRL.reg |= TC_EVCTRL_TCEI | TC_EVCTRL_EVACT_START;
 
-  DEBUG_PRINTLN("[TcSynced]: Capture channel 1.");
-  tc_->CTRLC.reg |= TC_CTRLC_CPTEN1;
-  while (tc_->STATUS.bit.SYNCBUSY) {
-  }
-
   DEBUG_PRINTLN("[TcSynced]: Enabling event interrupts.");
   tc_->INTENSET.reg |= TC_INTENSET_OVF;
   DEBUG_PRINTLN("[TcSynced]: Clearing interrupt flags.");
@@ -38,9 +33,56 @@ void TcSynced::setup() const {
 }
 
 void TcSynced::setupMpwmWaveform() {
-  setupMfrqWaveform();
+  // Setup wavegen.
+  DEBUG_PRINTLN("[TcSynced]: Disabling timer.");
+  while (tc_->STATUS.bit.SYNCBUSY) {
+  }
+  tc_->CTRLA.reg &= ~TC_CTRLA_ENABLE;
+  while (tc_->STATUS.bit.SYNCBUSY) {
+  }
+
+  DEBUG_PRINT("[TcSynced]: Prescaling timer by ");
+  DEBUG_PRINTLN(kPrescalers[prescaler_]);
+  tc_->CTRLA.reg |= TC_CTRLA_PRESCALER(prescaler_);
+  while (tc_->STATUS.bit.SYNCBUSY) {
+  }
+
   DEBUG_PRINTLN("[TcSynced]: Activate MPWM.");
   tc_->CTRLA.reg |= TC_CTRLA_WAVEGEN_MPWM;
+
+  DEBUG_PRINTLN("[TcSynced]: Make channel 0 compare register.");
+  tc_->CTRLC.reg &= ~TC_CTRLC_CPTEN0;
+  while (tc_->STATUS.bit.SYNCBUSY) {
+  }
+
+  DEBUG_PRINTLN("[TcSynced]: Make channel 1 compare register.");
+  tc_->CTRLC.reg &= ~TC_CTRLC_CPTEN1;
+  while (tc_->STATUS.bit.SYNCBUSY) {
+  }
+
+  // Invert pulse if desired.
+  if (trigger_state_.invert_) {
+    tc_->CTRLC.reg |= TC_CTRLC_INVEN1;
+    while (tc_->STATUS.bit.SYNCBUSY) {
+    }
+  }
+
+  DEBUG_PRINT("[TcSynced]: Set FRQ top.");
+  updateTopCompare();
+
+  DEBUG_PRINTLN("[TcSynced]: Setup pulse width WO[1].");
+  tc_->CC[1].reg = pulse_ticks_;
+  while (tc_->STATUS.bit.SYNCBUSY) {
+  }
+
+  DEBUG_PRINTLN("[TcSynced]: Enabling MC1 interrupts.");
+  tc_->INTENSET.reg |= TC_INTENSET_MC1;
+  tc_->INTFLAG.reg |= TC_INTFLAG_MC1;
+
+  DEBUG_PRINTLN("[TcSynced]: Enable timer.");
+  while (tc_->STATUS.bit.SYNCBUSY) {
+  }
+  tc_->CTRLA.reg |= TC_CTRLA_ENABLE;
   while (tc_->STATUS.bit.SYNCBUSY) {
   }
 }
@@ -113,8 +155,8 @@ void TcSynced::updateTopCompare() {
 
   if (nh_) {
     char buffer[250];
-    sprintf(buffer, "Freq: %d Prescaler: %d Top: %d", freq_,
-            kPrescalers[prescaler_], top_);
+    sprintf(buffer, "Freq: %d Prescaler: %d Top: %d CC1: %d", freq_,
+            kPrescalers[prescaler_], top_, pulse_ticks_);
     nh_->loginfo(buffer);
   }
 }
@@ -136,5 +178,10 @@ void TcSynced::handleInterrupt() {
       // Set new trigger timestamp.
       trigger_state_.setTime(time_);
     }
+  }
+  // Handle MPWM end of pulse to stamp new message.
+  else if (tc_->INTFLAG.bit.MC1) {
+    tc_->INTFLAG.reg = TC_INTFLAG_MC1;
+    trigger_state_.setTime(time_);
   }
 }

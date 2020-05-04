@@ -11,7 +11,7 @@ LidarLite::LidarLite(ros::NodeHandle *nh, TimerSynced *timer,
   // Setup MODE_PIN to trigger measurements.
   if (timer_) {
     const bool kInvert = true; // Change from high to low triggers measurement.
-    const uint16_t kPulseUs = 10;
+    const uint16_t kPulseUs = 50;
     timer_->setupMpwm(rate_hz, kPulseUs, kInvert);
   }
 
@@ -20,7 +20,6 @@ LidarLite::LidarLite(ros::NodeHandle *nh, TimerSynced *timer,
   }
 
   // Configure I2C sensor.
-  nh_->loginfo("Configure LidarLite.");
   Wire.begin();
   write(0x00, 0x00); // Default reset.
 }
@@ -28,22 +27,20 @@ LidarLite::LidarLite(ros::NodeHandle *nh, TimerSynced *timer,
 void LidarLite::publish() {
   // Obtain new stamp after triggering.
   if (timer_ && range_msg_) {
-    if (timer_->getTimeLastTrigger(&range_msg_->header.stamp,
-                                   &range_msg_->header.seq)) {
-      nh_->loginfo("Triggered LidarLite.");
-    }
+    timer_->getTimeLastTrigger(&range_msg_->header.stamp,
+                               &range_msg_->header.seq);
   }
 
-  if (!busy()) {
-    uint16_t range_cm = 0xFFFF;
-    auto nack = readDistance(&range_cm);
-    if (last_rng_ != range_cm) {
-      char buffer[250];
-      sprintf(buffer, "nack: %d, range: %d", nack, range_cm);
-      nh_->loginfo(buffer);
-      last_rng_ = range_cm;
-    }
-  }
+  // if (!busy()) {
+  //   uint16_t range_cm = 0xFFFF;
+  //   auto nack = readDistance(&range_cm);
+  //   if (last_rng_ != range_cm) {
+  //     char buffer[250];
+  //     sprintf(buffer, "nack: %d, range: %d", nack, range_cm);
+  //     nh_->loginfo(buffer);
+  //     last_rng_ = range_cm;
+  //   }
+  // }
 
   // If we have a new message number, try to obtain range message from I2C.
   if (range_msg_ && (last_msg_ != range_msg_->header.seq) && !busy()) {
@@ -58,7 +55,6 @@ void LidarLite::publish() {
 
       // ROS publish.
       if (publisher_) {
-        nh_->loginfo("Publish LidarLite.");
         publisher_->publish(range_msg_);
       }
     }

@@ -82,7 +82,8 @@ protected:
   uint32_t top_ = 0xFFFF; // Default 16 bit counter.
   uint16_t mod_ = 0;      // The fraction each nominal cycle counts to few.
   uint16_t r_ = 0; // The remainder missing in a cycle to calculate leap ticks.
-  uint16_t freq_ = 1;       // The rate of the counter.
+  uint16_t freq_ = 1; // The rate of the counter.
+  uint16_t pulse_ticks_ = 0; // Pulse length in PWM mode.
   ros::Time time_ = {1, 0}; // Timers are started by RTC at first second.
 
   // TODO(rikba): Make these states pointers.

@@ -31,6 +31,10 @@ void TimerSynced::setupMpwm(const uint16_t rate_hz, const uint16_t pulse_us,
   top_ = RTC_FREQ / kPrescalers[prescaler_] / freq_;
   mod_ = static_cast<uint32_t>((RTC_FREQ / kPrescalers[prescaler_])) % freq_;
 
+  uint32_t ticks = (RTC_FREQ / 1.0e6) * pulse_us;
+  pulse_ticks_ = ticks / kPrescalers[prescaler_];
+  pulse_ticks_ += ((ticks % kPrescalers[prescaler_]) != 0); // Ceil
+
   // Setup timer specific match frequency configuration.
   setupMpwmWaveform();
 
