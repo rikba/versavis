@@ -31,20 +31,9 @@ void LidarLite::publish() {
                                &range_msg_->header.seq);
   }
 
-  // if (!busy()) {
-  //   uint16_t range_cm = 0xFFFF;
-  //   auto nack = readDistance(&range_cm);
-  //   if (last_rng_ != range_cm) {
-  //     char buffer[250];
-  //     sprintf(buffer, "nack: %d, range: %d", nack, range_cm);
-  //     nh_->loginfo(buffer);
-  //     last_rng_ = range_cm;
-  //   }
-  // }
-
   // If we have a new message number, try to obtain range message from I2C.
   if (range_msg_ && (last_msg_ != range_msg_->header.seq) && !busy()) {
-    //
+
     // Read range measurement.
     uint16_t range_cm = 0xFFFF;
     auto nack = readDistance(&range_cm);
@@ -57,7 +46,7 @@ void LidarLite::publish() {
       if (publisher_) {
         publisher_->publish(range_msg_);
       }
-    }
+    } 
 
     // Update state.
     last_msg_ = range_msg_->header.seq;

@@ -145,12 +145,9 @@ bool TccSynced::getTimeLastExposure(ros::Time *time, uint32_t *num,
 }
 
 void TccSynced::updateTopCompare() {
-  r_ += mod_;
-  auto leap_ticks = r_ / freq_;
-  r_ %= freq_;
   while (tcc_->SYNCBUSY.bit.CC0) {
   }
-  tcc_->CC[0].reg = top_ + leap_ticks - 1;
+  tcc_->CC[0].reg = top_ + computeLeapTicks() - 1;
   while (tcc_->SYNCBUSY.bit.CC0) {
   }
 }

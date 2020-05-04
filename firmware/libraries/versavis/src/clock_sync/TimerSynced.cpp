@@ -12,8 +12,9 @@ void TimerSynced::setupMfrq(const uint16_t rate_hz, const bool invert) {
   trigger_state_.invert_ = invert;
   freq_ = 2 * rate_hz;
   prescaler_ = RtcSync::getInstance().findMinPrescalerFrq(rate_hz, top_);
-  top_ = RTC_FREQ / kPrescalers[prescaler_] / freq_;
-  mod_ = static_cast<uint32_t>((RTC_FREQ / kPrescalers[prescaler_])) % freq_;
+  wrap_around_ = kPrescalers[prescaler_] * freq_;
+  top_ = RTC_FREQ / wrap_around_;
+  mod_ = static_cast<uint32_t>(RTC_FREQ) % wrap_around_;
 
   // Setup timer specific match frequency configuration.
   setupMfrqWaveform();
@@ -28,8 +29,9 @@ void TimerSynced::setupMpwm(const uint16_t rate_hz, const uint16_t pulse_us,
   trigger_state_.invert_ = invert;
   freq_ = rate_hz;
   prescaler_ = RtcSync::getInstance().findMinPrescalerPwm(rate_hz, top_);
-  top_ = RTC_FREQ / kPrescalers[prescaler_] / freq_;
-  mod_ = static_cast<uint32_t>((RTC_FREQ / kPrescalers[prescaler_])) % freq_;
+  wrap_around_ = kPrescalers[prescaler_] * freq_;
+  top_ = RTC_FREQ / wrap_around_;
+  mod_ = static_cast<uint32_t>(RTC_FREQ) % wrap_around_;
 
   uint32_t ticks = (RTC_FREQ / 1.0e6) * pulse_us;
   pulse_ticks_ = ticks / kPrescalers[prescaler_];
@@ -41,6 +43,14 @@ void TimerSynced::setupMpwm(const uint16_t rate_hz, const uint16_t pulse_us,
   // Setup output pin.
   setupWaveOutPin();
 }
+
+uint16_t TimerSynced::computeLeapTicks() {
+  r_ += mod_;
+  uint16_t leap_ticks = r_ / wrap_around_;
+  r_ %= wrap_around_;
+  return leap_ticks;
+}
+
 
 void TimerSynced::setupWaveOutPin() const {
   DEBUG_PRINT("[TimerSynced]: Configuring wave output pin ");

@@ -144,19 +144,17 @@ void TcSynced::setupDataReady(const uint8_t port_group, const uint8_t pin,
 }
 
 void TcSynced::updateTopCompare() {
-  r_ += mod_;
-  auto leap_ticks = r_ / freq_;
-  r_ %= freq_;
   while (tc_->STATUS.bit.SYNCBUSY) {
   }
-  tc_->CC[0].reg = top_ + leap_ticks - 1;
+  tc_->CC[0].reg = top_ + computeLeapTicks() - 1;
   while (tc_->STATUS.bit.SYNCBUSY) {
   }
 
   if (nh_) {
     char buffer[250];
-    sprintf(buffer, "Freq: %d Prescaler: %d Top: %d CC1: %d", freq_,
-            kPrescalers[prescaler_], top_, pulse_ticks_);
+    sprintf(buffer, "Mod: %d Freq: %d Prescaler: %d Top: %d CC0: %d CC1: %d",
+            mod_, freq_, kPrescalers[prescaler_], top_, tc_->CC[0].reg,
+            pulse_ticks_);
     nh_->loginfo(buffer);
   }
 }

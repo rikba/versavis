@@ -68,6 +68,7 @@ protected:
   void setupWaveOutPin() const;
   bool getPinValue(const uint8_t group, const uint8_t pin) const;
   bool getWaveOutPinValue() const;
+  uint16_t computeLeapTicks();
 
   virtual void setupMfrqWaveform() = 0;
   virtual void setupMpwmWaveform() = 0;
@@ -80,11 +81,12 @@ protected:
   // States
   uint8_t prescaler_ = 0;
   uint32_t top_ = 0xFFFF; // Default 16 bit counter.
-  uint16_t mod_ = 0;      // The fraction each nominal cycle counts to few.
+  uint16_t mod_ = 0;      // The fraction each nominal cycle counts to little.
+  uint32_t wrap_around_ = 0; // The wrap around when a leap tick should occur.
   uint16_t r_ = 0; // The remainder missing in a cycle to calculate leap ticks.
-  uint16_t freq_ = 1; // The rate of the counter.
+  uint16_t freq_ = 1;        // The rate of the counter.
   uint16_t pulse_ticks_ = 0; // Pulse length in PWM mode.
-  ros::Time time_ = {1, 0}; // Timers are started by RTC at first second.
+  ros::Time time_ = {1, 0};  // Timers are started by RTC at first second.
 
   // TODO(rikba): Make these states pointers.
   // Trigger state.
