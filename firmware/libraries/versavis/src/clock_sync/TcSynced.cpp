@@ -149,14 +149,6 @@ void TcSynced::updateTopCompare() {
   tc_->CC[0].reg = top_ + computeLeapTicks() - 1;
   while (tc_->STATUS.bit.SYNCBUSY) {
   }
-
-  if (nh_) {
-    char buffer[250];
-    sprintf(buffer, "Mod: %d Freq: %d Prescaler: %d Top: %d CC0: %d CC1: %d",
-            mod_, freq_, kPrescalers[prescaler_], top_, tc_->CC[0].reg,
-            pulse_ticks_);
-    nh_->loginfo(buffer);
-  }
 }
 
 void TcSynced::handleInterrupt() {
