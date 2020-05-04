@@ -2,8 +2,8 @@
 
 // Setup MFRQ pin.
 // TODO(rikba)
-#define TC4_MFRQ_GROUP 255
-#define TC4_MFRQ_PIN 255
+#define TC4_MFRQ_GROUP PORTB
+#define TC4_MFRQ_PIN 8
 #define TC4_MFRQ_DRVSTR 0
 
 Tc4Synced::Tc4Synced()
