@@ -26,6 +26,7 @@ public:
   void setupDataReady(const uint8_t port_group, const uint8_t pin,
                       const InterruptLogic &logic) override {}
   void setupMfrqWaveform() override;
+  void setupMpwmWaveform() override;
   void setupExposure(const bool invert);
 
   void handleInterrupt() override;

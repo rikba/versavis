@@ -51,6 +51,8 @@ public:
   virtual void setupDataReady(const uint8_t port_group, const uint8_t pin,
                               const InterruptLogic &logic) = 0;
   void setupMfrq(const uint16_t rate_hz, const bool invert);
+  void setupMpwm(const uint16_t rate_hz, const uint16_t pulse_us,
+                 const bool invert);
 
   virtual void handleInterrupt() = 0;
   void handleEic();
@@ -68,6 +70,7 @@ protected:
   bool getWaveOutPinValue() const;
 
   virtual void setupMfrqWaveform() = 0;
+  virtual void setupMpwmWaveform() = 0;
   void setupInterruptPin(const uint8_t port_group, const uint8_t pin,
                          const InterruptLogic &logic,
                          const bool enable_interrupt) const;

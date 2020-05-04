@@ -37,6 +37,14 @@ void TcSynced::setup() const {
   tc_->INTFLAG.reg |= TC_INTFLAG_OVF;
 }
 
+void TcSynced::setupMpwmWaveform() {
+  setupMfrqWaveform();
+  DEBUG_PRINTLN("[TcSynced]: Activate MPWM.");
+  tc_->CTRLA.reg |= TC_CTRLA_WAVEGEN_MPWM;
+  while (tc_->STATUS.bit.SYNCBUSY) {
+  }
+}
+
 void TcSynced::setupMfrqWaveform() {
   // Setup wavegen.
   DEBUG_PRINTLN("[TcSynced]: Disabling timer.");
@@ -101,6 +109,13 @@ void TcSynced::updateTopCompare() {
   }
   tc_->CC[0].reg = top_ + leap_ticks - 1;
   while (tc_->STATUS.bit.SYNCBUSY) {
+  }
+
+  if (nh_) {
+    char buffer[250];
+    sprintf(buffer, "Freq: %d Prescaler: %d Top: %d", freq_,
+            kPrescalers[prescaler_], top_);
+    nh_->loginfo(buffer);
   }
 }
 

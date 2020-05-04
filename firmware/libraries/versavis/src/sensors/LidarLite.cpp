@@ -11,7 +11,8 @@ LidarLite::LidarLite(ros::NodeHandle *nh, TimerSynced *timer,
   // Setup MODE_PIN to trigger measurements.
   if (timer_) {
     const bool kInvert = true; // Change from high to low triggers measurement.
-    timer_->setupMfrq(rate_hz, kInvert);
+    const uint16_t kPulseUs = 10;
+    timer_->setupMpwm(rate_hz, kPulseUs, kInvert);
   }
 
   if (range_msg_) {

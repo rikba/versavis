@@ -22,6 +22,22 @@ void TimerSynced::setupMfrq(const uint16_t rate_hz, const bool invert) {
   setupWaveOutPin();
 }
 
+void TimerSynced::setupMpwm(const uint16_t rate_hz, const uint16_t pulse_us,
+                            const bool invert) {
+  // Set parameters.
+  trigger_state_.invert_ = invert;
+  freq_ = rate_hz;
+  prescaler_ = RtcSync::getInstance().findMinPrescalerPwm(rate_hz, top_);
+  top_ = RTC_FREQ / kPrescalers[prescaler_] / freq_;
+  mod_ = static_cast<uint32_t>((RTC_FREQ / kPrescalers[prescaler_])) % freq_;
+
+  // Setup timer specific match frequency configuration.
+  setupMpwmWaveform();
+
+  // Setup output pin.
+  setupWaveOutPin();
+}
+
 void TimerSynced::setupWaveOutPin() const {
   DEBUG_PRINT("[TimerSynced]: Configuring wave output pin ");
   DEBUG_PRINT(mfrq_pin_.pin);

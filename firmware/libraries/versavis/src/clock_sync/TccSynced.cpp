@@ -84,6 +84,7 @@ void TccSynced::setupMfrqWaveform() {
   while (tcc_->SYNCBUSY.bit.ENABLE) {
   }
 }
+void TccSynced::setupMpwmWaveform() { DEBUG_PRINTLN("MPWM not implemented."); }
 
 void TccSynced::setupExposure(const bool invert) {
   DEBUG_PRINT("[TccSynced]: Configuring exposure pin ");

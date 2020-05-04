@@ -17,6 +17,7 @@ public:
   TcSynced(const MfrqPin &mfrq_pin, TcCount16 *tc);
 
   void setupMfrqWaveform() override;
+  void setupMpwmWaveform() override;
   void setupDataReady(const uint8_t port_group, const uint8_t pin,
                       const InterruptLogic &logic) override;
 
