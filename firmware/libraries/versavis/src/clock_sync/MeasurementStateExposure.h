@@ -21,9 +21,8 @@ class MeasurementStateExposure : public MeasurementStateStamped {
 public:
   inline void setStart(const ros::Time &time) { start_time_ = time; }
   inline void setEnd(const ros::Time &time) {
-    if ((time.sec > start_time_.sec) ||
-        ((time.sec == start_time_.sec) && (time.nsec >= start_time_.nsec))) {
-      auto half_exposure = time - start_time_;
+    auto half_exposure = time - start_time_;
+    if (half_exposure.sec >= 0) {
       exposure_.sec = half_exposure.sec;
       exposure_.nsec = half_exposure.nsec;
       half_exposure *= 0.5;
