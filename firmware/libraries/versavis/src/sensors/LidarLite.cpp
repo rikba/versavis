@@ -15,12 +15,9 @@ LidarLite::LidarLite(ros::NodeHandle *nh, TimerSynced *timer,
     timer_->setupMpwm(rate_hz, kPulseUs, kInvert);
   }
 
-  if (msg_) {
-    last_msg_ = msg_->range.header.seq;
-  }
-
   // Configure I2C sensor.
   Wire.begin();
+  Wire.setClock(400000); // Fast mode.
   write(0x00, 0x00); // Default reset.
 }
 
@@ -40,6 +37,19 @@ void LidarLite::setupRos(const char *topic) {
 
     // Advertise.
     nh_->advertise(*publisher_);
+  }
+
+  // Initialize.
+  if (msg_) {
+    msg_->range.header.frame_id = "LidarLite";
+
+    // https://static.garmin.com/pumac/LIDAR_Lite_v3_Operation_Manual_and_Technical_Specifications.pdf
+    msg_->range.radiation_type = sensor_msgs::Range::INFRARED;
+    msg_->range.field_of_view = 0.008;
+    msg_->range.min_range = 0.05;
+    msg_->range.max_range = 40.0;
+
+    last_msg_ = msg_->range.header.seq;
   }
 }
 
