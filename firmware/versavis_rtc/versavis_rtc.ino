@@ -48,7 +48,7 @@ void setup() {
   static ExternalClockGnss gnss(nh, &Serial, 115200);
   ext_clock = &gnss;
 
-  static LidarLite lidar_lite(nh, &Tc4Synced::getInstance(), 2);
+  static LidarLite lidar_lite(nh, &Tc4Synced::getInstance(), 100);
   lidar = &lidar_lite;
 
   // ROS
@@ -67,7 +67,7 @@ void setup() {
   static char *ext_clock_topic = "/versavis/gnss/time_sync";
   ext_clock->setupRos(ext_clock_topic);
 
-  static char *lidar_lite_topic = "/versavis/lidar_lite/range";
+  static char *lidar_lite_topic = "/versavis/lidar_lite/data";
   lidar->setupRos(lidar_lite_topic);
 }
 
