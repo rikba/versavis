@@ -37,7 +37,7 @@ void setup() {
   DEBUG_PRINTLN("Setup.");
 
   // Sensors
-  static Adis16448BmlzTriggered adis_16448(nh, &Tc3Synced::getInstance(), 100,
+  static Adis16448BmlzTriggered adis_16448(nh, &Tc3Synced::getInstance(), 10,
                                            PORTA, 13, 10);
   imu = &adis_16448;
 
@@ -48,7 +48,7 @@ void setup() {
   static ExternalClockGnss gnss(nh, &Serial, 115200);
   ext_clock = &gnss;
 
-  static LidarLite lidar_lite(nh, &Tc4Synced::getInstance(), 10);
+  static LidarLite lidar_lite(nh, &Tc4Synced::getInstance(), 2);
   lidar = &lidar_lite;
 
   // ROS
@@ -75,7 +75,7 @@ void loop() {
   imu->publish();
   cam0->publish();
   ext_clock->publish();
-  lidar_lite->publish();
+  lidar->publish();
 
   RtcSync::getInstance().publish();
 
