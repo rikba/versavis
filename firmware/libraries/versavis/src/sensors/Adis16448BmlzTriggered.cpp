@@ -53,6 +53,22 @@ void Adis16448BmlzTriggered::setupRos(const char *baro_topic,
     nh_->advertise(*baro_pub_);
     nh_->advertise(*temp_pub_);
   }
+
+  if (imu_msg_) {
+    imu_msg_->header.frame_id = "adis16448";
+  }
+
+  if (mag_msg_) {
+    mag_msg_->header.frame_id = "adis16448";
+  }
+
+  if (baro_msg_) {
+    baro_msg_->header.frame_id = "adis16448";
+  }
+
+  if (temp_msg_) {
+    temp_msg_->header.frame_id = "adis16448";
+  }
 }
 
 void Adis16448BmlzTriggered::publish() {
@@ -84,7 +100,8 @@ void Adis16448BmlzTriggered::publish() {
 
       // BARO.
       if (has_mag_and_baro && baro_msg_) {
-        baro_msg_->header = imu_msg_->header;
+        baro_msg_->header.stamp = imu_msg_->header.stamp;
+        baro_msg_->header.seq = (imu_msg_->header.seq - mag_baro_offset_) / 16;
         baro_msg_->fluid_pressure = imu_.pressureScale(imu_data[10]);
         baro_msg_->variance = -1.0;
 
@@ -115,7 +132,8 @@ void Adis16448BmlzTriggered::publish() {
 
       // MAG.
       if (has_mag_and_baro && mag_msg_) {
-        mag_msg_->header = imu_msg_->header;
+        mag_msg_->header.stamp = imu_msg_->header.stamp;
+        mag_msg_->header.seq = (imu_msg_->header.seq - mag_baro_offset_) / 16;
 
         mag_msg_->magnetic_field.x = imu_.magnetometerScale(imu_data[7]);
         mag_msg_->magnetic_field.y = imu_.magnetometerScale(imu_data[8]);
@@ -130,7 +148,7 @@ void Adis16448BmlzTriggered::publish() {
       // TEMP.
       if (temp_msg_) {
         temp_msg_->header = imu_msg_->header;
-        temp_msg_->temperature = imu_.magnetometerScale(imu_data[11]);
+        temp_msg_->temperature = imu_.tempScale(imu_data[11]);
         temp_msg_->variance = -1.0;
 
         if (temp_pub_) {

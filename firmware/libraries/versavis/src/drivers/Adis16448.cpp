@@ -431,7 +431,7 @@ float Adis16448::accelScale(int16_t sensorData) {
 // return - (float) signed/scaled gyro in degrees/sec
 ////////////////////////////////////////////////////////////////////////////////
 float Adis16448::gyroScale(int16_t sensorData) {
-  return sensorData * 0.04 * DEGTORAD;
+  return sensorData * GYROSCALE;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -442,7 +442,7 @@ float Adis16448::gyroScale(int16_t sensorData) {
 // return - (float) signed/scaled temperature in degrees Celcius
 ////////////////////////////////////////////////////////////////////////////////
 float Adis16448::tempScale(int16_t sensorData) {
-  return (sensorData * 0.07386) + 31;
+  return (sensorData * 0.07386) + 31.0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -450,7 +450,7 @@ float Adis16448::tempScale(int16_t sensorData) {
 // in bar
 ////////////////////////////////////////////////////////////////////////////////
 // sensorData - data output from regRead()
-// return - (float) signed/scaled pressure in mBar
+// return - (float) signed/scaled pressure in Pascals
 ////////////////////////////////////////////////////////////////////////////////
 float Adis16448::pressureScale(int16_t sensorData) {
   return sensorData * PRESSURESCALE;

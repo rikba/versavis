@@ -4,6 +4,8 @@
 
 const uint8_t kAddress = 0x62;
 const bool kStopTransmission = true;
+const float kVarianceLow = pow(0.025 / 3, 2);
+const float kVarianceHigh = pow(0.1 / 3, 2);
 
 LidarLite::LidarLite(ros::NodeHandle *nh, TimerSynced *timer,
                      const uint16_t rate_hz)
@@ -18,7 +20,7 @@ LidarLite::LidarLite(ros::NodeHandle *nh, TimerSynced *timer,
   // Configure I2C sensor.
   Wire.begin();
   Wire.setClock(400000); // Fast mode.
-  write(0x00, 0x00); // Default reset.
+  write(0x00, 0x00);     // Default reset.
 }
 
 void LidarLite::setupRos(const char *topic) {
@@ -90,9 +92,14 @@ bool LidarLite::readData(image_numbered_msgs::LidarLite *msg) const {
     uint8_t high = Wire.read();
     uint8_t low = Wire.read();
 
-    uint16_t range_cm = (high << 8) + low;
-    msg->range.range = static_cast<float>(range_cm / 100);
-    msg->range.range += static_cast<float>(range_cm % 100) * 0.01;
+    msg->range.range = ((high << 8) + low) * 0.01;
+
+    // Variance
+    if (msg->range.range < 5.0) {
+      msg->variance = kVarianceLow;
+    } else {
+      msg->variance = kVarianceHigh;
+    }
   }
   return (nack == 0);
 }

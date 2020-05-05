@@ -2,6 +2,11 @@
 
 #include "clock_sync/RtcSync.h"
 
+const uint8_t kHeader = 0xFE;
+const uint8_t kVersionId = 0x02;
+const float kVarianceLow = pow(0.06 / 3, 2);
+const float kVarianceHigh = pow(0.04 / 3, 2);
+
 UsD1::UsD1(ros::NodeHandle *nh, Uart *uart) : nh_(nh), uart_(uart) {
   if (uart_) {
     uart_->begin(115200);
@@ -40,8 +45,6 @@ void UsD1::setupRos(const char *topic) {
 }
 
 void UsD1::publish() {
-  const uint8_t kHeader = 0xFE;
-  const uint8_t kVersionId = 0x02;
 
   while (msg_ && uart_ && uart_->available()) {
     uint8_t c = uart_->read();
@@ -80,6 +83,12 @@ void UsD1::publish() {
     }
     case UsD1State::kMsb: {
       msg_->range.range = ((c << 8) + lsb_) * 0.01;
+
+      if (msg_->range.range < 1.0) {
+        msg_->variance = kVarianceLow;
+      } else {
+        msg_->variance = kVarianceHigh;
+      }
       cs_ += c;
       state_ = UsD1State::kSnr;
       break;
@@ -96,6 +105,7 @@ void UsD1::publish() {
         if (publisher_) {
           publisher_->publish(msg_);
         }
+        msg_->range.header.seq++;
       } else if (!buffer_empty) {
         if (nh_)
           nh_->logwarn("Rejecting US-D1 message. New available.");
