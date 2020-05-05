@@ -36,10 +36,8 @@ void setup() {
   while (!SerialUSB)
     ;
 
-  DEBUG_PRINTLN("Setup.");
-
   // Sensors
-  static Adis16448BmlzTriggered adis_16448(nh, &Tc3Synced::getInstance(), 100,
+  static Adis16448BmlzTriggered adis_16448(nh, &Tc3Synced::getInstance(), 400,
                                            PORTA, 13, 10);
   imu = &adis_16448;
 
