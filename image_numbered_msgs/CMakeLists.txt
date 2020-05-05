@@ -16,6 +16,7 @@ add_message_files(
   FILES
   ImageNumbered.msg
   LidarLite.msg
+  UsD1.msg
 )
 
 generate_messages(

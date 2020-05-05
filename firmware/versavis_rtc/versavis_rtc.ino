@@ -12,6 +12,7 @@
 #include "sensors/CamSyncedExposure.h"
 #include "sensors/ExternalClockGnss.h"
 #include "sensors/LidarLite.h"
+#include "sensors/UsD1.h"
 
 #include <Arduino.h>
 
@@ -23,6 +24,7 @@ Adis16448BmlzTriggered *imu = NULL;
 CamSyncedExposure *cam0 = NULL;
 ExternalClock *ext_clock = NULL;
 LidarLite *lidar = NULL;
+UsD1 *radar = NULL;
 
 void setup() {
 #ifndef DEBUG
@@ -51,6 +53,9 @@ void setup() {
   static LidarLite lidar_lite(nh, &Tc4Synced::getInstance(), 100);
   lidar = &lidar_lite;
 
+  static UsD1 us_d1(nh, &Serial1);
+  radar = &us_d1;
+
   // ROS
   static char *rtc_topic = "/versavis/rtc";
   RtcSync::getInstance().setupRos(nh, rtc_topic);
@@ -69,6 +74,9 @@ void setup() {
 
   static char *lidar_lite_topic = "/versavis/lidar_lite/data";
   lidar->setupRos(lidar_lite_topic);
+
+  static char *us_d1_topic = "/versavis/us_d1/data";
+  radar->setupRos(us_d1_topic);
 }
 
 void loop() {
@@ -76,6 +84,7 @@ void loop() {
   cam0->publish();
   ext_clock->publish();
   lidar->publish();
+  radar->publish();
 
   RtcSync::getInstance().publish();
 
