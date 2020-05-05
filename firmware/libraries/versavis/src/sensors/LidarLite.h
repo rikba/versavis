@@ -5,14 +5,15 @@
 //  LidarLite.h
 ////////////////////////////////////////////////////////////////////////////////
 //
-// Implements the I2C Lidar Lite interface.
+// Implements the I2C Lidar Lite interface. The Lidar is triggered and time
+// stamped using the Mode Pin and then read using the I2C connection.
 //
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef Sensors_LidarLite_h
 #define Sensors_LidarLite_h
 
-#include "image_numbered_msgs/LidarLite.h"
+#include <image_numbered_msgs/LidarLite.h>
 #include "sensors/SensorSynced.h"
 
 class LidarLite : public SensorSynced {
