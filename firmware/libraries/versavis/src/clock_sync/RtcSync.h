@@ -83,7 +83,7 @@ private:
   // State
   ros::Time time_;
   const uint32_t clock_freq_ = RTC_FREQ;
-  const double ns_per_tick_ = 1.0e9 / clock_freq_;
+  const uint16_t ns_per_tick_ = 1e9 / clock_freq_;
   const ros::Duration ros_resolution_ = ros::Duration(0, 1000000);
   ros::Time timer_start_ = {1, 0};
   const uint8_t pps_pin_ = 11;
