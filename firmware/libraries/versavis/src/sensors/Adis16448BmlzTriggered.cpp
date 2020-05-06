@@ -118,12 +118,17 @@ void Adis16448BmlzTriggered::publish() {
         imu_msg_->angular_velocity.x = imu_.gyroScale(imu_data[1]);
         imu_msg_->angular_velocity.y = imu_.gyroScale(imu_data[2]);
         imu_msg_->angular_velocity.z = imu_.gyroScale(imu_data[3]);
-        imu_msg_->angular_velocity_covariance[0] = -1.0;
+        // TODO(rikba): Determine covariance, e.g., Allan deviation.
+        imu_msg_->angular_velocity_covariance[0] = 6e-9;
+        imu_msg_->angular_velocity_covariance[4] = 6e-9;
+        imu_msg_->angular_velocity_covariance[8] = 6e-9;
 
         imu_msg_->linear_acceleration.x = imu_.accelScale(imu_data[4]);
         imu_msg_->linear_acceleration.y = imu_.accelScale(imu_data[5]);
         imu_msg_->linear_acceleration.z = imu_.accelScale(imu_data[6]);
-        imu_msg_->linear_acceleration_covariance[0] = -1.0;
+        imu_msg_->linear_acceleration_covariance[0] = 0.043864908;
+        imu_msg_->linear_acceleration_covariance[4] = 0.043864908;
+        imu_msg_->linear_acceleration_covariance[8] = 0.043864908;
 
         if (publisher_) {
           publisher_->publish(imu_msg_);
