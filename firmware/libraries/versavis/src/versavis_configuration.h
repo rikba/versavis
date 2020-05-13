@@ -76,7 +76,6 @@
 #define RTC_CLK_SYNC_X2_OFFSET 1.0   // Initial offset of control offset [ppm/V]
 #define RTC_CLK_SYNC_U_REF 3.3       // Reference voltage [V]
 #define RTC_CLK_SYNC_DAC_RANGE 0x3FF // DAC range [1]
-#define RTC_CLK_SYNC_DAC_MAX 0x3FF   // DAC range [1]
 #define RTC_CLK_SYNC_DAC_MIN 155.0   // Max. allowed DAC
 #define RTC_CLK_SYNC_DAC_MAX 775.0   // Min. allowed DAC
 #define RTC_CLK_SYNC_LQR_GAIN 3.0583967
