@@ -13,7 +13,7 @@
 #ifndef Sensors_UsD1_h
 #define Sensors_UsD1_h
 
-#include <image_numbered_msgs/UsD1.h>
+#include <versavis/UsD1.h>
 #include <ros.h>
 
 enum class UsD1State { kHeader, kVersion, kLsb, kMsb, kSnr, kCs };

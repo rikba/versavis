@@ -13,7 +13,7 @@
 #ifndef Sensors_LidarLite_h
 #define Sensors_LidarLite_h
 
-#include <image_numbered_msgs/LidarLite.h>
+#include <versavis/LidarLite.h>
 #include "sensors/SensorSynced.h"
 
 class LidarLite : public SensorSynced {
