@@ -55,25 +55,25 @@ void setup() {
   radar = &us_d1;
 
   // ROS
-  static char *rtc_topic = "/versavis/rtc";
+  static char *rtc_topic = "versavis/rtc";
   RtcSync::getInstance().setupRos(nh, rtc_topic);
 
-  static char *baro_topic = "/versavis/adis16448/baro";
-  static char *imu_topic = "/versavis/adis16448/imu";
-  static char *mag_topic = "/versavis/adis16448/mag";
-  static char *temp_topic = "/versavis/adis16448/temp";
+  static char *baro_topic = "versavis/adis16448/baro";
+  static char *imu_topic = "versavis/adis16448/imu";
+  static char *mag_topic = "versavis/adis16448/mag";
+  static char *temp_topic = "versavis/adis16448/temp";
   imu->setupRos(baro_topic, imu_topic, mag_topic, temp_topic);
 
-  static char *bfly_topic = "/versavis/bfly/image";
+  static char *bfly_topic = "versavis/bfly/image";
   cam0->setupRos(bfly_topic);
 
-  static char *ext_clock_topic = "/versavis/gnss/time_sync";
+  static char *ext_clock_topic = "versavis/gnss/time_sync";
   ext_clock->setupRos(ext_clock_topic);
 
-  static char *lidar_lite_topic = "/versavis/lidar_lite/data";
+  static char *lidar_lite_topic = "versavis/lidar_lite/data";
   lidar->setupRos(lidar_lite_topic);
 
-  static char *us_d1_topic = "/versavis/us_d1/data";
+  static char *us_d1_topic = "versavis/us_d1/data";
   radar->setupRos(us_d1_topic);
 }
 

@@ -16,7 +16,7 @@ UsD1::UsD1(ros::NodeHandle *nh, Uart *uart) : nh_(nh), uart_(uart) {
 void UsD1::setupRos(const char *topic) {
   if (nh_) {
     // Create static ROS msg.
-    static image_numbered_msgs::UsD1 msg;
+    static versavis::UsD1 msg;
 
     // Assign topic pointer.
     msg_ = &msg;

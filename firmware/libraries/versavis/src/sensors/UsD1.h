@@ -13,7 +13,7 @@
 #ifndef Sensors_UsD1_h
 #define Sensors_UsD1_h
 
-#include <image_numbered_msgs/UsD1.h>
+#include <versavis/UsD1.h>
 #include <ros.h>
 
 enum class UsD1State { kHeader, kVersion, kLsb, kMsb, kSnr, kCs };
@@ -29,7 +29,7 @@ private:
   ros::NodeHandle *nh_ = NULL;
   ros::Publisher *publisher_ = NULL;
 
-  image_numbered_msgs::UsD1 *msg_ = NULL;
+  versavis::UsD1 *msg_ = NULL;
   Uart *uart_ = NULL;
 
   uint8_t lsb_ = 0xFF;
