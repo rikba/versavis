@@ -26,7 +26,7 @@ LidarLite::LidarLite(ros::NodeHandle *nh, TimerSynced *timer,
 void LidarLite::setupRos(const char *topic) {
   if (nh_) {
     // Create static ROS msg.
-    static image_numbered_msgs::LidarLite msg;
+    static versavis::LidarLite msg;
 
     // Assign topic pointer.
     msg_ = &msg;
@@ -75,7 +75,7 @@ void LidarLite::publish() {
   }
 }
 
-bool LidarLite::readData(image_numbered_msgs::LidarLite *msg) const {
+bool LidarLite::readData(versavis::LidarLite *msg) const {
   Wire.beginTransmission(kAddress);
   Wire.write(0x8E); // Start from signal strength with auto-increment bit
   uint8_t nack = Wire.endTransmission(kStopTransmission);

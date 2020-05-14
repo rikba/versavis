@@ -29,7 +29,7 @@ private:
   ros::NodeHandle *nh_ = NULL;
   ros::Publisher *publisher_ = NULL;
 
-  image_numbered_msgs::UsD1 *msg_ = NULL;
+  versavis::UsD1 *msg_ = NULL;
   Uart *uart_ = NULL;
 
   uint8_t lsb_ = 0xFF;
