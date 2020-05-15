@@ -58,10 +58,10 @@ void setup() {
   static char *rtc_topic = "versavis/rtc";
   RtcSync::getInstance().setupRos(nh, rtc_topic);
 
-  static char *baro_topic = "versavis/adis16448/baro/data";
-  static char *imu_topic = "versavis/adis16448/imu/data_raw";
-  static char *mag_topic = "versavis/adis16448/mag/data";
-  static char *temp_topic = "versavis/adis16448/temp/data";
+  static char *baro_topic = "versavis/imu/baro";
+  static char *imu_topic = "versavis/imu/data_raw";
+  static char *mag_topic = "versavis/imu/mag";
+  static char *temp_topic = "versavis/imu/temp";
   imu->setupRos(baro_topic, imu_topic, mag_topic, temp_topic);
 
   static char *bfly_topic = "versavis/bfly/image";
