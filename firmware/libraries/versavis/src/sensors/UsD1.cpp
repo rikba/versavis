@@ -38,7 +38,7 @@ void UsD1::setupRos(const char *topic) {
     // https://cdn.shopify.com/s/files/1/0113/0414/0900/files/User_Manual_US-D1.pdf?16288212927919010227
     // TODO(rikba): Fix sensor type https://github.com/ros/common_msgs/pull/153
     msg_->range.radiation_type = sensor_msgs::Range::INFRARED;
-    msg_->range.field_of_view = 0.5;
+    msg_->range.field_of_view = 0.35;
     msg_->range.min_range = 0.5;
     msg_->range.max_range = 50.0;
   }

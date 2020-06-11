@@ -49,7 +49,7 @@ void LidarLite::setupRos(const char *topic) {
     msg_->range.radiation_type = sensor_msgs::Range::INFRARED;
     msg_->range.field_of_view = 0.008;
     msg_->range.min_range = 0.05;
-    msg_->range.max_range = 40.0;
+    msg_->range.max_range = 30.0;
 
     last_msg_ = msg_->range.header.seq;
   }
