@@ -17,6 +17,7 @@ void TimerSynced::updateRateMpwm(const uint16_t rate_hz) {
 
 bool TimerSynced::updateFreq() {
   bool update = new_freq_ != freq_;
+  update &= !time_.nsec; // Only update at change of second.
   if (update) {
     setClosestRate(new_freq_);
   }
