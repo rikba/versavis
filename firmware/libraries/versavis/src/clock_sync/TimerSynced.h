@@ -60,11 +60,20 @@ public:
   // Returns true only once per trigger.
   bool getTimeLastTrigger(ros::Time *time, uint32_t *num);
 
+  // Change rate to the closest possible rate.
+  virtual void updateRate(const uint16_t rate_hz) = 0;
+
   bool getDataReady(uint32_t *num); // Returns true only once per data ready.
 
   inline void activateLogging(ros::NodeHandle *nh) { nh_ = nh; }
 
 protected:
+  // Does not change prescaler. Sets rate to the closest possible rate.
+  void setClosestRateMfreq(const uint16_t rate_hz);
+  void setClosestRateMpwm(const uint16_t rate_hz);
+  bool updateFreq();
+  void updateRateMfrq(const uint16_t rate_hz);
+  void updateRateMpwm(const uint16_t rate_hz);
   void setupWaveOutPin() const;
   bool getPinValue(const uint8_t group, const uint8_t pin) const;
   bool getWaveOutPinValue() const;
@@ -80,11 +89,13 @@ protected:
 
   // States
   uint8_t prescaler_ = 0;
-  uint32_t top_ = 0xFFFF; // Default 16 bit counter.
-  uint16_t mod_ = 0;      // The fraction each nominal cycle counts to little.
+  uint32_t top_max_ = 0xFFFF; // Default 16 bit counter.
+  uint32_t top_ = top_max_;
+  uint16_t mod_ = 0; // The fraction each nominal cycle counts to little.
   uint32_t wrap_around_ = 0; // The wrap around when a leap tick should occur.
   uint16_t r_ = 0; // The remainder missing in a cycle to calculate leap ticks.
-  uint16_t freq_ = 1;        // The rate of the counter.
+  uint16_t freq_ = 0; // The rate of the counter.
+  uint16_t new_freq_ = 0;
   uint16_t pulse_ticks_ = 0; // Pulse length in PWM mode.
   ros::Time time_ = {1, 0};  // Timers are started by RTC at first second.
 
@@ -102,6 +113,9 @@ protected:
 
   // Logging.
   ros::NodeHandle *nh_ = NULL;
+
+private:
+  void setClosestRate(const uint16_t freq);
 };
 
 #endif

@@ -24,8 +24,9 @@ Tcc0Synced::Tcc0Synced()
                 ExposurePin{.group = TCC0_EXP_GROUP, .pin = TCC0_EXP_PIN},
                 (Tcc *)TCC0),
       pps_pin_{.group = PPS_GROUP, .pin = PPS_PIN} {
-  // This is a 32 bit counter.
-  top_ = 0xFFFFFFFF;
+  // This is a 24 bit counter.
+  top_max_ = 0xFFFFFF;
+  top_ = top_max_;
   setupAmbiguityComparison();
   // Enable interrupts.
   NVIC_SetPriority(TCC0_IRQn, 0);

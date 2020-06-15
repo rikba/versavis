@@ -86,6 +86,12 @@ void TccSynced::setupMfrqWaveform() {
 }
 void TccSynced::setupMpwmWaveform() { DEBUG_PRINTLN("MPWM not implemented."); }
 
+void TccSynced::updateRate(const uint16_t rate_hz) {
+  if (tcc_->WAVE.bit.WAVEGEN == TCC_WAVE_WAVEGEN_MFRQ_Val) {
+    updateRateMfrq(rate_hz);
+  }
+}
+
 void TccSynced::setupExposure(const bool invert) {
   DEBUG_PRINT("[TccSynced]: Configuring exposure pin ");
   DEBUG_PRINT(exposure_pin_.pin);
@@ -145,6 +151,13 @@ bool TccSynced::getTimeLastExposure(ros::Time *time, uint32_t *num,
 }
 
 void TccSynced::updateTopCompare() {
+  if (updateFreq()) {
+    while (tcc_->SYNCBUSY.bit.CC3) {
+    }
+    tcc_->CC[3].reg = top_ / 2;
+    while (tcc_->SYNCBUSY.bit.CC3) {
+    }
+  }
   while (tcc_->SYNCBUSY.bit.CC0) {
   }
   tcc_->CC[0].reg = top_ + computeLeapTicks() - 1;

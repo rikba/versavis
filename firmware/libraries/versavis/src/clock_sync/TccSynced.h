@@ -27,6 +27,7 @@ public:
                       const InterruptLogic &logic) override {}
   void setupMfrqWaveform() override;
   void setupMpwmWaveform() override;
+  void updateRate(const uint16_t rate_hz) override;
   void setupExposure(const bool invert);
 
   void handleInterrupt() override;

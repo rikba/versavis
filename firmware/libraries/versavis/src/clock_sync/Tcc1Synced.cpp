@@ -16,8 +16,9 @@ Tcc1Synced::Tcc1Synced()
                         .drvstr = TCC1_MFRQ_DRVSTR},
                 ExposurePin{.group = TCC1_EXP_GROUP, .pin = TCC1_EXP_PIN},
                 (Tcc *)TCC1) {
-  // This is a 32 bit counter.
-  top_ = 0xFFFFFFFF;
+  // This is a 24 bit counter.
+  top_max_ = 0xFFFFFF;
+  top_ = top_max_;
   // Enable interrupts.
   NVIC_SetPriority(TCC1_IRQn, 0);
   NVIC_EnableIRQ(TCC1_IRQn);

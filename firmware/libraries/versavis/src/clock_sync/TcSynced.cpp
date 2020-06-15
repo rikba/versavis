@@ -87,6 +87,14 @@ void TcSynced::setupMpwmWaveform() {
   }
 }
 
+void TcSynced::updateRate(const uint16_t rate_hz) {
+  if (tc_->CTRLA.bit.WAVEGEN == TC_CTRLA_WAVEGEN_MFRQ_Val) {
+    updateRateMfrq(rate_hz);
+  } else if (tc_->CTRLA.bit.WAVEGEN == TC_CTRLA_WAVEGEN_MPWM_Val) {
+    updateRateMpwm(rate_hz);
+  }
+}
+
 void TcSynced::setupMfrqWaveform() {
   // Setup wavegen.
   DEBUG_PRINTLN("[TcSynced]: Disabling timer.");
@@ -144,6 +152,7 @@ void TcSynced::setupDataReady(const uint8_t port_group, const uint8_t pin,
 }
 
 void TcSynced::updateTopCompare() {
+  updateFreq();
   while (tc_->STATUS.bit.SYNCBUSY) {
   }
   tc_->CC[0].reg = top_ + computeLeapTicks() - 1;

@@ -14,6 +14,7 @@
 #define Sensors_SensorSynced_h
 
 #include <ros.h>
+#include <std_msgs/UInt16.h>
 
 #include "clock_sync/TimerSynced.h"
 
@@ -24,13 +25,24 @@ public:
   inline virtual void publish() = 0;
   inline virtual void setupRos(const char *topic) = 0;
 
+  inline void changeRateCb(const std_msgs::UInt16 &rate_msg) {
+    if (timer_) {
+      timer_->updateRate(rate_msg.data);
+    }
+  }
+
 protected:
   // ROS
   ros::NodeHandle *nh_ = NULL;
   ros::Publisher *publisher_ = NULL;
+  // TODO(rikba): Should be service callback, but that's not supported by
+  // rosserial_server, yet.
+  ros::Subscriber<std_msgs::UInt16, SensorSynced> *rate_sub_ = NULL;
 
   // Timer
   TimerSynced *timer_ = NULL;
+
+private:
 };
 
 #endif

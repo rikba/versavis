@@ -42,16 +42,20 @@ void Adis16448BmlzTriggered::setupRos(const char *baro_topic,
     static ros::Publisher baro_pub(baro_topic, baro_msg_);
     static ros::Publisher mag_pub(mag_topic, mag_msg_);
     static ros::Publisher temp_pub(temp_topic, temp_msg_);
+    static ros::Subscriber<std_msgs::UInt16, SensorSynced> rate_sub(
+        "versavis/imu/change_rate", &SensorSynced::changeRateCb, this);
 
     // Assign publisher pointers.
     mag_pub_ = &mag_pub;
     baro_pub_ = &baro_pub;
     temp_pub_ = &temp_pub;
+    rate_sub_ = &rate_sub;
 
     // Advertise.
     nh_->advertise(*mag_pub_);
     nh_->advertise(*baro_pub_);
     nh_->advertise(*temp_pub_);
+    nh_->subscribe(*rate_sub_);
   }
 
   if (imu_msg_) {
