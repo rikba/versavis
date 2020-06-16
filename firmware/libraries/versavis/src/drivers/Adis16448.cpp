@@ -52,20 +52,19 @@ void Adis16448::setup() {
   // Configure SPI.
   SPI.begin(); // Initialize SPI bus
 
-  regWrite(GLOB_CMD, 0xBE80); // Perform an IMU reset.
+  regWrite(GLOB_CMD, 0x80); // Perform an IMU reset.
   delay(300);
-  regWrite(MSC_CTRL, 0x16); // DR with active HIGH on DIO1, activate CRC
+  regWrite(GLOB_CMD, 0x02); // Factory calibration restore.
+  delay(20);
+  regWrite(MSC_CTRL, 0x56); // Point of percussion alignment, DR with active
+                            // HIGH on DIO1, activate CRC
   delay(20);
   regWrite(GPIO_CTRL, 0x2); // DIO2 output (LED).
   delay(20);
   regWrite(SMPL_PRD, 0x0); // external clock, no averaging.
   delay(20);
-  regWrite(SENS_AVG, 0x40); // +-1000 dps range, no digital filter.
+  regWrite(SENS_AVG, 0x400); // +-1000 dps range, no digital filter.
   delay(20);
-  regWrite(GLOB_CMD, 0xBE08); // Save settings to flash.
-  delay(20);
-  regWrite(GLOB_CMD, 0xBE80); // Perform another IMU reset.
-  delay(300);
 }
 
 ////////////////////////////////////////////////////////////////////////////
