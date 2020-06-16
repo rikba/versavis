@@ -48,11 +48,11 @@ void setup() {
   static ExternalClockGnss gnss(nh, &Serial, 115200);
   ext_clock = &gnss;
 
-  static LidarLite lidar_lite(nh, &Tc4Synced::getInstance(), 100);
-  lidar = &lidar_lite;
-
   static UsD1 us_d1(nh, &Serial1);
   radar = &us_d1;
+
+  static LidarLite lidar_lite(nh, &Tc4Synced::getInstance(), 100);
+  lidar = &lidar_lite;
 
   // ROS
   static char *rtc_topic = "versavis/rtc";
@@ -70,21 +70,27 @@ void setup() {
   static char *ext_clock_topic = "versavis/gnss/time_sync";
   ext_clock->setupRos(ext_clock_topic);
 
-  static char *lidar_lite_topic = "versavis/lidar_lite/data";
-  lidar->setupRos(lidar_lite_topic);
-
   static char *us_d1_topic = "versavis/us_d1/data";
   radar->setupRos(us_d1_topic);
+
+  static char *lidar_lite_topic = "versavis/lidar_lite/data";
+  lidar->setupRos(lidar_lite_topic);
 }
 
 void loop() {
-  imu->publish();
-  cam0->publish();
-  ext_clock->publish();
-  lidar->publish();
-  radar->publish();
-
-  RtcSync::getInstance().publish();
+  // Prioritizing readout queue. IMU and camera are processed first.
+  if (imu->publish())
+    ;
+  else if (cam0->publish())
+    ;
+  else if (radar->publish())
+    ;
+  else if (lidar->publish())
+    ;
+  else if (ext_clock->publish())
+    ;
+  else if (RtcSync::getInstance().publish())
+    ;
 
   if (nh)
     nh->spinOnce();
