@@ -56,7 +56,7 @@ void ExternalClock::setupRos(const char *topic) {
 }
 
 bool ExternalClock::publish() {
-  bool new_measurement = false;
+  bool is_active = false;
 
   switch (state_) {
   case State::kWaitForPulse: {
@@ -68,6 +68,7 @@ bool ExternalClock::publish() {
     break;
   }
   case State::kWaitForRemoteTime: {
+    bool is_active = true;
     auto remote_time_status = setRemoteTime();
     if (remote_time_status == RemoteTimeStatus::kReceived) {
       state_ = State::kUpdateFilter;
@@ -77,13 +78,14 @@ bool ExternalClock::publish() {
     break;
   }
   case State::kUpdateFilter: {
+    bool is_active = true;
     updateFilter();
     controlClock();
     state_ = State::kPublishFilterState;
     break;
   }
   case State::kPublishFilterState: {
-    new_measurement = true;
+    bool is_active = true;
     if (publisher_) {
       publisher_->publish(clock_msg_);
     }
@@ -96,7 +98,7 @@ bool ExternalClock::publish() {
   }
   }
 
-  return new_measurement;
+  return is_active;
 }
 
 void ExternalClock::updateFilter() {
