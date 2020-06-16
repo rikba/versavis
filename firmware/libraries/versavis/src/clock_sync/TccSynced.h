@@ -61,6 +61,7 @@ private:
 
   // Wrap around state after half a clock cycle to handle ambiguities.
   ros::Time time_2_ = time_;
+  uint32_t time_2_cc_ = 0xFFFFFFFF; // the capture value at time_2_.
 };
 
 #endif
