@@ -22,6 +22,9 @@ protected:
 
   Uart *uart_ = NULL;
   NmeaParser nmea_parser_;
+
+  // State
+  RemoteTimeStatus result_ = RemoteTimeStatus::kWaiting;
 };
 
 #endif
