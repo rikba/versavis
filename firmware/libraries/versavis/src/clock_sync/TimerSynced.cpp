@@ -37,7 +37,12 @@ void TimerSynced::setClosestRate(const uint16_t freq) {
     top_ = RTC_FREQ / wrap_around_;
     mod_ = static_cast<uint32_t>(RTC_FREQ) % wrap_around_;
     if (nh_) {
-      nh_->loginfo("Changed rate.");
+      char buffer[150];
+      sprintf(buffer,
+              "Changed rate. Desired rate: %d Actual rate: %d Top compare: %u "
+              "Prescaler: %d Wrap around: %d",
+              freq, freq_, top_, kPrescalers[prescaler_], wrap_around_);
+      nh_->loginfo(buffer);
     }
   }
 }
