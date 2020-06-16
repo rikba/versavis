@@ -132,55 +132,35 @@ int16_t *Adis16448::sensorRead() {
                                       // bit transaction requirement
   joinedData[0] = (sensorData[0] << 8) |
                   (sensorData[1] & 0xFF); // Concatenate two bytes into word
-  endTransaction();
-  beginTransaction();
   sensorData[2] = SPI.transfer(
       XGYRO_OUT); // Write next address to device and read upper byte
   sensorData[3] = SPI.transfer(0x00); // Read lower byte
   joinedData[1] = (sensorData[2] << 8) |
                   (sensorData[3] & 0xFF); // Concatenate two bytes into word
-  endTransaction();
-  beginTransaction();
   sensorData[4] = SPI.transfer(YGYRO_OUT);
   sensorData[5] = SPI.transfer(0x00);
   joinedData[2] = (sensorData[4] << 8) | (sensorData[5] & 0xFF);
-  endTransaction();
-  beginTransaction();
   sensorData[6] = SPI.transfer(ZGYRO_OUT);
   sensorData[7] = SPI.transfer(0x00);
   joinedData[3] = (sensorData[6] << 8) | (sensorData[7] & 0xFF);
-  endTransaction();
-  beginTransaction();
   sensorData[8] = SPI.transfer(XACCL_OUT);
   sensorData[9] = SPI.transfer(0x00);
   joinedData[4] = (sensorData[8] << 8) | (sensorData[9] & 0xFF);
-  endTransaction();
-  beginTransaction();
   sensorData[10] = SPI.transfer(YACCL_OUT);
   sensorData[11] = SPI.transfer(0x00);
   joinedData[5] = (sensorData[10] << 8) | (sensorData[11] & 0xFF);
-  endTransaction();
-  beginTransaction();
   sensorData[12] = SPI.transfer(ZACCL_OUT);
   sensorData[13] = SPI.transfer(0x00);
   joinedData[6] = (sensorData[12] << 8) | (sensorData[13] & 0xFF);
-  endTransaction();
-  beginTransaction();
   sensorData[14] = SPI.transfer(XMAGN_OUT);
   sensorData[15] = SPI.transfer(0x00);
   joinedData[7] = (sensorData[14] << 8) | (sensorData[15] & 0xFF);
-  endTransaction();
-  beginTransaction();
   sensorData[16] = SPI.transfer(YMAGN_OUT);
   sensorData[17] = SPI.transfer(0x00);
   joinedData[8] = (sensorData[16] << 8) | (sensorData[17] & 0xFF);
-  endTransaction();
-  beginTransaction();
   sensorData[18] = SPI.transfer(ZMAGN_OUT);
   sensorData[19] = SPI.transfer(0x00);
   joinedData[9] = (sensorData[18] << 8) | (sensorData[19] & 0xFF);
-  endTransaction();
-  beginTransaction();
   sensorData[20] =
       SPI.transfer(FLASH_CNT); // Final transfer. Data after this invalid
   sensorData[21] = SPI.transfer(0x00);
