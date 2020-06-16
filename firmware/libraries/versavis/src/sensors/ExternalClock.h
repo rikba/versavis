@@ -20,7 +20,7 @@ class ExternalClock : public SensorSynced {
 public:
   ExternalClock(ros::NodeHandle *nh);
   void setupRos(const char *topic) override;
-  void publish() override;
+  bool publish() override;
 
 protected:
   enum class RemoteTimeStatus { kWaiting, kReceived, kTimeout, kReading };

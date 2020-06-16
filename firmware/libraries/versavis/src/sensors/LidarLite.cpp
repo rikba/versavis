@@ -20,7 +20,7 @@ LidarLite::LidarLite(ros::NodeHandle *nh, TimerSynced *timer,
   // Configure I2C sensor.
   Wire.begin();
   Wire.setClock(3400000); // High speed mode.
-  write(0x00, 0x00);     // Default reset.
+  write(0x00, 0x00);      // Default reset.
 }
 
 void LidarLite::setupRos(const char *topic) {
@@ -55,7 +55,9 @@ void LidarLite::setupRos(const char *topic) {
   }
 }
 
-void LidarLite::publish() {
+bool LidarLite::publish() {
+  bool new_measurement = false;
+
   // Obtain new stamp after triggering.
   if (timer_ && msg_) {
     timer_->getTimeLastTrigger(&msg_->range.header.stamp,
@@ -64,15 +66,17 @@ void LidarLite::publish() {
 
   // If we have a new message number, try to obtain range message from I2C.
   if (msg_ && (last_msg_ != msg_->range.header.seq) && !busy()) {
-
     // Read measurement.
     if (readData(msg_) && publisher_) {
       publisher_->publish(msg_);
     }
 
     // Update state.
+    new_measurement = true;
     last_msg_ = msg_->range.header.seq;
   }
+
+  return new_measurement;
 }
 
 bool LidarLite::readData(versavis::LidarLite *msg) const {

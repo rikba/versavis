@@ -25,7 +25,7 @@ public:
     if (nh_)
       timer_->activateLogging(nh_);
   }
-  inline virtual void publish() = 0;
+  inline virtual bool publish() = 0;
   inline virtual void setupRos(const char *topic) = 0;
 
   inline void changeRateCb(const std_msgs::UInt16 &rate_msg) {

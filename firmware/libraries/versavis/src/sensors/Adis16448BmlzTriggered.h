@@ -26,7 +26,7 @@ public:
                          const uint8_t dr_pin, const uint8_t chip_select);
   void setupRos(const char *baro_topic, const char *imu_topic,
                 const char *mag_topic, const char *temp_topic);
-  void publish() override;
+  bool publish() override;
 
 private:
   Adis16448 imu_;

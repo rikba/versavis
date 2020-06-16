@@ -20,7 +20,7 @@ public:
   CamSyncedExposure(ros::NodeHandle *nh, TccSynced *timer,
                     const uint16_t rate_hz, const bool invert_trigger,
                     const bool invert_exposure);
-  void publish() override;
+  bool publish() override;
 };
 
 #endif

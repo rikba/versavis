@@ -20,7 +20,7 @@ class LidarLite : public SensorSynced {
 public:
   LidarLite(ros::NodeHandle *nh, TimerSynced *timer, const uint16_t rate_hz);
   void setupRos(const char *topic) override;
-  void publish() override;
+  bool publish() override;
 
 private:
   uint16_t last_msg_ = 0xFFFF;

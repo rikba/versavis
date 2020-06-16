@@ -29,13 +29,15 @@ void RtcSync::setupRos(ros::NodeHandle *nh, const char *topic) {
   }
 }
 
-void RtcSync::publish() {
+bool RtcSync::publish() {
+  bool new_rtc = has_stamp_;
   if (rtc_pub_ && rtc_msg_ && has_stamp_) {
     rtc_msg_->data.sec = time_.sec;
     rtc_msg_->data.nsec = time_.nsec;
     rtc_pub_->publish(rtc_msg_);
     has_stamp_ = false;
   }
+  return new_rtc;
 }
 
 void RtcSync::setupPort() const {

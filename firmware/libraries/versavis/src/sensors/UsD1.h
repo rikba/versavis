@@ -22,7 +22,7 @@ class UsD1 {
 public:
   UsD1(ros::NodeHandle *nh, Uart *uart);
   void setupRos(const char *topic);
-  void publish();
+  bool publish();
 
 private:
   // ROS

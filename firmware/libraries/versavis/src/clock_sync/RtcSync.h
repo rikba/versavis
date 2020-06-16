@@ -41,7 +41,7 @@ public:
 
   // ROS
   void setupRos(ros::NodeHandle *nh, const char *topic);
-  void publish(); // Resets has_stamp_ flag.
+  bool publish(); // Resets has_stamp_ flag.
 
   // Accessors
   void computePwm(const uint16_t rate_hz, const uint32_t pulse_us,

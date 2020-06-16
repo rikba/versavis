@@ -55,7 +55,9 @@ void ExternalClock::setupRos(const char *topic) {
   }
 }
 
-void ExternalClock::publish() {
+bool ExternalClock::publish() {
+  bool new_measurement = false;
+
   switch (state_) {
   case State::kWaitForPulse: {
     if (timer_ && clock_msg_ &&
@@ -81,6 +83,7 @@ void ExternalClock::publish() {
     break;
   }
   case State::kPublishFilterState: {
+    new_measurement = true;
     if (publisher_) {
       publisher_->publish(clock_msg_);
     }
@@ -92,6 +95,8 @@ void ExternalClock::publish() {
     break;
   }
   }
+
+  return new_measurement;
 }
 
 void ExternalClock::updateFilter() {

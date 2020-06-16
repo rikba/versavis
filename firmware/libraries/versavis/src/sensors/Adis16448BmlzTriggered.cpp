@@ -75,7 +75,9 @@ void Adis16448BmlzTriggered::setupRos(const char *baro_topic,
   }
 }
 
-void Adis16448BmlzTriggered::publish() {
+bool Adis16448BmlzTriggered::publish() {
+  bool new_measurement = false;
+
   if (timer_ && imu_msg_) {
     timer_->getTimeLastTrigger(&imu_msg_->header.stamp, &imu_msg_->header.seq);
   }
@@ -84,6 +86,7 @@ void Adis16448BmlzTriggered::publish() {
     int16_t *imu_data = imu_.sensorReadAllCRC();
 
     if ((imu_.checksum(imu_data) == imu_data[12])) {
+      new_measurement = true;
       bool has_mag_and_baro = imu_data[0] & (1 << 7);
 
       // BARO.
@@ -152,4 +155,6 @@ void Adis16448BmlzTriggered::publish() {
       nh_->logwarn("IMU checksum error.");
     }
   }
+
+  return new_measurement;
 }

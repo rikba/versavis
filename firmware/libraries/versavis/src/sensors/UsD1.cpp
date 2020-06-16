@@ -44,7 +44,8 @@ void UsD1::setupRos(const char *topic) {
   }
 }
 
-void UsD1::publish() {
+bool UsD1::publish() {
+  bool new_measurement = false;
 
   while (msg_ && uart_ && uart_->available()) {
     uint8_t c = uart_->read();
@@ -102,6 +103,7 @@ void UsD1::publish() {
     case UsD1State::kCs: {
       bool buffer_empty = (uart_->available() == 0);
       if ((c == (cs_ & 0xFF)) && buffer_empty) {
+        new_measurement = true;
         if (publisher_) {
           publisher_->publish(msg_);
         }
@@ -121,4 +123,6 @@ void UsD1::publish() {
     }
     }
   }
+
+  return new_measurement;
 }
