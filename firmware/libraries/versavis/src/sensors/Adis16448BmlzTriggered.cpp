@@ -164,6 +164,8 @@ void Adis16448BmlzTriggered::publish() {
           temp_pub_->publish(temp_msg_);
         }
       }
+    } else if (nh_) {
+      nh_->logwarn("IMU checksum error.");
     }
   }
 }
