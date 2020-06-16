@@ -21,7 +21,10 @@
 class SensorSynced {
 public:
   inline SensorSynced(ros::NodeHandle *nh, TimerSynced *timer)
-      : nh_(nh), timer_(timer) {}
+      : nh_(nh), timer_(timer) {
+    if (nh_)
+      timer_->activateLogging(nh_);
+  }
   inline virtual void publish() = 0;
   inline virtual void setupRos(const char *topic) = 0;
 
