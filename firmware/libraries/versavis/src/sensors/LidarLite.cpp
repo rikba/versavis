@@ -19,8 +19,8 @@ LidarLite::LidarLite(ros::NodeHandle *nh, TimerSynced *timer,
 
   // Configure I2C sensor.
   Wire.begin();
-  Wire.setClock(3400000); // High speed mode.
-  write(0x00, 0x00);      // Default reset.
+  Wire.setClock(400000); // Fast mode.
+  write(0x00, 0x00);     // Default reset.
 }
 
 void LidarLite::setupRos(const char *topic) {
