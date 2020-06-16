@@ -40,7 +40,7 @@ public:
   void operator=(RtcSync const &) = delete;
 
   // ROS
-  void setupRos(ros::NodeHandle *nh, const char *topic);
+  void setupRos(ros::NodeHandle *nh);
   bool publish(); // Resets has_stamp_ flag.
 
   // Accessors

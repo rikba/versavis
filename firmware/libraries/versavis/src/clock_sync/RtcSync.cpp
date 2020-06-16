@@ -6,6 +6,8 @@
 #include "helper.h"
 #include "versavis_configuration.h"
 
+#define RTC_TOPIC "rtc"
+
 RtcSync::RtcSync() {
   timer_start_ -= ros_resolution_;
   setupPort();
@@ -14,11 +16,11 @@ RtcSync::RtcSync() {
   setupRtc();
 }
 
-void RtcSync::setupRos(ros::NodeHandle *nh, const char *topic) {
+void RtcSync::setupRos(ros::NodeHandle *nh) {
   if (nh) {
     // Create static ROS objects.
     static std_msgs::Time msg;
-    static ros::Publisher pub(topic, &msg);
+    static ros::Publisher pub(RTC_TOPIC, &msg);
 
     // Set member variables.
     rtc_msg_ = &msg;

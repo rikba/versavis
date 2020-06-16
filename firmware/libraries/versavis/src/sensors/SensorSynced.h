@@ -21,12 +21,17 @@
 class SensorSynced {
 public:
   inline SensorSynced(ros::NodeHandle *nh, TimerSynced *timer)
-      : nh_(nh), timer_(timer) {
-    if (nh_)
-      timer_->activateLogging(nh_);
-  }
+      : nh_(nh), timer_(timer) {}
   inline virtual bool publish() = 0;
-  inline virtual void setupRos(const char *topic) = 0;
+
+protected:
+  inline void
+  setupRos(ros::Subscriber<std_msgs::UInt16, SensorSynced> &rate_sub) {
+    if (nh_) {
+      timer_->activateLogging(nh_);
+      nh_->subscribe(rate_sub);
+    }
+  }
 
   inline void changeRateCb(const std_msgs::UInt16 &rate_msg) {
     if (timer_) {
@@ -38,9 +43,6 @@ protected:
   // ROS
   ros::NodeHandle *nh_ = NULL;
   ros::Publisher *publisher_ = NULL;
-  // TODO(rikba): Should be service callback, but that's not supported by
-  // rosserial_server, yet.
-  ros::Subscriber<std_msgs::UInt16, SensorSynced> *rate_sub_ = NULL;
 
   // Timer
   TimerSynced *timer_ = NULL;

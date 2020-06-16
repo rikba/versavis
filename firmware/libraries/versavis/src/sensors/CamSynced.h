@@ -20,7 +20,7 @@ class CamSynced : public SensorSynced {
 public:
   CamSynced(ros::NodeHandle *nh, TimerSynced *timer, const uint16_t rate_hz,
             const bool invert);
-  void setupRos(const char *topic) override;
+  void setupRos(char *rate_topic, char *img_topic);
 
 protected:
   versavis::TimeNumbered *time_msg_ = NULL;

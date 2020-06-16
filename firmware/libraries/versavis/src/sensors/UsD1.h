@@ -13,15 +13,15 @@
 #ifndef Sensors_UsD1_h
 #define Sensors_UsD1_h
 
-#include <versavis/UsD1.h>
 #include <ros.h>
+#include <versavis/UsD1.h>
 
 enum class UsD1State { kHeader, kVersion, kLsb, kMsb, kSnr, kCs };
 
 class UsD1 {
 public:
   UsD1(ros::NodeHandle *nh, Uart *uart);
-  void setupRos(const char *topic);
+  void setupRos(char *frame_id, char *data_topic);
   bool publish();
 
 private:

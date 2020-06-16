@@ -16,18 +16,25 @@
 
 #include "versavis_configuration.h"
 
-class ExternalClock : public SensorSynced {
+class ExternalClock {
 public:
   ExternalClock(ros::NodeHandle *nh);
-  void setupRos(const char *topic) override;
-  bool publish() override;
+  void setupRos();
+  bool publish();
 
 protected:
   enum class RemoteTimeStatus { kWaiting, kReceived, kTimeout, kReading };
   virtual RemoteTimeStatus setRemoteTime() = 0;
   versavis::ExtClk *clock_msg_ = NULL;
 
+  // ROS
+  ros::NodeHandle *nh_ = NULL;
+  ros::Publisher *publisher_ = NULL;
+
 private:
+  // Timer
+  TimerSynced *timer_ = NULL;
+
   void updateFilter();
   void controlClock();
   void resetFilter();

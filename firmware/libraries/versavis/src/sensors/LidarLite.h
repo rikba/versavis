@@ -13,13 +13,13 @@
 #ifndef Sensors_LidarLite_h
 #define Sensors_LidarLite_h
 
-#include <versavis/LidarLite.h>
 #include "sensors/SensorSynced.h"
+#include <versavis/LidarLite.h>
 
 class LidarLite : public SensorSynced {
 public:
   LidarLite(ros::NodeHandle *nh, TimerSynced *timer, const uint16_t rate_hz);
-  void setupRos(const char *topic) override;
+  void setupRos(char *frame_id, char *rate_topic, char *data_topic);
   bool publish() override;
 
 private:

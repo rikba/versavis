@@ -16,6 +16,23 @@
 
 #include <Arduino.h>
 
+#define IMU_FRAME_ID "adis16448bmlz"
+#define IMU_RATE_TOPIC "adis16448bmlz/imu/change_rate"
+#define IMU_IMU_TOPIC "adis16448bmlz/imu/data_raw"
+#define IMU_BARO_TOPIC "adis16448bmlz/imu/baro"
+#define IMU_MAG_TOPIC "adis16448bmlz/imu/mag"
+#define IMU_TEMP_TOPIC "adis16448bmlz/imu/temp"
+
+#define LIDAR_FRAME_ID "lidar_lite"
+#define LIDAR_RATE_TOPIC "lidar_lite/change_rate"
+#define LIDAR_DATA_TOPIC "lidar_lite/data"
+
+#define CAM_RATE_TOPIC "bfly/change_rate"
+#define CAM_IMG_TOPIC "bfly/image"
+
+#define RADAR_FRAME_ID "us_d1"
+#define RADAR_DATA_TOPIC "us_d1/data"
+
 // ROS
 ros::NodeHandle *nh = NULL;
 
@@ -55,26 +72,16 @@ void setup() {
   lidar = &lidar_lite;
 
   // ROS
-  static char *rtc_topic = "versavis/rtc";
-  RtcSync::getInstance().setupRos(nh, rtc_topic);
+  RtcSync::getInstance().setupRos(nh);
 
-  static char *baro_topic = "versavis/imu/baro";
-  static char *imu_topic = "versavis/imu/data_raw";
-  static char *mag_topic = "versavis/imu/mag";
-  static char *temp_topic = "versavis/imu/temp";
-  imu->setupRos(baro_topic, imu_topic, mag_topic, temp_topic);
+  imu->setupRos(IMU_FRAME_ID, IMU_RATE_TOPIC, IMU_IMU_TOPIC, IMU_BARO_TOPIC,
+                IMU_MAG_TOPIC, IMU_TEMP_TOPIC);
 
-  static char *bfly_topic = "versavis/bfly/image";
-  cam0->setupRos(bfly_topic);
+  cam0->setupRos(CAM_RATE_TOPIC, CAM_IMG_TOPIC);
 
-  static char *ext_clock_topic = "versavis/gnss/time_sync";
-  ext_clock->setupRos(ext_clock_topic);
-
-  static char *us_d1_topic = "versavis/us_d1/data";
-  radar->setupRos(us_d1_topic);
-
-  static char *lidar_lite_topic = "versavis/lidar_lite/data";
-  lidar->setupRos(lidar_lite_topic);
+  ext_clock->setupRos();
+  radar->setupRos(RADAR_FRAME_ID, RADAR_DATA_TOPIC);
+  lidar->setupRos(LIDAR_FRAME_ID, LIDAR_RATE_TOPIC, LIDAR_DATA_TOPIC);
 }
 
 void loop() {

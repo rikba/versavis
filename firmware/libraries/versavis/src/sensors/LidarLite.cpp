@@ -23,7 +23,11 @@ LidarLite::LidarLite(ros::NodeHandle *nh, TimerSynced *timer,
   write(0x00, 0x00);     // Default reset.
 }
 
-void LidarLite::setupRos(const char *topic) {
+void LidarLite::setupRos(char *frame_id, char *rate_topic, char *data_topic) {
+  static ros::Subscriber<std_msgs::UInt16, SensorSynced> rate_sub(
+      rate_topic, &LidarLite::changeRateCb, this);
+  SensorSynced::setupRos(rate_sub);
+
   if (nh_) {
     // Create static ROS msg.
     static versavis::LidarLite msg;
@@ -32,7 +36,7 @@ void LidarLite::setupRos(const char *topic) {
     msg_ = &msg;
 
     // Create static ROS publisher.
-    static ros::Publisher pub(topic, msg_);
+    static ros::Publisher pub(data_topic, msg_);
 
     // Assign publisher pointers.
     publisher_ = &pub;
@@ -43,7 +47,7 @@ void LidarLite::setupRos(const char *topic) {
 
   // Initialize.
   if (msg_) {
-    msg_->range.header.frame_id = "LidarLite";
+    msg_->range.header.frame_id = frame_id;
 
     // https://static.garmin.com/pumac/LIDAR_Lite_v3_Operation_Manual_and_Technical_Specifications.pdf
     msg_->range.radiation_type = sensor_msgs::Range::INFRARED;

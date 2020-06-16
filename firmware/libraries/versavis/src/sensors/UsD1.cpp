@@ -13,7 +13,7 @@ UsD1::UsD1(ros::NodeHandle *nh, Uart *uart) : nh_(nh), uart_(uart) {
   }
 }
 
-void UsD1::setupRos(const char *topic) {
+void UsD1::setupRos(char *frame_id, char *data_topic) {
   if (nh_) {
     // Create static ROS msg.
     static versavis::UsD1 msg;
@@ -22,7 +22,7 @@ void UsD1::setupRos(const char *topic) {
     msg_ = &msg;
 
     // Create static ROS publisher.
-    static ros::Publisher pub(topic, msg_);
+    static ros::Publisher pub(data_topic, msg_);
 
     // Assign publisher pointers.
     publisher_ = &pub;
@@ -33,7 +33,7 @@ void UsD1::setupRos(const char *topic) {
 
   // Initialize.
   if (msg_) {
-    msg_->range.header.frame_id = "US-D1";
+    msg_->range.header.frame_id = frame_id;
 
     // https://cdn.shopify.com/s/files/1/0113/0414/0900/files/User_Manual_US-D1.pdf?16288212927919010227
     // TODO(rikba): Fix sensor type https://github.com/ros/common_msgs/pull/153

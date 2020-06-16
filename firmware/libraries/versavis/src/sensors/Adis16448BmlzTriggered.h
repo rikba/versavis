@@ -24,8 +24,8 @@ public:
   Adis16448BmlzTriggered(ros::NodeHandle *nh, TimerSynced *timer,
                          const uint16_t rate_hz, const uint8_t dr_port_group,
                          const uint8_t dr_pin, const uint8_t chip_select);
-  void setupRos(const char *baro_topic, const char *imu_topic,
-                const char *mag_topic, const char *temp_topic);
+  void setupRos(char *frame_id, char *rate_topic, char *imu_topic,
+                char *baro_topic, char *mag_topic, char *temp_topic);
   bool publish() override;
 
 private:
