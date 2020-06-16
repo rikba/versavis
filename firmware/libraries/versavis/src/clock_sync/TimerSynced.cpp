@@ -67,7 +67,7 @@ void TimerSynced::setupMpwm(const uint16_t rate_hz, const uint16_t pulse_us,
   prescaler_ = RtcSync::getInstance().findMinPrescalerPwm(rate_hz, top_max_);
   setClosestRate(rate_hz);
 
-  uint32_t ticks = (RTC_FREQ / 1.0e6) * pulse_us;
+  uint32_t ticks = (RTC_FREQ / 1e6) * pulse_us;
   pulse_ticks_ = ticks / kPrescalers[prescaler_];
   pulse_ticks_ += ((ticks % kPrescalers[prescaler_]) != 0); // Ceil
 
