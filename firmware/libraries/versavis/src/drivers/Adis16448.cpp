@@ -97,8 +97,6 @@ int16_t Adis16448::regRead(uint8_t regAddr) {
                       // requirement
   endTransaction();
 
-  delayMicroseconds(25); // Delay to not violate read rate (40us)
-
   // Read data from requested register
   beginTransaction();
   uint8_t _msbData =
@@ -106,8 +104,6 @@ int16_t Adis16448::regRead(uint8_t regAddr) {
   uint8_t _lsbData =
       SPI.transfer(0x00); // Send (0x00) and place lower byte into variable
   endTransaction();
-
-  delayMicroseconds(25); // Delay to not violate read rate (40us)
 
   int16_t _dataOut =
       (_msbData << 8) | (_lsbData & 0xFF); // Concatenate upper and lower bytes
@@ -127,7 +123,6 @@ int16_t *Adis16448::sensorRead() {
   // Initialize sensor data arrays and stall time variable
   uint8_t sensorData[22];
   static int16_t joinedData[11];
-  int stall = 25;
 
   // Write each requested register address and read back it's data
   beginTransaction();
@@ -138,7 +133,6 @@ int16_t *Adis16448::sensorRead() {
   joinedData[0] = (sensorData[0] << 8) |
                   (sensorData[1] & 0xFF); // Concatenate two bytes into word
   endTransaction();
-  delayMicroseconds(stall); // Delay to not violate read rate (40us)
   beginTransaction();
   sensorData[2] = SPI.transfer(
       XGYRO_OUT); // Write next address to device and read upper byte
@@ -146,55 +140,46 @@ int16_t *Adis16448::sensorRead() {
   joinedData[1] = (sensorData[2] << 8) |
                   (sensorData[3] & 0xFF); // Concatenate two bytes into word
   endTransaction();
-  delayMicroseconds(stall);
   beginTransaction();
   sensorData[4] = SPI.transfer(YGYRO_OUT);
   sensorData[5] = SPI.transfer(0x00);
   joinedData[2] = (sensorData[4] << 8) | (sensorData[5] & 0xFF);
   endTransaction();
-  delayMicroseconds(stall);
   beginTransaction();
   sensorData[6] = SPI.transfer(ZGYRO_OUT);
   sensorData[7] = SPI.transfer(0x00);
   joinedData[3] = (sensorData[6] << 8) | (sensorData[7] & 0xFF);
   endTransaction();
-  delayMicroseconds(stall);
   beginTransaction();
   sensorData[8] = SPI.transfer(XACCL_OUT);
   sensorData[9] = SPI.transfer(0x00);
   joinedData[4] = (sensorData[8] << 8) | (sensorData[9] & 0xFF);
   endTransaction();
-  delayMicroseconds(stall);
   beginTransaction();
   sensorData[10] = SPI.transfer(YACCL_OUT);
   sensorData[11] = SPI.transfer(0x00);
   joinedData[5] = (sensorData[10] << 8) | (sensorData[11] & 0xFF);
   endTransaction();
-  delayMicroseconds(stall);
   beginTransaction();
   sensorData[12] = SPI.transfer(ZACCL_OUT);
   sensorData[13] = SPI.transfer(0x00);
   joinedData[6] = (sensorData[12] << 8) | (sensorData[13] & 0xFF);
   endTransaction();
-  delayMicroseconds(stall);
   beginTransaction();
   sensorData[14] = SPI.transfer(XMAGN_OUT);
   sensorData[15] = SPI.transfer(0x00);
   joinedData[7] = (sensorData[14] << 8) | (sensorData[15] & 0xFF);
   endTransaction();
-  delayMicroseconds(stall);
   beginTransaction();
   sensorData[16] = SPI.transfer(YMAGN_OUT);
   sensorData[17] = SPI.transfer(0x00);
   joinedData[8] = (sensorData[16] << 8) | (sensorData[17] & 0xFF);
   endTransaction();
-  delayMicroseconds(stall);
   beginTransaction();
   sensorData[18] = SPI.transfer(ZMAGN_OUT);
   sensorData[19] = SPI.transfer(0x00);
   joinedData[9] = (sensorData[18] << 8) | (sensorData[19] & 0xFF);
   endTransaction();
-  delayMicroseconds(stall);
   beginTransaction();
   sensorData[20] =
       SPI.transfer(FLASH_CNT); // Final transfer. Data after this invalid
@@ -356,8 +341,6 @@ int Adis16448::regWrite(uint8_t regAddr, int16_t regData) {
   SPI.transfer(highBytehighWord); // Write high byte from high word to SPI bus
   SPI.transfer(lowBytehighWord);  // Write low byte from high word to SPI bus
   endTransaction();
-
-  delayMicroseconds(40); // Delay to not violate read rate (40us)
 
   // Write lowWord to SPI bus
   beginTransaction();            // Set CS low to enable device
