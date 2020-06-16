@@ -78,7 +78,7 @@ void setup() {
 }
 
 void loop() {
-  // Prioritizing readout queue. IMU and camera are processed first.
+  // Prioritizing readout queue.
   if (imu->publish())
     ;
   else if (cam0->publish())
@@ -91,9 +91,9 @@ void loop() {
     ;
   else if (RtcSync::getInstance().publish())
     ;
-
-  if (nh)
+  else if (nh) { // Only spin if no sensor is busy.
     nh->spinOnce();
+  }
 }
 
 void EIC_Handler() {
