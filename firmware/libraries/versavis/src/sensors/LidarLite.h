@@ -23,7 +23,7 @@ public:
   bool publish() override;
 
 private:
-  uint16_t last_msg_ = 0xFFFF;
+  uint32_t last_msg_ = 0xFFFFFFFF;
 
   // I2C interface.
   bool readData(versavis::LidarLite *msg) const;
