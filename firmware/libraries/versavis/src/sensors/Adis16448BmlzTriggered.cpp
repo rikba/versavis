@@ -84,28 +84,12 @@ void Adis16448BmlzTriggered::publish() {
     int16_t *imu_data = imu_.sensorReadAllCRC();
 
     if ((imu_.checksum(imu_data) == imu_data[12])) {
-
-      // MAG and baro update every 16th trigger.
-      // We are not quite sure when the first trigger happens, so we calibrate
-      // the offset.
-      bool has_mag_and_baro = (mag_baro_offset_ != 0xFF);
-      if (!has_mag_and_baro) {
-        if (prev_pressure == 0xFFFF) {
-          prev_pressure = imu_data[10];
-        } else if (prev_pressure != imu_data[10]) {
-          mag_baro_offset_ = imu_msg_->header.seq % 16;
-        }
-      } else {
-        // https://ez.analog.com/mems/w/documents/4122/adis16448-data-sampling
-        // 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, -->15<--
-        has_mag_and_baro &=
-            ((imu_msg_->header.seq - mag_baro_offset_) % 16) == 0;
-      }
+      bool has_mag_and_baro = imu_data[0] & (1 << 7);
 
       // BARO.
       if (has_mag_and_baro && baro_msg_) {
         baro_msg_->header.stamp = imu_msg_->header.stamp;
-        baro_msg_->header.seq = (imu_msg_->header.seq - mag_baro_offset_) / 16;
+        baro_msg_->header.seq = imu_msg_->header.seq / 16;
         baro_msg_->fluid_pressure = imu_.pressureScale(imu_data[10]);
         baro_msg_->variance = -1.0;
 
@@ -142,7 +126,7 @@ void Adis16448BmlzTriggered::publish() {
       // MAG.
       if (has_mag_and_baro && mag_msg_) {
         mag_msg_->header.stamp = imu_msg_->header.stamp;
-        mag_msg_->header.seq = (imu_msg_->header.seq - mag_baro_offset_) / 16;
+        mag_msg_->header.seq = imu_msg_->header.seq / 16;
 
         mag_msg_->magnetic_field.x = imu_.magnetometerScale(imu_data[7]);
         mag_msg_->magnetic_field.y = imu_.magnetometerScale(imu_data[8]);

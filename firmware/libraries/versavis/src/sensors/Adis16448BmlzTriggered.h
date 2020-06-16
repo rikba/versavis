@@ -39,10 +39,6 @@ private:
   sensor_msgs::FluidPressure *baro_msg_ = NULL;
   sensor_msgs::MagneticField *mag_msg_ = NULL;
   sensor_msgs::Temperature *temp_msg_ = NULL;
-
-  // State.
-  uint8_t mag_baro_offset_ = 0xFF;
-  uint16_t prev_pressure = 0xFFFF;
 };
 
 #endif
