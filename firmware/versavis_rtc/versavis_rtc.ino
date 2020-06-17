@@ -17,18 +17,18 @@
 #include <Arduino.h>
 
 #define IMU_FRAME_ID "adis16448bmlz"
-#define IMU_RATE_TOPIC "adis16448bmlz/imu/change_rate"
+#define IMU_RATE_TOPIC "adis16448bmlz/imu/set_rate"
 #define IMU_IMU_TOPIC "adis16448bmlz/imu/data_raw"
 #define IMU_BARO_TOPIC "adis16448bmlz/imu/baro"
 #define IMU_MAG_TOPIC "adis16448bmlz/imu/mag"
 #define IMU_TEMP_TOPIC "adis16448bmlz/imu/temp"
 
 #define LIDAR_FRAME_ID "lidar_lite"
-#define LIDAR_RATE_TOPIC "lidar_lite/change_rate"
+#define LIDAR_RATE_TOPIC "lidar_lite/set_rate"
 #define LIDAR_DATA_TOPIC "lidar_lite/data"
 
-#define CAM_RATE_TOPIC "bfly/change_rate"
-#define CAM_IMG_TOPIC "bfly/image"
+#define CAM_RATE_TOPIC "bfly/set_rate"
+#define CAM_IMG_TOPIC "bfly/header"
 
 #define RADAR_FRAME_ID "us_d1"
 #define RADAR_DATA_TOPIC "us_d1/data"
