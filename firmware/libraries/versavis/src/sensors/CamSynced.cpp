@@ -9,7 +9,7 @@ CamSynced::CamSynced(ros::NodeHandle *nh, TimerSynced *timer,
   }
 }
 
-void CamSynced::setupRos(char *rate_topic, char *img_topic) {
+void CamSynced::setupRos(char* frame_id, char *rate_topic, char *img_topic) {
   static ros::Subscriber<std_msgs::UInt16, SensorSynced> rate_sub(
       rate_topic, &CamSynced::changeRateCb, this);
   SensorSynced::setupRos(rate_sub);
@@ -24,5 +24,8 @@ void CamSynced::setupRos(char *rate_topic, char *img_topic) {
 
     // Advertise.
     nh_->advertise(pub);
+
+    // Initialize
+    img_msg_->frame_id = frame_id;
   }
 }

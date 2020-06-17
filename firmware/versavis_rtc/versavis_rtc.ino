@@ -27,6 +27,7 @@
 #define LIDAR_RATE_TOPIC "lidar_lite/set_rate"
 #define LIDAR_DATA_TOPIC "lidar_lite/data"
 
+#define CAM_FRAME_ID "bfly"
 #define CAM_RATE_TOPIC "bfly/set_rate"
 #define CAM_IMG_TOPIC "bfly/header"
 
@@ -77,7 +78,7 @@ void setup() {
   imu->setupRos(IMU_FRAME_ID, IMU_RATE_TOPIC, IMU_IMU_TOPIC, IMU_BARO_TOPIC,
                 IMU_MAG_TOPIC, IMU_TEMP_TOPIC);
 
-  cam0->setupRos(CAM_RATE_TOPIC, CAM_IMG_TOPIC);
+  cam0->setupRos(CAM_FRAME_ID, CAM_RATE_TOPIC, CAM_IMG_TOPIC);
 
   ext_clock->setupRos();
   radar->setupRos(RADAR_FRAME_ID, RADAR_DATA_TOPIC);
