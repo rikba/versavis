@@ -191,7 +191,6 @@ void TccSynced::handleInterrupt() {
   } else if (tcc_->INTFLAG.bit.MC1) { // Capture exposure.
     // TODO(rikba): Find a way to solve half cycle ambiguity for TCC1 and TCC2.
     // https://e2e.ti.com/support/microcontrollers/msp430/f/166/t/225035
-    tcc_->INTFLAG.reg = TCC_INTFLAG_MC1;
     auto time = tcc_->CC[1].reg < time_2_cc_ ? time_ : time_2_;
     time += RtcSync::getInstance().computeDuration(tcc_->CC[1].reg, prescaler_);
     if (getExposurePinValue() ^ exposure_state_.invert_) { // Start exposure.
