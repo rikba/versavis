@@ -29,6 +29,8 @@ public:
   void setupMpwmWaveform() override;
   void updateRate(const uint16_t rate_hz) override;
   void setupExposure(const bool invert);
+  // TODO(rikba): Make this a function of TimerSynced.
+  void setExposureStateNum(const uint32_t num);
 
   void handleInterrupt() override;
 

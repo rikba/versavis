@@ -12,6 +12,7 @@
     <remap from="image_raw" to="$(arg camera_name)/image_raw"/>
     <remap from="header" to="$(arg camera_name)/header"/>
     <remap from="set_seq" to="$(arg camera_name)/set_seq"/>
+    <remap from="set_rate" to="$(arg camera_name)/set_rate"/>
     <remap from="image_numbered" to="$(arg camera_name)/image_numbered"/>
   </node>
 
@@ -31,6 +32,7 @@
       <!-- Pin 2 -->
       <param name="enable_trigger" value="On"/>
       <param name="trigger_activation_mode" value="RisingEdge"/>
+      <param name="trigger_overlap_mode" value="ReadOut"/>
 
       <!-- Expose related config -->
       <param name="exposure_mode" value="Timed"/>

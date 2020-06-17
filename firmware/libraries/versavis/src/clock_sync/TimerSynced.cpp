@@ -78,6 +78,10 @@ void TimerSynced::setupMpwm(const uint16_t rate_hz, const uint16_t pulse_us,
   setupWaveOutPin();
 }
 
+void TimerSynced::setTriggerStateNum(const uint32_t num) {
+  trigger_state_.setNum(num);
+}
+
 uint16_t TimerSynced::computeLeapTicks() {
   r_ += mod_;
   uint16_t leap_ticks = r_ / wrap_around_;

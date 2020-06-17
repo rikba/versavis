@@ -15,14 +15,18 @@
 
 #include "sensors/SensorSynced.h"
 #include <std_msgs/Header.h>
+#include <std_msgs/UInt32.h>
 
 class CamSynced : public SensorSynced {
 public:
   CamSynced(ros::NodeHandle *nh, TimerSynced *timer, const uint16_t rate_hz,
             const bool invert);
-  void setupRos(char *frame_id, char *rate_topic, char *img_topic);
+  void setupRos(char *frame_id, char *rate_topic, char *seq_topic,
+                char *img_topic);
 
 protected:
+  virtual void setSeqCb(const std_msgs::UInt32 &seq_msg);
+
   std_msgs::Header *img_msg_ = NULL;
 };
 

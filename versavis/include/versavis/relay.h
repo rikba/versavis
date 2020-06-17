@@ -44,6 +44,9 @@ private:
   ros::Subscriber img_header_sub_;
   ros::Subscriber img_sub_;
 
+  ros::Publisher img_rate_pub_;
+  ros::Publisher img_seq_pub_;
+
   image_transport::ImageTransport it_;
   std::shared_ptr<camera_info_manager::CameraInfoManager> cinfo_;
   image_transport::CameraPublisher img_pub_;

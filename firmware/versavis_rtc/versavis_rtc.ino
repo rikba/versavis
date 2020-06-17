@@ -29,6 +29,7 @@
 
 #define CAM_FRAME_ID "bfly"
 #define CAM_RATE_TOPIC "bfly/set_rate"
+#define CAM_SEQ_TOPIC "bfly/set_seq"
 #define CAM_IMG_TOPIC "bfly/header"
 
 #define RADAR_FRAME_ID "us_d1"
@@ -78,7 +79,7 @@ void setup() {
   imu->setupRos(IMU_FRAME_ID, IMU_RATE_TOPIC, IMU_IMU_TOPIC, IMU_BARO_TOPIC,
                 IMU_MAG_TOPIC, IMU_TEMP_TOPIC);
 
-  cam0->setupRos(CAM_FRAME_ID, CAM_RATE_TOPIC, CAM_IMG_TOPIC);
+  cam0->setupRos(CAM_FRAME_ID, CAM_RATE_TOPIC, CAM_SEQ_TOPIC, CAM_IMG_TOPIC);
 
   ext_clock->setupRos();
   radar->setupRos(RADAR_FRAME_ID, RADAR_DATA_TOPIC);

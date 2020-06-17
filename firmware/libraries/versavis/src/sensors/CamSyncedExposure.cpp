@@ -25,3 +25,12 @@ bool CamSyncedExposure::publish() {
 
   return new_measurement;
 }
+
+void CamSyncedExposure::setSeqCb(const std_msgs::UInt32 &seq_msg) {
+  if (timer_) {
+    static_cast<TccSynced *>(timer_)->setExposureStateNum(seq_msg.data);
+    if (nh_) {
+      nh_->loginfo("Setting exposure header sequence.");
+    }
+  }
+}

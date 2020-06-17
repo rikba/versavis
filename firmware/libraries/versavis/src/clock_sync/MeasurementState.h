@@ -36,6 +36,10 @@ public:
     }
   }
 
+  inline void setNum(const uint32_t num) {
+    ATOMIC_BLOCK(ATOMIC_RESTORESTATE) { num_ = num; }
+  }
+
   volatile bool invert_ = false; // Signals whether the signal is inverted.
 
 private:

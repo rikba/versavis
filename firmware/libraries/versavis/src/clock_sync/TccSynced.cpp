@@ -92,6 +92,10 @@ void TccSynced::updateRate(const uint16_t rate_hz) {
   }
 }
 
+void TccSynced::setExposureStateNum(const uint32_t num) {
+  exposure_state_.setNum(num);
+}
+
 void TccSynced::setupExposure(const bool invert) {
   DEBUG_PRINT("[TccSynced]: Configuring exposure pin ");
   DEBUG_PRINT(exposure_pin_.pin);

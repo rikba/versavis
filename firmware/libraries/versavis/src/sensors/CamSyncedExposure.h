@@ -21,6 +21,10 @@ public:
                     const uint16_t rate_hz, const bool invert_trigger,
                     const bool invert_exposure);
   bool publish() override;
+
+protected:
+  void setSeqCb(const std_msgs::UInt32 &seq_msg) override;
+
 };
 
 #endif

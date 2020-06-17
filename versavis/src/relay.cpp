@@ -56,17 +56,20 @@ void Relay::advertiseTopics() {
   img_pub_ = it_.advertiseCamera("image_raw", kBufferSize, kLatchTopic);
   ROS_INFO("Relaying images with corrected stamp to: %s",
            img_pub_.getTopic().c_str());
+
+  img_rate_pub_ =
+      nh_.advertise<std_msgs::UInt16>("set_rate", kBufferSize, kLatchTopic);
+
+  img_seq_pub_ =
+      nh_.advertise<std_msgs::UInt32>("set_seq", kBufferSize, kLatchTopic);
 }
 
 void Relay::setRate(const int rate) {
-  ros::Publisher img_rate_pub =
-      nh_.advertise<std_msgs::UInt16>("set_rate", kBufferSize, kLatchTopic);
-
   ROS_INFO("Setting camera rate to %dHz: %s", rate,
-           img_rate_pub.getTopic().c_str());
+           img_rate_pub_.getTopic().c_str());
   std_msgs::UInt16 new_rate;
   new_rate.data = rate;
-  img_rate_pub.publish(new_rate);
+  img_rate_pub_.publish(new_rate);
 }
 
 void Relay::imageHeaderCb(const std_msgs::Header &msg) {
@@ -161,14 +164,12 @@ void Relay::initialize() {
       if (corresponding) {
         ROS_INFO("Found corresponding image %lu and header %u.",
                  images_.back().number, headers_.back().seq);
-        ros::Publisher img_seq_pub = nh_.advertise<std_msgs::UInt32>(
-            "set_seq", kBufferSize, kLatchTopic);
 
         ROS_INFO("Setting image number to %lu: %s", images_.back().number,
-                 img_seq_pub.getTopic().c_str());
+                 img_seq_pub_.getTopic().c_str());
         std_msgs::UInt32 new_seq;
         new_seq.data = images_.back().number;
-        img_seq_pub.publish(new_seq);
+        img_seq_pub_.publish(new_seq);
 
         headers_.clear();
         images_.clear();

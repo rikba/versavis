@@ -53,6 +53,7 @@ public:
   void setupMfrq(const uint16_t rate_hz, const bool invert);
   void setupMpwm(const uint16_t rate_hz, const uint16_t pulse_us,
                  const bool invert);
+  void setTriggerStateNum(const uint32_t num);
 
   virtual void handleInterrupt() = 0;
   void handleEic();
