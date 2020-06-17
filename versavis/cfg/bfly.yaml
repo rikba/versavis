@@ -1,0 +1,20 @@
+image_width: 2048
+image_height: 1536
+camera_name: bfly
+camera_matrix:
+  rows: 3
+  cols: 3
+  data: [1821.3021281, 0.0, 995.807178647, 0.0, 1820.59310389, 778.519700578, 0.0, 0.0, 1.0]
+distortion_model: equidistant
+distortion_coefficients:
+  rows: 1
+  cols: 4
+  data: [0.135174574669, 0.19207071476, -0.273526933387, 0.454292302712]
+rectification_matrix:
+  rows: 0
+  cols: 0
+  data: []
+projection_matrix:
+  rows: 0
+  cols: 0
+  data: []
