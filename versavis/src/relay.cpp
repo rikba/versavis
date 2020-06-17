@@ -53,7 +53,7 @@ void Relay::subscribeToTopics() {
 }
 
 void Relay::advertiseTopics() {
-  img_pub_ = it_.advertiseCamera("image_raw", kBufferSize, kLatchTopic);
+  img_pub_ = it_.advertiseCamera("image_synced", kBufferSize, kLatchTopic);
   ROS_INFO("Relaying images with corrected stamp to: %s",
            img_pub_.getTopic().c_str());
 
@@ -111,10 +111,12 @@ void Relay::associate() {
       ci.header = img_it->image.header;
       img_pub_.publish(img_it->image, ci);
       // Erase all images up to and including the current image.
-      img_it = images_.erase(images_.begin(), img_it);
+      img_it = images_.erase(images_.begin(), img_it + 1);
       // Erase all headers up to and including the current stamp.
-      headers_.erase(headers_.begin(), header_it);
+      headers_.erase(headers_.begin(), header_it + 1);
     }
+    if (img_it == images_.end())
+      break;
   }
 }
 

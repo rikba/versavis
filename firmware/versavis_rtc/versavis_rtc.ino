@@ -60,7 +60,7 @@ void setup() {
                                            PORTA, 13, 10);
   imu = &adis_16448;
 
-  static CamSyncedExposure bfly(nh, &Tcc0Synced::getInstance(), 15, false,
+  static CamSyncedExposure bfly(nh, &Tcc0Synced::getInstance(), 10, false,
                                 true);
   cam0 = &bfly;
 
