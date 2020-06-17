@@ -191,11 +191,17 @@ void TccSynced::handleInterrupt() {
   } else if (tcc_->INTFLAG.bit.MC1) { // Capture exposure.
     // TODO(rikba): Find a way to solve half cycle ambiguity for TCC1 and TCC2.
     // https://e2e.ti.com/support/microcontrollers/msp430/f/166/t/225035
-    auto time = tcc_->CC[1].reg < time_2_cc_ ? time_ : time_2_;
-    time += RtcSync::getInstance().computeDuration(tcc_->CC[1].reg, prescaler_);
-    if (getExposurePinValue() ^ exposure_state_.invert_) { // Start exposure.
+    bool missed_start = tcc_->STATUS.bit.CCBV1;
+    auto cc = tcc_->CC[1].reg;
+    // TODO(rikba): Make sure to not miss any.
+    if (missed_start ||
+        getExposurePinValue() ^ exposure_state_.invert_) { // Start exposure.
+      auto time = cc < time_2_cc_ ? time_ : time_2_;
+      time += RtcSync::getInstance().computeDuration(cc, prescaler_);
       exposure_state_.setStart(time);
     } else { // Stop exposure.
+      auto time = cc < time_2_cc_ ? time_ : time_2_;
+      time += RtcSync::getInstance().computeDuration(cc, prescaler_);
       exposure_state_.setEnd(time);
     }
   } else if (tcc_->INTFLAG.bit.MC2) { // Handle PPS.
