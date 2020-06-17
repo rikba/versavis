@@ -46,7 +46,8 @@ void Relay::subscribeToTopics() {
       nh_.subscribe("image_numbered", kBufferSize, &Relay::imageCb, this);
   ROS_INFO("Subscribing to image topic: %s", img_sub_.getTopic().c_str());
   img_header_sub_ =
-      nh_.subscribe("header", kBufferSize, &Relay::imageHeaderCb, this);
+      nh_.subscribe(cinfo_->getCameraInfo().header.frame_id + "/header",
+                    kBufferSize, &Relay::imageHeaderCb, this);
   ROS_INFO("Subscribing to image header topic: %s",
            img_header_sub_.getTopic().c_str());
 }
@@ -123,7 +124,7 @@ void Relay::initialize() {
   ros::Rate loop_rate(1000);
   ros::Time start;
 
-  while (state_ != State::kRunning) {
+  while (ros::ok() && state_ != State::kRunning) {
     switch (state_) {
     case State::kInitWaitFirstMsg: {
       if (!headers_.empty() && !images_.empty()) {
