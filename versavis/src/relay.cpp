@@ -25,11 +25,12 @@ void Relay::loadParameters() {
   // Camera info.
   cinfo_.reset(
       new camera_info_manager::CameraInfoManager(nh_private_.getNamespace()));
-  std::string cam_name = "cam0";
-  if (!nh_private_.getParam("cam_name", cam_name)) {
-    ROS_WARN_STREAM("Using default camera name in camera info: " << cam_name);
+  std::string camera_name = "cam0";
+  if (!nh_private_.getParam("camera_name", camera_name)) {
+    ROS_WARN_STREAM(
+        "Using default camera name in camera info: " << camera_name);
   }
-  cinfo_->setCameraName(cam_name);
+  cinfo_->setCameraName(camera_name);
 
   std::string cam_info_url;
   if (nh_private_.getParam("camera_info_url", cam_info_url)) {
