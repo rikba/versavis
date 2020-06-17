@@ -17,6 +17,7 @@ find_package(catkin REQUIRED COMPONENTS
   sensor_msgs
   std_msgs
   image_numbered_msgs
+  camera_info_manager
 )
 
 add_message_files(

@@ -1,9 +1,16 @@
 <library path="lib/libversavis_nodelet">
-  <class name="versavis/VersaVISSynchronizerNodelet" 
+  <class name="versavis/VersaVISSynchronizerNodelet"
     type="versavis::VersaVISSynchronizerNodelet"
     base_class_type="nodelet::Nodelet">
   <description>
   This is the VersaVIS synchronizer nodelet.
+  </description>
+  </class>
+  <class name="versavis/RelayNodelet"
+    type="versavis::RelayNodelet"
+    base_class_type="nodelet::Nodelet">
+  <description>
+  This is the VersaVIS image relay nodelet.
   </description>
   </class>
 </library>
