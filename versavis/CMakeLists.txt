@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 2.8.3)
 project(versavis)
 
 # Set compile flags (-Ofast actually makes a big difference over -O3 here (maybe 20% faster)
-set(CMAKE_CXX_FLAGS "-std=c++11 -Ofast")
+set(CMAKE_CXX_FLAGS "-std=c++17 -Ofast")
 
 find_package(catkin REQUIRED COMPONENTS
   image_transport
@@ -59,6 +59,8 @@ link_directories(
 add_library(${PROJECT_NAME}_nodelet
   src/versavis_synchronizer_nodelet.cpp
   src/versavis_synchronizer.cpp
+  src/relay.cpp
+  src/relay_nodelet.cpp
 )
 
 target_link_libraries(${PROJECT_NAME}_nodelet
@@ -68,6 +70,9 @@ add_dependencies(${PROJECT_NAME}_nodelet ${${PROJECT_NAME}_EXPORTED_TARGETS})
 
 add_executable(versavis_synchronizer_node src/versavis_synchronizer_node.cpp)
 target_link_libraries(versavis_synchronizer_node ${catkin_LIBRARIES})
+
+add_executable(relay src/relay_node.cpp)
+target_link_libraries(relay ${PROJECT_NAME}_nodelet)
 
 add_executable(versavis_imu_receiver
    src/versavis_imu_receiver.cpp
