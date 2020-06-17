@@ -155,18 +155,11 @@ bool TccSynced::getTimeLastExposure(ros::Time *time, uint32_t *num,
 }
 
 void TccSynced::updateTopCompare() {
+  // TODO(rikba): Use circular buffer or check register synchronization.
   if (updateFreq()) {
-    while (tcc_->SYNCBUSY.bit.CC3) {
-    }
     tcc_->CC[3].reg = top_ / 2;
-    while (tcc_->SYNCBUSY.bit.CC3) {
-    }
-  }
-  while (tcc_->SYNCBUSY.bit.CC0) {
   }
   tcc_->CC[0].reg = top_ + computeLeapTicks() - 1;
-  while (tcc_->SYNCBUSY.bit.CC0) {
-  }
 }
 
 void TccSynced::handleInterrupt() {

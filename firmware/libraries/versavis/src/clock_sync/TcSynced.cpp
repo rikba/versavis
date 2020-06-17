@@ -153,11 +153,7 @@ void TcSynced::setupDataReady(const uint8_t port_group, const uint8_t pin,
 
 void TcSynced::updateTopCompare() {
   updateFreq();
-  while (tc_->STATUS.bit.SYNCBUSY) {
-  }
   tc_->CC[0].reg = top_ + computeLeapTicks() - 1;
-  while (tc_->STATUS.bit.SYNCBUSY) {
-  }
 }
 
 void TcSynced::handleInterrupt() {
