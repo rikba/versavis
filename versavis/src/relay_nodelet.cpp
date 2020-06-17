@@ -9,6 +9,7 @@ class RelayNodelet : public nodelet::Nodelet {
   virtual void onInit() {
     try {
       relay_ = std::make_shared<Relay>(getNodeHandle(), getPrivateNodeHandle());
+      relay_->initialize();
     } catch (std::runtime_error e) {
       ROS_ERROR("%s", e.what());
     }
@@ -16,6 +17,6 @@ class RelayNodelet : public nodelet::Nodelet {
 
   std::shared_ptr<Relay> relay_;
 };
-}
+} // namespace versavis
 
 PLUGINLIB_EXPORT_CLASS(versavis::RelayNodelet, nodelet::Nodelet)

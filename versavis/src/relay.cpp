@@ -74,6 +74,10 @@ void Relay::imageHeaderCb(const std_msgs::Header &msg) {
   if (state_ == State::kRunning) {
     associate();
   }
+  if (headers_.size() > kBufferSize) {
+    ROS_WARN("Header deque overflowing. Removing oldest.");
+    headers_.pop_front();
+  }
 }
 
 void Relay::imageCb(const image_numbered_msgs::ImageNumbered &msg) {
@@ -81,6 +85,10 @@ void Relay::imageCb(const image_numbered_msgs::ImageNumbered &msg) {
   images_.push_back(msg);
   if (state_ == State::kRunning) {
     associate();
+  }
+  if (images_.size() > kBufferSize) {
+    ROS_WARN("Image deque overflowing. Removing oldest.");
+    images_.pop_front();
   }
 }
 
@@ -104,9 +112,6 @@ void Relay::associate() {
       headers_.erase(headers_.begin(), header_it);
     }
   }
-
-  ROS_ERROR_COND(images_.size() > kBufferSize, "Image deque not cleared.");
-  ROS_ERROR_COND(headers_.size() > kBufferSize, "Header deque not cleared.");
 }
 
 // This is (a little bit brittle) initialization procedure.
