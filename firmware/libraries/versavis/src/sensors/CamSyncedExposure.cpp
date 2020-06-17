@@ -13,15 +13,13 @@ CamSyncedExposure::CamSyncedExposure(ros::NodeHandle *nh, TccSynced *timer,
 }
 
 bool CamSyncedExposure::publish() {
-  uint32_t num = 0;
   bool new_measurement = false;
-  if (timer_ && time_msg_ &&
-      static_cast<TccSynced *>(timer_)->getTimeLastExposure(&time_msg_->time,
-                                                            &num, NULL)) {
+  if (timer_ && img_msg_ &&
+      static_cast<TccSynced *>(timer_)->getTimeLastExposure(
+          &img_msg_->stamp, &img_msg_->seq, NULL)) {
     new_measurement = true;
     if (publisher_) {
-      time_msg_->number = static_cast<uint64_t>(num);
-      publisher_->publish(time_msg_);
+      publisher_->publish(img_msg_);
     }
   }
 

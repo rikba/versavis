@@ -14,7 +14,7 @@
 #define Sensors_CamSynced_h
 
 #include "sensors/SensorSynced.h"
-#include <versavis/TimeNumbered.h>
+#include <std_msgs/Header.h>
 
 class CamSynced : public SensorSynced {
 public:
@@ -23,7 +23,7 @@ public:
   void setupRos(char *rate_topic, char *img_topic);
 
 protected:
-  versavis::TimeNumbered *time_msg_ = NULL;
+  std_msgs::Header *img_msg_ = NULL;
 };
 
 #endif

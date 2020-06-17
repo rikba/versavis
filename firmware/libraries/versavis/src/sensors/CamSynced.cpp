@@ -15,11 +15,11 @@ void CamSynced::setupRos(char *rate_topic, char *img_topic) {
   SensorSynced::setupRos(rate_sub);
   if (nh_) {
     // Create static ROS message.
-    static versavis::TimeNumbered time_msg;
-    time_msg_ = &time_msg;
+    static std_msgs::Header img_msg;
+    img_msg_ = &img_msg;
 
     // Create static ROS publisher.
-    static ros::Publisher pub(img_topic, time_msg_);
+    static ros::Publisher pub(img_topic, img_msg_);
     publisher_ = &pub;
 
     // Advertise.
