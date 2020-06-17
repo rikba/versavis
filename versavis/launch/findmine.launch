@@ -16,7 +16,6 @@
     <node pkg="nodelet" type="nodelet" name="spinnaker_camera_nodelet" args="load spinnaker_camera_driver/SpinnakerCameraNodelet camera_nodelet_manager">
 
       <param name="frame_id" value="$(arg camera_name)"/>
-      <param name="serial" value="$(arg camera_name)"/>
 
       <!-- Trigger related config -->
       <param name="trigger_source" value="Line0"/>
@@ -66,6 +65,13 @@
     <node pkg="nodelet" type="nodelet" name="debayer" args="load image_proc/debayer camera_nodelet_manager" output="screen">
       <remap from="image_raw" to="image_synced"/>
     </node>
+
+    <!-- image undistort -->
+    <!--node pkg="nodelet" type="nodelet" name="rectify" args="load image_undistort/ImageUndistortNodelet camera_nodelet_manager" output="screen">
+      <param name="output_camera_info_source" value="camera_info" />
+      <remap from="output/camera_info" to="camera_info"/>
+      <remap from="input/image" to="image_mono"/>
+    </node-->
 
   </group>
 </launch>
