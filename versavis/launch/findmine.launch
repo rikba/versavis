@@ -61,17 +61,18 @@
       <param name="rate" value="$(arg rate)"/>
     </node>
 
-    <!-- image proc -->
+    <!-- debayer -->
     <node pkg="nodelet" type="nodelet" name="debayer" args="load image_proc/debayer camera_nodelet_manager" output="screen">
       <remap from="image_raw" to="image_synced"/>
     </node>
 
-    <!-- image undistort -->
-    <!--node pkg="nodelet" type="nodelet" name="rectify" args="load image_undistort/ImageUndistortNodelet camera_nodelet_manager" output="screen">
-      <param name="output_camera_info_source" value="camera_info" />
-      <remap from="output/camera_info" to="camera_info"/>
-      <remap from="input/image" to="image_mono"/>
-    </node-->
+    <!-- rectify -->
+    <node pkg="nodelet" type="nodelet" name="rectify" args="load image_proc/rectify camera_nodelet_manager" output="screen"></node>
+    <!-- rectify color -->
+    <node pkg="nodelet" type="nodelet" name="rectify_color" args="load image_proc/rectify camera_nodelet_manager" output="screen">
+      <remap from="image_mono" to="image_color"/>
+      <remap from="image_rect" to="image_rect_color"/>
+    </node>
 
   </group>
 </launch>
