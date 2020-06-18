@@ -11,9 +11,9 @@ distortion_coefficients:
   cols: 5
   data: [-0.18294290326860796, 0.10707780279452253, 1.1595507185276904e-05, 0.00011902962626724061, 0.0]
 rectification_matrix:
-  rows: 0
-  cols: 0
-  data: []
+  rows: 3
+  cols: 3
+  data: [1, 0, 0, 0, 1, 0, 0, 0, 1]
 projection_matrix:
   rows: 3
   cols: 4
