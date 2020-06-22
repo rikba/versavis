@@ -36,6 +36,12 @@ protected:
   inline void changeRateCb(const std_msgs::UInt16 &rate_msg) {
     if (timer_) {
       timer_->updateRate(rate_msg.data);
+
+      if (nh_) {
+        char info[50];
+        sprintf(info, "Changed rate: %d", rate_msg.data);
+        nh_->loginfo(info);
+      }
     }
   }
 
