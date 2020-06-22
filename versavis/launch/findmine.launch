@@ -5,6 +5,7 @@
   <arg name="camera_name" default="bfly"/>
   <arg name="camera_info_url" default="file://$(find versavis)/cfg/$(arg camera_name).yaml"/>
   <arg name="rate" default="20"/>
+  <arg name="throttled_rate" default="2"/>
 
   <!-- Camera driver. -->
   <group ns="$(arg camera_name)">
@@ -73,6 +74,9 @@
       <remap from="image_mono" to="image_color"/>
       <remap from="image_rect" to="image_rect_color"/>
     </node>
+
+    <!-- Add a throttle topic -->
+    <node name="bfly_throttle" type="throttle" pkg="topic_tools" args="messages image_synced $(arg throttled_rate) image_synced_throttled" />
 
   </group>
 </launch>
