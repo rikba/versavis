@@ -16,9 +16,17 @@ void TimerSynced::updateRateMpwm(const uint16_t rate_hz) {
 }
 
 void TimerSynced::offsetTrigger(const double sec) {
-  double offset = RTC_FREQ * sec;
+  double offset = (RTC_FREQ / kPrescalers[prescaler_]) * sec;
   offset = offset + 0.5 - (offset < 0);
   offset_ = static_cast<int32_t>(offset);
+
+  if (nh_) {
+    char info[50];
+    sprintf(info, "Offset ticks: %d", offset_);
+    nh_->loginfo(info);
+    sprintf(info, "prescaler: %d", kPrescalers[prescaler_]);
+    nh_->loginfo(info);
+  }
 }
 
 bool TimerSynced::updateFreq() {
