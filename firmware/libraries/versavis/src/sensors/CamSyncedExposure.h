@@ -25,6 +25,9 @@ public:
 protected:
   void setSeqCb(const std_msgs::UInt32 &seq_msg) override;
 
+private:
+  void compensateExposure();
+  ros::Time last_stamp_;
 };
 
 #endif

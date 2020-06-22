@@ -15,6 +15,12 @@ void TimerSynced::updateRateMpwm(const uint16_t rate_hz) {
   new_freq_ = rate_hz;
 }
 
+void TimerSynced::offsetTrigger(const double sec) {
+  double offset = RTC_FREQ * sec;
+  offset = offset + 0.5 - (offset < 0);
+  offset_ = static_cast<int32_t>(offset);
+}
+
 bool TimerSynced::updateFreq() {
   bool update = new_freq_ != freq_;
   update &= !time_.nsec; // Only update at change of second.
@@ -36,14 +42,14 @@ void TimerSynced::setClosestRate(const uint16_t freq) {
     wrap_around_ = kPrescalers[prescaler_] * freq_;
     top_ = RTC_FREQ / wrap_around_;
     mod_ = static_cast<uint32_t>(RTC_FREQ) % wrap_around_;
-// if (nh_) {
-//   char buffer[150];
-//   sprintf(buffer,
-//           "Changed rate. Desired rate: %d Actual rate: %d Top compare: %u "
-//           "Prescaler: %d Wrap around: %d",
-//           freq, freq_, top_, kPrescalers[prescaler_], wrap_around_);
-//   nh_->loginfo(buffer);
-// }
+    // if (nh_) {
+    //   char buffer[150];
+    //   sprintf(buffer,
+    //           "Changed rate. Desired rate: %d Actual rate: %d Top compare: %u
+    //           " "Prescaler: %d Wrap around: %d", freq, freq_, top_,
+    //           kPrescalers[prescaler_], wrap_around_);
+    //   nh_->loginfo(buffer);
+    // }
   } else if (r_ != 0) {
     nh_->logerror("Cannot update rate while remainder r is not zero.");
   }

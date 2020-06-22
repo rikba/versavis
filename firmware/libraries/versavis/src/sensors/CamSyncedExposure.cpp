@@ -21,9 +21,30 @@ bool CamSyncedExposure::publish() {
     if (publisher_) {
       publisher_->publish(img_msg_);
     }
+
+    compensateExposure();
   }
 
   return new_measurement;
+}
+
+// Every change in second check how far off the time stamp was from the exact
+// second. Compensate for this offset.
+void CamSyncedExposure::compensateExposure() {
+  if (timer_ && (img_msg_->stamp.sec == last_stamp_.sec + 1)) {
+    // Seconds incremented.
+    // Check which time stamp is closer to the full second.
+    ros::Time this_second = ros::Time(img_msg_->stamp.sec, 0);
+    auto d1 = (this_second - img_msg_->stamp).toSec();
+    auto d2 = (this_second - last_stamp_).toSec();
+    if (fabs(d1) < fabs(d2)) {
+      timer_->offsetTrigger(d1);
+    } else {
+      timer_->offsetTrigger(d2);
+    }
+  }
+
+  last_stamp_ = img_msg_->stamp;
 }
 
 void CamSyncedExposure::setSeqCb(const std_msgs::UInt32 &seq_msg) {

@@ -54,6 +54,7 @@ public:
   void setupMpwm(const uint16_t rate_hz, const uint16_t pulse_us,
                  const bool invert);
   void setTriggerStateNum(const uint32_t num);
+  void offsetTrigger(const double sec);
 
   virtual void handleInterrupt() = 0;
   void handleEic();
@@ -106,6 +107,7 @@ protected:
 
   // Trigger pin.
   const MfrqPin mfrq_pin_;
+  int32_t offset_ = 0;
 
   // Data ready state.
   MeasurementState data_ready_;

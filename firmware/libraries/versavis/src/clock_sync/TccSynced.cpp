@@ -159,7 +159,8 @@ void TccSynced::updateTopCompare() {
   if (updateFreq()) {
     tcc_->CC[3].reg = top_ / 2;
   }
-  tcc_->CC[0].reg = top_ + computeLeapTicks() - 1;
+  tcc_->CC[0].reg = top_ + computeLeapTicks() - 1 + offset_;
+  offset_ = 0;
 }
 
 void TccSynced::handleInterrupt() {
