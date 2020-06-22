@@ -37,10 +37,18 @@ void CamSyncedExposure::compensateExposure() {
     ros::Time this_second = ros::Time(img_msg_->stamp.sec, 0);
     auto d1 = (this_second - img_msg_->stamp).toSec();
     auto d2 = (this_second - last_stamp_).toSec();
+    double d;
     if (fabs(d1) < fabs(d2)) {
       timer_->offsetTrigger(d1);
+      d = d1;
     } else {
       timer_->offsetTrigger(d2);
+      d = d2;
+    }
+    if (nh_) {
+      char info[50];
+      sprintf(info, "Offset compensation: %.9f", d);
+      nh_->loginfo(info);
     }
   }
 
