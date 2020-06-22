@@ -191,7 +191,7 @@ void RtcSync::start() const {
   }
 }
 
-ros::Duration RtcSync::computeDuration(const uint32_t ticks,
+ros::Duration RtcSync::computeDuration(const int32_t ticks,
                                        const uint8_t prescaler) const {
   return ros::Duration(0, ticks * kPrescalers[prescaler] * ns_per_tick_);
 }

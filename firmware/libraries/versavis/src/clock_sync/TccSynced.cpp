@@ -160,6 +160,7 @@ void TccSynced::updateTopCompare() {
     tcc_->CC[3].reg = top_ / 2;
   }
   tcc_->CC[0].reg = top_ + computeLeapTicks() - 1 + offset_;
+  accumulated_offset_ += offset_;
   offset_ = 0;
 }
 

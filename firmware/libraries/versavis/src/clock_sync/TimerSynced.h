@@ -108,6 +108,7 @@ protected:
   // Trigger pin.
   const MfrqPin mfrq_pin_;
   int32_t offset_ = 0;
+  int32_t accumulated_offset_ = 0;
 
   // Data ready state.
   MeasurementState data_ready_;

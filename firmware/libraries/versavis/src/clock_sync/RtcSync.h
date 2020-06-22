@@ -64,7 +64,7 @@ public:
   uint8_t findMinPrescalerFrq(const uint16_t rate_hz,
                               const uint32_t counter_max) const;
 
-  ros::Duration computeDuration(const uint32_t ticks,
+  ros::Duration computeDuration(const int32_t ticks,
                                 const uint8_t prescaler) const;
 
 private:
