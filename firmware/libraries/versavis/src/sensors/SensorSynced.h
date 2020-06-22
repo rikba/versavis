@@ -39,7 +39,7 @@ protected:
 
       if (nh_) {
         char info[50];
-        sprintf(info, "Changed rate: %d", rate_msg.data);
+        sprintf(info, "Updating desired rate: %d", rate_msg.data);
         nh_->loginfo(info);
       }
     }
