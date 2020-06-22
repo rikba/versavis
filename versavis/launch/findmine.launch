@@ -27,7 +27,7 @@
       <!-- Expose related config -->
       <param name="exposure_mode" value="Timed"/>
       <param name="exposure_auto" value="Continuous"/>
-      <param name="auto_exposure_time_upper_limit" value="37500.0"/>
+      <param name="auto_exposure_time_upper_limit" value="32754.0"/>
 
       <param name="line_selector" value="Line1"/>
       <param name="line_mode" value="Output"/>

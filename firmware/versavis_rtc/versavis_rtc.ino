@@ -31,6 +31,7 @@
 #define CAM_RATE_TOPIC "bfly/set_rate"
 #define CAM_SEQ_TOPIC "bfly/set_seq"
 #define CAM_IMG_TOPIC "bfly/header"
+#define CAM_EXP_COMPENSATION true
 
 #define RADAR_FRAME_ID "us_d1"
 #define RADAR_DATA_TOPIC "us_d1/data"
@@ -60,8 +61,8 @@ void setup() {
                                            PORTA, 13, 10);
   imu = &adis_16448;
 
-  static CamSyncedExposure bfly(nh, &Tcc0Synced::getInstance(), 10, false,
-                                true);
+  static CamSyncedExposure bfly(nh, &Tcc0Synced::getInstance(), 10, false, true,
+                                CAM_EXP_COMPENSATION);
   cam0 = &bfly;
 
   static ExternalClockGnss gnss(nh, &Serial, 115200);

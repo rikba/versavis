@@ -154,6 +154,7 @@ void TcSynced::setupDataReady(const uint8_t port_group, const uint8_t pin,
 void TcSynced::updateTopCompare() {
   updateFreq();
   tc_->CC[0].reg = top_ + computeLeapTicks() - 1 + offset_;
+  accumulated_offset_ += offset_;
   offset_ = 0;
 }
 

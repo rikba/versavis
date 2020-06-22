@@ -19,7 +19,7 @@ class CamSyncedExposure : public CamSynced {
 public:
   CamSyncedExposure(ros::NodeHandle *nh, TccSynced *timer,
                     const uint16_t rate_hz, const bool invert_trigger,
-                    const bool invert_exposure);
+                    const bool invert_exposure, const bool exposure_compensation);
   bool publish() override;
 
 protected:
@@ -27,6 +27,7 @@ protected:
 
 private:
   void compensateExposure();
+  bool exposure_compensation_ = false;
   ros::Time expected_stamp_;
   ros::Time prev_expected_stamp_;
 };
