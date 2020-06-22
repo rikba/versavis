@@ -4,7 +4,7 @@
   <!-- camera name prefix -->
   <arg name="camera_name" default="bfly"/>
   <arg name="camera_info_url" default="file://$(find versavis)/cfg/$(arg camera_name).yaml"/>
-  <arg name="rate" default="2"/>
+  <arg name="rate" default="20"/>
 
   <!-- Camera driver. -->
   <group ns="$(arg camera_name)">
