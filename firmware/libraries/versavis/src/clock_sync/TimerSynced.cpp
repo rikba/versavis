@@ -237,6 +237,15 @@ bool TimerSynced::getTimeLastTrigger(ros::Time *time, uint32_t *num) {
   return trigger_state_.getTime(time, num);
 }
 
+bool TimerSynced::getTimeLastNominalTrigger(ros::Time *time, uint32_t *num) {
+  bool triggered = getTimeLastTrigger(time, num);
+  if (triggered) {
+    (*time) -=
+        RtcSync::getInstance().computeDuration(accumulated_offset_, prescaler_);
+  }
+  return triggered;
+}
+
 bool TimerSynced::getDataReady(uint32_t *num) {
   return data_ready_.getDataReady(num);
 }

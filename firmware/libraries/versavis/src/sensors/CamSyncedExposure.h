@@ -27,7 +27,8 @@ protected:
 
 private:
   void compensateExposure();
-  ros::Time last_stamp_;
+  ros::Time expected_stamp_;
+  ros::Time prev_expected_stamp_;
 };
 
 #endif

@@ -61,6 +61,7 @@ public:
 
   // Returns true only once per trigger.
   bool getTimeLastTrigger(ros::Time *time, uint32_t *num);
+  bool getTimeLastNominalTrigger(ros::Time *time, uint32_t *num);
 
   // Change rate to the closest possible rate.
   virtual void updateRate(const uint16_t rate_hz) = 0;
