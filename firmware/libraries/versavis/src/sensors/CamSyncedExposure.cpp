@@ -15,6 +15,16 @@ CamSyncedExposure::CamSyncedExposure(ros::NodeHandle *nh, TccSynced *timer,
 }
 
 bool CamSyncedExposure::publish() {
+  // TODO(rikba): This breaks if exposure is not finished before next trigger.
+  // It would be more robust to find a mapping between trigger and exposure.
+  // For now we check the last two nominal time stamps.
+  ros::Time new_stamp;
+  if (timer_ && exposure_compensation_ &&
+      timer_->getTimeLastNominalTrigger(&new_stamp, NULL)) {
+    prev_expected_stamp_ = expected_stamp_;
+    expected_stamp_ = new_stamp;
+  }
+
   bool new_measurement = false;
 
   if (timer_ && img_msg_ &&
@@ -35,13 +45,6 @@ bool CamSyncedExposure::publish() {
 // Check how far off the time stamp was from the exact second. Compensate for
 // this offset.
 void CamSyncedExposure::compensateExposure() {
-  // TODO(rikba): This breaks if exposure is not finished before next trigger.
-  // It would be more robust to find a mapping between trigger and exposure.
-  // For now we check the last two nominal time stamps.
-  prev_expected_stamp_ = expected_stamp_;
-  if (timer_) {
-    timer_->getTimeLastNominalTrigger(&expected_stamp_, NULL);
-  }
   if (timer_ && prev_expected_stamp_.sec) {
     // Check which time stamp is closer to the full second.
     auto d1 = (expected_stamp_ - img_msg_->stamp).toSec();
