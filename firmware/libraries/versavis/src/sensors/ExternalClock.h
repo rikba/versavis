@@ -69,7 +69,7 @@ private:
   // [Q11, Q22, Q33]
   const float Q_[3] = {
       pow(RTC_CLK_SYNC_U_REF / RTC_CLK_SYNC_DAC_RANGE / 2.0, 2.0),
-      pow(1.0e-3, 2.0), pow(1.0e-3, 2.0)};
+      pow(1.0e-4, 2.0), pow(1.0e-3, 2.0)};
   // Measurement uncertainty is clock resolution + pps accuracy.
   const float R_ =
       pow(1.0e6 / RTC_FREQ / 2.0 + 1.0e6 * GNSS_PPS_ACCURACY / 2.0, 2.0);
