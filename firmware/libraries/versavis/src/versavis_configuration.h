@@ -73,7 +73,7 @@
 #define RTC_CLK_SYNC_X2 5.0            // The nominal control scale [ppm/V]
 #define RTC_CLK_SYNC_X0_OFFSET 2.0 // Hotstart initial clock offset [us].
 #define RTC_CLK_SYNC_X1_OFFSET 0.1      // Initial offset of control offset [V]
-#define RTC_CLK_SYNC_X2_OFFSET 0.5   // Initial offset of control offset [ppm/V]
+#define RTC_CLK_SYNC_X2_OFFSET 1.5   // Initial offset of control offset [ppm/V]
 #define RTC_CLK_SYNC_U_REF 3.3       // Reference voltage [V]
 #define RTC_CLK_SYNC_DAC_RANGE 0x3FF // DAC range [1]
 #define RTC_CLK_SYNC_DAC_MIN 155.0   // Max. allowed DAC
