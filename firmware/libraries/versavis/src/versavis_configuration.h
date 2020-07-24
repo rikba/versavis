@@ -70,7 +70,7 @@
 #define RTC_CLK_SYNC // Activate RTC synchronization
 // https://docs.google.com/spreadsheets/d/1pf0QecrXWwRHv6BMs1xoJcgUBYCmLpuZk2bO-ykS4-I/edit#gid=0
 #define RTC_CLK_SYNC_X1 1.5          // The nominal control offset [V]
-#define RTC_CLK_SYNC_X2 6.6          // The nominal control scale [ppm/V]
+#define RTC_CLK_SYNC_X2 6.0          // The nominal control scale [ppm/V]
 #define RTC_CLK_SYNC_X0_OFFSET 2.0   // Hotstart initial clock offset [us].
 #define RTC_CLK_SYNC_X1_OFFSET 0.1   // Initial offset of control offset [V]
 #define RTC_CLK_SYNC_X2_OFFSET 0.3   // Initial offset of control offset [ppm/V]
