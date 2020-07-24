@@ -69,16 +69,16 @@
 #define RTC_FREQ 10e6
 #define RTC_CLK_SYNC // Activate RTC synchronization
 // https://docs.google.com/spreadsheets/d/1pf0QecrXWwRHv6BMs1xoJcgUBYCmLpuZk2bO-ykS4-I/edit#gid=0
-#define RTC_CLK_SYNC_X1 1.47            // The nominal control offset [V]
-#define RTC_CLK_SYNC_X2 6.55            // The nominal control scale [ppm/V]
-#define RTC_CLK_SYNC_X0_OFFSET 100.0 // Hotstart initial clock offset [us].
+#define RTC_CLK_SYNC_X1 1.5            // The nominal control offset [V]
+#define RTC_CLK_SYNC_X2 5.0            // The nominal control scale [ppm/V]
+#define RTC_CLK_SYNC_X0_OFFSET 2.0 // Hotstart initial clock offset [us].
 #define RTC_CLK_SYNC_X1_OFFSET 0.1      // Initial offset of control offset [V]
-#define RTC_CLK_SYNC_X2_OFFSET 1.0   // Initial offset of control offset [ppm/V]
+#define RTC_CLK_SYNC_X2_OFFSET 0.1   // Initial offset of control offset [ppm/V]
 #define RTC_CLK_SYNC_U_REF 3.3       // Reference voltage [V]
 #define RTC_CLK_SYNC_DAC_RANGE 0x3FF // DAC range [1]
 #define RTC_CLK_SYNC_DAC_MIN 155.0   // Max. allowed DAC
 #define RTC_CLK_SYNC_DAC_MAX 775.0   // Min. allowed DAC
-#define RTC_CLK_SYNC_LQR_GAIN 3.0583967
+#define RTC_CLK_SYNC_LQR_GAIN 3.08266065
 #define RTC_CLK_SYNC_CONV_CRIT 1.0  // Offset convergence criterion [us]
 #define RTC_CLK_SYNC_CONV_WINDOW 60 // Window of converged values
 #else
