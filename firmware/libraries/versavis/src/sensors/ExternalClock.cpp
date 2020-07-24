@@ -117,17 +117,17 @@ void ExternalClock::updateFilter() {
     clock_msg_->x[1] = RTC_CLK_SYNC_X1;
     clock_msg_->x[2] = RTC_CLK_SYNC_X2;
 
-    clock_msg_->P[0] = pow(RTC_CLK_SYNC_X0_OFFSET / 3.0, 2.0);
+    clock_msg_->P[0] = pow(RTC_CLK_SYNC_X0_OFFSET / 2.0, 2.0);
     clock_msg_->P[1] = 0.0;
     clock_msg_->P[2] = 0.0;
 
     clock_msg_->P[3] = 0.0;
-    clock_msg_->P[4] = pow(RTC_CLK_SYNC_X1_OFFSET / 3.0, 2.0);
+    clock_msg_->P[4] = pow(RTC_CLK_SYNC_X1_OFFSET / 2.0, 2.0);
     clock_msg_->P[5] = 0.0;
 
     clock_msg_->P[6] = 0.0;
     clock_msg_->P[7] = 0.0;
-    clock_msg_->P[8] = pow(RTC_CLK_SYNC_X2_OFFSET / 3.0, 2.0);
+    clock_msg_->P[8] = pow(RTC_CLK_SYNC_X2_OFFSET / 2.0, 2.0);
   } else {
     // Propagate filter.
     // Prediction.
