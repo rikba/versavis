@@ -36,12 +36,19 @@
 #define RADAR_FRAME_ID "us_d1"
 #define RADAR_DATA_TOPIC "us_d1/data"
 
+// Hacky way to include external event as camera.
+#define EXT_EVENT_FRAME_ID "ext_event"
+#define EXT_EVENT_RATE_TOPIC "ext_event/set_rate"
+#define EXT_EVENT_SEQ_TOPIC "ext_event/set_seq"
+#define EXT_EVENT_TOPIC "ext_event"
+
 // ROS
 ros::NodeHandle *nh = NULL;
 
 // Sensors.
 Adis16448BmlzTriggered *imu = NULL;
 CamSyncedExposure *cam0 = NULL;
+CamSyncedExposure *ext_event = NULL;
 ExternalClock *ext_clock = NULL;
 LidarLite *lidar = NULL;
 UsD1 *radar = NULL;
@@ -65,6 +72,10 @@ void setup() {
                                 CAM_EXP_COMPENSATION);
   cam0 = &bfly;
 
+  static CamSyncedExposure freq_event(nh, &Tcc2Synced::getInstance(), 100, false, false,
+                                false);
+  ext_event = &freq_event;
+
   static ExternalClockGnss gnss(nh, &Serial, 115200);
   ext_clock = &gnss;
 
@@ -81,6 +92,7 @@ void setup() {
                 IMU_MAG_TOPIC, IMU_TEMP_TOPIC);
 
   cam0->setupRos(CAM_FRAME_ID, CAM_RATE_TOPIC, CAM_SEQ_TOPIC, CAM_IMG_TOPIC);
+  ext_event->setupRos(EXT_EVENT_FRAME_ID, EXT_EVENT_RATE_TOPIC, EXT_EVENT_SEQ_TOPIC, EXT_EVENT_TOPIC);
 
   ext_clock->setupRos();
   radar->setupRos(RADAR_FRAME_ID, RADAR_DATA_TOPIC);
@@ -92,6 +104,8 @@ void loop() {
   if (imu->publish())
     ;
   else if (cam0->publish())
+    ;
+  else if (ext_event->publish())
     ;
   else if (radar->publish())
     ;

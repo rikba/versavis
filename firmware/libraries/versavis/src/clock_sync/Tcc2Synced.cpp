@@ -9,7 +9,7 @@
 // UNIQUE exposure definitions.
 #define TCC2_EXP_CHANNEL 3
 #define TCC2_EXP_GROUP PORTA
-#define TCC2_EXP_PIN 21
+#define TCC2_EXP_PIN 5
 
 Tcc2Synced::Tcc2Synced()
     : TccSynced(MfrqPin{.group = TCC2_MFRQ_GROUP,
