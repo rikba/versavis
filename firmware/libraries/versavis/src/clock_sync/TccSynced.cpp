@@ -136,6 +136,13 @@ void TccSynced::setupExposure(const bool invert) {
   }
 }
 
+void TccSynced::setupExternalEvent(const bool invert) {
+  DEBUG_PRINT("[TcSynced]: External event not implemented.");
+  if (nh_) {
+    nh_->logerror("External event not implemented.");
+  }
+}
+
 uint8_t TccSynced::getEventGeneratorId(const uint8_t pin) const {
   // https://github.com/ethz-asl/versavis_hw/blob/1e71a3843aefbbec8e6261c0855bd7cad7f38f9e/VersaVIS/bootloaders/mzero/Bootloader_D21/src/ASF/sam0/utils/cmsis/samd21/include/instance/evsys.h
   return (pin % 16) + 12;

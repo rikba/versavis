@@ -142,6 +142,46 @@ void TcSynced::setupMfrqWaveform() {
   }
 }
 
+void TcSynced::setupExternalEvent(const bool invert) {
+  DEBUG_PRINT("[TcSynced]: Configuring external event pin ");
+  DEBUG_PRINT(mfrq_pin_.pin);
+  DEBUG_PRINT(" of group ");
+  DEBUG_PRINTLN(mfrq_pin_.group);
+
+  trigger_state_.invert_ = invert;
+
+  DEBUG_PRINTLN("[TcSynced]: Setup interrupt pin.");
+  auto logic = invert ? InterruptLogic::kFall : InterruptLogic::kRise;
+  setupInterruptPin(mfrq_pin_.group, mfrq_pin_.pin, logic, false);
+  DEBUG_PRINTLN("[TcSynced]: Setup exposure evsys.");
+  setupExposureEvsys();
+
+  // Setup interrupt
+  DEBUG_PRINTLN("[TcSynced]: Disabling timer.");
+  while (tc_->STATUS.bit.SYNCBUSY) {
+  }
+  tc_->CTRLA.reg &= ~TC_CTRLA_ENABLE;
+  while (tc_->STATUS.bit.SYNCBUSY) {
+  }
+  DEBUG_PRINTLN("[TcSynced]: Configure external event capture and interrupt.");
+  tc_->EVCTRL.reg |= TC_EVCTRL_TCEI;
+  DEBUG_PRINTLN("[TcSynced]: Make channel 0 capture register.");
+  tc_->CTRLC.reg |= TC_CTRLC_CPTEN0;
+  DEBUG_PRINTLN("[TcSynced]: TC_INTENSET_MC0.");
+  tc_->INTENSET.reg |= TC_INTENSET_MC0;
+  DEBUG_PRINTLN("[TcSynced]: TC_INTFLAG_MC0.");
+  tc_->INTFLAG.reg = TC_INTFLAG_MC0;
+  while (tc_->STATUS.bit.SYNCBUSY) {
+  }
+
+  DEBUG_PRINTLN("[TcSynced]: Enable timer.");
+  while (tc_->STATUS.bit.SYNCBUSY) {
+  }
+  tc_->CTRLA.reg |= TC_CTRLA_ENABLE;
+  while (tc_->STATUS.bit.SYNCBUSY) {
+  }
+}
+
 void TcSynced::setupDataReady(const uint8_t port_group, const uint8_t pin,
                               const InterruptLogic &logic) {
   // Store parameters.
