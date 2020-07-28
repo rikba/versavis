@@ -22,6 +22,7 @@ public:
 
 private:
   Tc4Synced();
+  void setupExternalEventEvsys() const override;
 };
 
 #endif

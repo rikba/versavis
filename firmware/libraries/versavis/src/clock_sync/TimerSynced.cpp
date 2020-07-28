@@ -221,6 +221,11 @@ bool TimerSynced::getPinValue(const uint8_t group, const uint8_t pin) const {
   return PORT->Group[group].IN.reg & (1 << pin);
 }
 
+uint8_t TimerSynced::getEventGeneratorId(const uint8_t pin) const {
+  // https://github.com/ethz-asl/versavis_hw/blob/1e71a3843aefbbec8e6261c0855bd7cad7f38f9e/VersaVIS/bootloaders/mzero/Bootloader_D21/src/ASF/sam0/utils/cmsis/samd21/include/instance/evsys.h
+  return (pin % 16) + 12;
+}
+
 bool TimerSynced::getWaveOutPinValue() const {
   return getPinValue(mfrq_pin_.group, mfrq_pin_.pin);
 }

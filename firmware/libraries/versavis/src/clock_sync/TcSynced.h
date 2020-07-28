@@ -18,12 +18,15 @@ public:
 
   void setupMfrqWaveform() override;
   void setupMpwmWaveform() override;
-  void setupExternalEvent() override;
+  void setupExternalEvent(const bool invert) override;
   void updateRate(const uint16_t rate_hz) override;
   void setupDataReady(const uint8_t port_group, const uint8_t pin,
                       const InterruptLogic &logic) override;
 
   void handleInterrupt() override;
+
+protected:
+  virtual void setupExternalEventEvsys() const = 0;
 
 private:
   void updateTopCompare() override;

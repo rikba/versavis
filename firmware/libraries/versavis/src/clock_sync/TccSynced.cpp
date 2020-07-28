@@ -143,11 +143,6 @@ void TccSynced::setupExternalEvent(const bool invert) {
   }
 }
 
-uint8_t TccSynced::getEventGeneratorId(const uint8_t pin) const {
-  // https://github.com/ethz-asl/versavis_hw/blob/1e71a3843aefbbec8e6261c0855bd7cad7f38f9e/VersaVIS/bootloaders/mzero/Bootloader_D21/src/ASF/sam0/utils/cmsis/samd21/include/instance/evsys.h
-  return (pin % 16) + 12;
-}
-
 bool TccSynced::getExposurePinValue() const {
   return getPinValue(exposure_pin_.group, exposure_pin_.pin);
 }

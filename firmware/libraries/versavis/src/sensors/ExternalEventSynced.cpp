@@ -1,7 +1,7 @@
-#include "sensors/ExternalEvent.h"
+#include "sensors/ExternalEventSynced.h"
 
-ExternalEvent::ExternalEvent(ros::NodeHandle *nh, TimerSynced *timer,
-                             bool invert)
+ExternalEventSynced::ExternalEventSynced(ros::NodeHandle *nh,
+                                         TimerSynced *timer, bool invert)
     : nh_(nh), timer_(timer) {
   // Setup pin to capture external event.
   if (timer_) {
@@ -9,7 +9,7 @@ ExternalEvent::ExternalEvent(ros::NodeHandle *nh, TimerSynced *timer,
   }
 }
 
-void ExternalEvent::setupRos(char *frame_id, char *event_topic) {
+void ExternalEventSynced::setupRos(char *frame_id, char *event_topic) {
   if (nh_) {
     // Create static ROS msg.
     static std_msgs::Header msg;
@@ -33,7 +33,7 @@ void ExternalEvent::setupRos(char *frame_id, char *event_topic) {
   }
 }
 
-void ExternalEvent::publish() {
+bool ExternalEventSynced::publish() {
   bool new_measurement = false;
 
   // Obtain new stamp.

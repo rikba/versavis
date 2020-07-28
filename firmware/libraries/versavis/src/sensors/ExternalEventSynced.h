@@ -2,22 +2,24 @@
 //  July 2020
 //  Author: Rik Bähnemann <brik@ethz.ch>
 ////////////////////////////////////////////////////////////////////////////////
-//  ExternalEvent.h
+//  ExternalEventSynced.h
 ////////////////////////////////////////////////////////////////////////////////
 //
 // Implements an external event interface.
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef Sensors_ExternalEvent_h
-#define Sensors_ExternalEvent_h
+#ifndef Sensors_ExternalEventSynced_h
+#define Sensors_ExternalEventSynced_h
 
 #include <ros.h>
 #include <std_msgs/Header.h>
 
-class ExternalEvent {
+#include "clock_sync/TimerSynced.h"
+
+class ExternalEventSynced {
 public:
-  ExternalEvent(ros::NodeHandle *nh, TimerSynced *timer, bool invert);
+  ExternalEventSynced(ros::NodeHandle *nh, TimerSynced *timer, bool invert);
   void setupRos(char *frame_id, char *event_topic);
   bool publish();
 
@@ -27,6 +29,9 @@ private:
   ros::Publisher *publisher_ = NULL;
 
   std_msgs::Header *msg_ = NULL;
+
+  // Timer
+  TimerSynced *timer_ = NULL;
 };
 
 #endif

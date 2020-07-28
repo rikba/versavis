@@ -27,6 +27,7 @@ public:
                       const InterruptLogic &logic) override {}
   void setupMfrqWaveform() override;
   void setupMpwmWaveform() override;
+  void setupExternalEvent(const bool invert) override;
   void updateRate(const uint16_t rate_hz) override;
   void setupExposure(const bool invert);
   // TODO(rikba): Make this a function of TimerSynced.
@@ -42,8 +43,6 @@ public:
 
 protected:
   virtual void setupExposureEvsys() const = 0;
-
-  uint8_t getEventGeneratorId(const uint8_t pin) const;
 
   // Pointer to the actual timer.
   Tcc *tcc_ = NULL;

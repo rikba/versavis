@@ -154,7 +154,7 @@ void TcSynced::setupExternalEvent(const bool invert) {
   auto logic = invert ? InterruptLogic::kFall : InterruptLogic::kRise;
   setupInterruptPin(mfrq_pin_.group, mfrq_pin_.pin, logic, false);
   DEBUG_PRINTLN("[TcSynced]: Setup exposure evsys.");
-  setupExposureEvsys();
+  setupExternalEventEvsys();
 
   // Setup interrupt
   DEBUG_PRINTLN("[TcSynced]: Disabling timer.");

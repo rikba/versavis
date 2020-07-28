@@ -53,7 +53,7 @@ public:
   void setupMfrq(const uint16_t rate_hz, const bool invert);
   void setupMpwm(const uint16_t rate_hz, const uint16_t pulse_us,
                  const bool invert);
-  void setupExternalEvent(const bool invert) = 0;
+  virtual void setupExternalEvent(const bool invert) = 0;
 
   void setTriggerStateNum(const uint32_t num);
   void offsetTrigger(const double sec);
@@ -73,6 +73,7 @@ public:
   inline void activateLogging(ros::NodeHandle *nh) { nh_ = nh; }
 
 protected:
+  uint8_t getEventGeneratorId(const uint8_t pin) const;
   // Does not change prescaler. Sets rate to the closest possible rate.
   void setClosestRateMfreq(const uint16_t rate_hz);
   void setClosestRateMpwm(const uint16_t rate_hz);
