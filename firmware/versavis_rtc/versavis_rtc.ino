@@ -39,6 +39,7 @@
 
 #define EXT_EVENT_FRAME_ID "generic"
 #define EXT_EVENT_TOPIC "external_event"
+#define EXT_EVENT_INVERTED false
 
 // ROS
 ros::NodeHandle *nh = NULL;
@@ -79,7 +80,8 @@ void setup() {
   static LidarLite lidar_lite(nh, &Tc4Synced::getInstance(), 100);
   lidar = &lidar_lite;
 
-  static ExternalEventSynced generic(nh, &Tc4Synced::getInstance(), 100);
+  static ExternalEventSynced generic(nh, &Tc5Synced::getInstance(),
+                                     EXT_EVENT_INVERTED);
   ext_event = &generic;
 
   // ROS
