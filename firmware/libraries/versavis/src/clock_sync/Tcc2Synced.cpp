@@ -2,8 +2,8 @@
 
 // Setup MFRQ pin.
 // TODO(rikba)
-#define TCC2_MFRQ_GROUP 255
-#define TCC2_MFRQ_PIN 255
+#define TCC2_MFRQ_GROUP PORTA
+#define TCC2_MFRQ_PIN 16
 #define TCC2_MFRQ_DRVSTR 0
 
 // UNIQUE exposure definitions.
