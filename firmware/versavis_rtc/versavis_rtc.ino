@@ -11,6 +11,7 @@
 #include "sensors/Adis16448BmlzTriggered.h"
 #include "sensors/CamSyncedExposure.h"
 #include "sensors/ExternalClockGnss.h"
+#include "sensors/ExternalEventSynced.h"
 #include "sensors/LidarLite.h"
 #include "sensors/UsD1.h"
 
@@ -36,6 +37,9 @@
 #define RADAR_FRAME_ID "us_d1"
 #define RADAR_DATA_TOPIC "us_d1/data"
 
+#define EXT_EVENT_FRAME_ID "generic"
+#define EXT_EVENT_TOPIC "external_event"
+
 // ROS
 ros::NodeHandle *nh = NULL;
 
@@ -45,6 +49,7 @@ CamSyncedExposure *cam0 = NULL;
 ExternalClock *ext_clock = NULL;
 LidarLite *lidar = NULL;
 UsD1 *radar = NULL;
+ExternalEventSynced *ext_event = NULL;
 
 void setup() {
 #ifndef DEBUG
@@ -74,6 +79,9 @@ void setup() {
   static LidarLite lidar_lite(nh, &Tc4Synced::getInstance(), 100);
   lidar = &lidar_lite;
 
+  static ExternalEventSynced generic(nh, &Tc4Synced::getInstance(), 100);
+  ext_event = &generic;
+
   // ROS
   RtcSync::getInstance().setupRos(nh);
 
@@ -85,6 +93,8 @@ void setup() {
   ext_clock->setupRos();
   radar->setupRos(RADAR_FRAME_ID, RADAR_DATA_TOPIC);
   lidar->setupRos(LIDAR_FRAME_ID, LIDAR_RATE_TOPIC, LIDAR_DATA_TOPIC);
+
+  ext_event->setupRos(EXT_EVENT_FRAME_ID, EXT_EVENT_TOPIC);
 }
 
 void loop() {
@@ -96,6 +106,8 @@ void loop() {
   else if (radar->publish())
     ;
   else if (lidar->publish())
+    ;
+  else if (ext_event->publish())
     ;
   else if (ext_clock->publish())
     ;
