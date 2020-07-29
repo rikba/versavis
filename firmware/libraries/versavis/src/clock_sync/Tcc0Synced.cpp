@@ -10,7 +10,7 @@
 // UNIQUE exposure definitions.
 #define TCC0_EXP_CHANNEL 1
 #define TCC0_EXP_GROUP PORTA
-#define TCC0_EXP_PIN 15
+#define TCC0_EXP_PIN 5
 
 // Setup PPS pin.
 #define PPS_CHANNEL 4 // UNIQUE event channel.

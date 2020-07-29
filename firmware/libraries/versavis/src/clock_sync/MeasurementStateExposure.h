@@ -23,11 +23,7 @@ public:
   inline void setEnd(const ros::Time &time) {
     auto half_exposure = time - start_time_;
     if (half_exposure.sec >= 0) {
-      exposure_.sec = half_exposure.sec;
-      exposure_.nsec = half_exposure.nsec;
-      half_exposure *= 0.5;
-      start_time_ += half_exposure;
-      setTime(start_time_);
+      setTime(time);
     }
   }
 

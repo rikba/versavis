@@ -31,7 +31,7 @@
 #define CAM_RATE_TOPIC "bfly/set_rate"
 #define CAM_SEQ_TOPIC "bfly/set_seq"
 #define CAM_IMG_TOPIC "bfly/header"
-#define CAM_EXP_COMPENSATION true
+#define CAM_EXP_COMPENSATION false
 
 #define RADAR_FRAME_ID "us_d1"
 #define RADAR_DATA_TOPIC "us_d1/data"
