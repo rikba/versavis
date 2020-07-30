@@ -71,7 +71,7 @@ void setup() {
   static UsD1 us_d1(nh, &Serial1);
   radar = &us_d1;
 
-  static LidarLite lidar_lite(nh, &Tc4Synced::getInstance(), 100);
+  static LidarLite lidar_lite(nh, &Tc4Synced::getInstance(), 10);
   lidar = &lidar_lite;
 
   // ROS
