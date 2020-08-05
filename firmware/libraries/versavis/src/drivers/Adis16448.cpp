@@ -63,7 +63,7 @@ void Adis16448::setup() {
   delay(20);
   regWrite(SMPL_PRD, 0x0); // external clock, no averaging.
   delay(20);
-  regWrite(SENS_AVG, 0x400); // +-1000 dps range, no digital filter.
+  regWrite(SENS_AVG, 0x403); // +-1000 dps range, B=3 for 8 measurement bartlett window.
   delay(20);
 }
 
