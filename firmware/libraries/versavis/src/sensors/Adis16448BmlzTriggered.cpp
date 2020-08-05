@@ -74,7 +74,7 @@ bool Adis16448BmlzTriggered::publish() {
   bool new_measurement = false;
 
   if (timer_ && imu_msg_) {
-    timer_->getTimeLastTrigger(&imu_msg_->header.stamp, &imu_msg_->header.seq);
+    timer_->getTimeLastTrigger(&stamp_, &imu_msg_->header.seq);
   }
 
   if (imu_msg_ && timer_ && timer_->getDataReady(NULL)) {
@@ -86,7 +86,7 @@ bool Adis16448BmlzTriggered::publish() {
 
       // BARO.
       if (has_mag_and_baro && baro_msg_) {
-        baro_msg_->header.stamp = imu_msg_->header.stamp;
+        baro_msg_->header.stamp = stamp_;
         baro_msg_->header.seq = imu_msg_->header.seq / 16;
         baro_msg_->fluid_pressure = imu_.pressureScale(imu_data[10]);
         baro_msg_->variance = -1.0;
@@ -99,6 +99,8 @@ bool Adis16448BmlzTriggered::publish() {
       // IMU.
       if (imu_msg_) {
         // TODO(rikba): Implement simple orientation filter.
+        imu_msg_->header.stamp = stamp_;
+        imu_msg_->header.stamp -= ros::Duration(0, IMU_DELAY_NS);
         imu_msg_->orientation_covariance[0] = -1.0;
 
         imu_msg_->angular_velocity.x = imu_.gyroScale(imu_data[1]);
@@ -123,7 +125,7 @@ bool Adis16448BmlzTriggered::publish() {
 
       // MAG.
       if (has_mag_and_baro && mag_msg_) {
-        mag_msg_->header.stamp = imu_msg_->header.stamp;
+        mag_msg_->header.stamp = stamp_;
         mag_msg_->header.seq = imu_msg_->header.seq / 16;
 
         mag_msg_->magnetic_field.x = imu_.magnetometerScale(imu_data[7]);

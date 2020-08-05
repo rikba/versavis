@@ -57,7 +57,7 @@ void setup() {
     ;
 
   // Sensors
-  static Adis16448BmlzTriggered adis_16448(nh, &Tc3Synced::getInstance(), 500,
+  static Adis16448BmlzTriggered adis_16448(nh, &Tc3Synced::getInstance(), IMU_RATE,
                                            PORTA, 13, 10);
   imu = &adis_16448;
 

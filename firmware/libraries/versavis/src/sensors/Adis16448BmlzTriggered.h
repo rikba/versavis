@@ -39,6 +39,8 @@ private:
   sensor_msgs::FluidPressure *baro_msg_ = NULL;
   sensor_msgs::MagneticField *mag_msg_ = NULL;
   sensor_msgs::Temperature *temp_msg_ = NULL;
+
+  ros::Time stamp_;
 };
 
 #endif

@@ -38,7 +38,8 @@
 // USE_ADIS16460
 #define USE_ADIS16460
 #define IMU_TOPIC "/versavis/imu_micro"
-#define IMU_RATE 200
+#define IMU_RATE 500
+#define IMU_DELAY_NS 8*2000000 // Hacky calculation based on 8 size bartlett window.
 
 /* ----- ExternalEvent -----*/
 #define EXT_EVENT
