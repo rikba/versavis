@@ -59,11 +59,22 @@ void Adis16448::setup() {
   regWrite(MSC_CTRL, 0x56); // Point of percussion alignment, DR with active
                             // HIGH on DIO1, activate CRC
   delay(20);
+
+  // Gyro calibration
+  regWrite(SENS_AVG, 0x100); // +-250 dps range
+  delay(20);
+  regWrite(SMPL_PRD,
+           0xe00); // 819.2 SPS, 2**14=16384 sample decimation -> 20 seconds
+  delay(21000);    // Wait 21 seconds.
+  regWrite(GLOB_CMD, 0x01); // Gyroscope bias correction
+  delay(20);
+
   regWrite(GPIO_CTRL, 0x2); // DIO2 output (LED).
   delay(20);
   regWrite(SMPL_PRD, 0x0); // external clock, no averaging.
   delay(20);
-  regWrite(SENS_AVG, 0x104); // +-250 dps range, B=4 for 16 measurement bartlett window.
+  regWrite(SENS_AVG,
+           0x104); // +-250 dps range, B=4 for 16 measurement bartlett window.
   delay(20);
 }
 
