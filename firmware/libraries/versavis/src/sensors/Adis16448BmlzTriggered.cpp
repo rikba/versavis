@@ -151,7 +151,7 @@ bool Adis16448BmlzTriggered::publish() {
           calibration_ = CalibrationStatus::kFinished;
           break;
         }
-        default:
+        default: { break; }
         }
       }
 
