@@ -133,7 +133,7 @@ bool Adis16448BmlzTriggered::publish() {
         }
         case CalibrationStatus::kRunning: {
           auto duration =
-              calibration_start_ - RtcSync::getInstance().getTimeNow();
+              RtcSync::getInstance().getTimeNow() - calibration_start_;
           if (duration.sec > 10) {
             calibration_ = CalibrationStatus::kCalibrating;
           }
