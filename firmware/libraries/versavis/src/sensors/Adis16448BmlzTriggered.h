@@ -46,7 +46,8 @@ private:
   ros::Time stamp_;
 
   CalibrationStatus calibration_ = CalibrationStatus::kInit;
-  ros::Time calibration_start_;
+  uint32_t calibration_start_;
+  uint16_t smpl_prd_settings_;
 };
 
 #endif

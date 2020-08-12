@@ -1,7 +1,5 @@
 #include "sensors/Adis16448BmlzTriggered.h"
 
-#include "clock_sync/RtcSync.h"
-
 Adis16448BmlzTriggered::Adis16448BmlzTriggered(ros::NodeHandle *nh,
                                                TimerSynced *timer,
                                                const uint16_t rate_hz,
@@ -127,13 +125,17 @@ bool Adis16448BmlzTriggered::publish() {
         // Calibrate gyro offset.
         switch (calibration_) {
         case CalibrationStatus::kInit: {
-          calibration_start_ = nh_->now();
+          smpl_prd_settings_ = imu_.regRead(SMPL_PRD);
+          uint8_t avg = IMU_CALIBRATION_SAMPLES;
+          uint16_t smpl_prd = (avg << 8) | (smpl_prd_settings_ & 0xFF);
+          imu_.regWrite(SMPL_PRD, smpl_prd);
+          calibration_start_ = imu_msg_->header.seq;
           calibration_ = CalibrationStatus::kRunning;
           break;
         }
         case CalibrationStatus::kRunning: {
-          auto duration = nh_->now() - calibration_start_;
-          if (duration.sec > 10) {
+          if (imu_msg_->header.seq - calibration_start_ >
+              pow(2, IMU_CALIBRATION_SAMPLES)) {
             calibration_ = CalibrationStatus::kCalibrating;
           }
           break;
@@ -150,8 +152,8 @@ bool Adis16448BmlzTriggered::publish() {
           break;
         }
         case CalibrationStatus::kResetAvg: {
-          nh_->loginfo("Disabling IMU averaging.");
-          imu_.regWrite(SMPL_PRD, 0x0); // external clock, no samples averaging.
+          nh_->loginfo("Reset SMPL_PRD register.");
+          imu_.regWrite(SMPL_PRD, smpl_prd_settings_);
           calibration_ = CalibrationStatus::kFinished;
           break;
         }

@@ -68,7 +68,7 @@ void Adis16448::setup() {
   delay(20);
   regWrite(GPIO_CTRL, 0x2); // DIO2 output (LED).
   delay(20);
-  regWrite(SMPL_PRD, 0xc00); // external clock, 2**12=4096 samples averaging.
+  regWrite(SMPL_PRD, 0x0); // external clock, no averaging.
   delay(20);
   regWrite(SENS_AVG,
            0x104); // +-250 dps range, B=4 for 16 measurement bartlett window.
