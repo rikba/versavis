@@ -129,15 +129,12 @@ bool Adis16448BmlzTriggered::publish() {
           uint8_t avg = IMU_CALIBRATION_SAMPLES;
           uint16_t smpl_prd = (avg << 8) | (smpl_prd_settings_ & 0xFF);
           imu_.regWrite(SMPL_PRD, smpl_prd);
-          calibration_start_ = imu_msg_->header.seq;
+          nh_->loginfo("Start calibrating IMU bias.");
           calibration_ = CalibrationStatus::kRunning;
           break;
         }
         case CalibrationStatus::kRunning: {
-          if (imu_msg_->header.seq - calibration_start_ >
-              pow(2, IMU_CALIBRATION_SAMPLES)) {
-            calibration_ = CalibrationStatus::kCalibrating;
-          }
+          calibration_ = CalibrationStatus::kCalibrating;
           break;
         }
         case CalibrationStatus::kCalibrating: {
@@ -155,6 +152,20 @@ bool Adis16448BmlzTriggered::publish() {
           nh_->loginfo("Reset SMPL_PRD register.");
           imu_.regWrite(SMPL_PRD, smpl_prd_settings_);
           calibration_ = CalibrationStatus::kFinished;
+          break;
+        }
+        case CalibrationStatus::kFinished: {
+          // Toggle LED to visualize finished status.
+          static uint8_t num_toggles = 0;
+          if (!(imu_msg_->header.seq % IMU_RATE)) {
+            uint16_t led_status = regRead(GPIO_CTRL);
+            led_status ^= 1 << 9;
+            regWrite(GPIO_CTRL, led_status);
+            num_toggles++;
+          }
+          if (num_toggles == 3) {
+            calibration_ = CalibrationStatus::kCalibrated;
+          }
           break;
         }
         default: { break; }

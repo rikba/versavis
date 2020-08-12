@@ -30,7 +30,7 @@ public:
   bool publish() override;
 
 private:
-  enum class CalibrationStatus { kInit, kRunning, kCalibrating, kResetAvg, kFinished };
+  enum class CalibrationStatus { kInit, kRunning, kCalibrating, kResetAvg, kFinished, kCalibrated };
 
   Adis16448 imu_;
 
@@ -46,7 +46,6 @@ private:
   ros::Time stamp_;
 
   CalibrationStatus calibration_ = CalibrationStatus::kInit;
-  uint32_t calibration_start_;
   uint16_t smpl_prd_settings_;
 };
 
