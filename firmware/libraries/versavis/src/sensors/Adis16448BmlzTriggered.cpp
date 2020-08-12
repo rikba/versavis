@@ -127,13 +127,12 @@ bool Adis16448BmlzTriggered::publish() {
         // Calibrate gyro offset.
         switch (calibration_) {
         case CalibrationStatus::kInit: {
-          calibration_start_ = RtcSync::getInstance().getTimeNow();
+          calibration_start_ = nh_->now();
           calibration_ = CalibrationStatus::kRunning;
           break;
         }
         case CalibrationStatus::kRunning: {
-          auto duration =
-              RtcSync::getInstance().getTimeNow() - calibration_start_;
+          auto duration = nh_->now() - calibration_start_;
           if (duration.sec > 10) {
             calibration_ = CalibrationStatus::kCalibrating;
           }
@@ -141,7 +140,12 @@ bool Adis16448BmlzTriggered::publish() {
         }
         case CalibrationStatus::kCalibrating: {
           nh_->loginfo("Calibrating IMU bias.");
-          imu_.regWrite(GLOB_CMD, 0x1);
+          uint16_t xgyro_off = -imu_data[1];
+          uint16_t ygyro_off = -imu_data[2];
+          uint16_t zgyro_off = -imu_data[3];
+          imu_.regWrite(XGYRO_OFF, xgyro_off);
+          imu_.regWrite(YGYRO_OFF, ygyro_off);
+          imu_.regWrite(ZGYRO_OFF, zgyro_off);
           calibration_ = CalibrationStatus::kResetAvg;
           break;
         }
