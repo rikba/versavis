@@ -1,5 +1,7 @@
 #include "sensors/Adis16448BmlzTriggered.h"
 
+#include "clock_sync/RtcSync.h"
+
 Adis16448BmlzTriggered::Adis16448BmlzTriggered(ros::NodeHandle *nh,
                                                TimerSynced *timer,
                                                const uint16_t rate_hz,
@@ -125,12 +127,12 @@ bool Adis16448BmlzTriggered::publish() {
         // Calibrate gyro offset.
         switch (calibration_) {
         case CalibrationStatus::kInit:
-          calibration_start_ = RtcSync::getInstance()::getTimeNow();
+          calibration_start_ = RtcSync::getInstance().getTimeNow();
           calibration_ = CalibrationStatus::kRunning;
           break;
         case CalibrationStatus::kRunning:
           auto duration =
-              calibration_start_ - RtcSync::getInstance()::getTimeNow();
+              calibration_start_ - RtcSync::getInstance().getTimeNow();
           if (duration.sec > 10) {
             calibration_ = CalibrationStatus::kCalibrating;
           }
