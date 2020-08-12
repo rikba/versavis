@@ -52,21 +52,10 @@ void Adis16448::setup() {
   // Configure SPI.
   SPI.begin(); // Initialize SPI bus
 
-  regWrite(GLOB_CMD, 0x80); // Perform an IMU reset.
-  do {
-    delay(20);
-  }
-  while(regRead(GLOB_CMD) & (1<<7));
-  regWrite(GLOB_CMD, 0x02); // Factory calibration restore.
-  do {
-    delay(20);
-  }
-  while(regRead(GLOB_CMD) & (1<<1));
-
   regWrite(MSC_CTRL, 0x56); // Point of percussion alignment, DR with active
                             // HIGH on DIO1, activate CRC
   delay(20);
-  regWrite(GPIO_CTRL, 0x2); // DIO2 output (LED).
+  regWrite(GPIO_CTRL, 0x202); // DIO2 output (LED).
   delay(20);
   regWrite(SMPL_PRD, 0x0); // external clock, no averaging.
   delay(20);
