@@ -20,6 +20,7 @@
 #include <sensor_msgs/Temperature.h>
 
 class Adis16448BmlzTriggered : public ImuSynced {
+
 public:
   Adis16448BmlzTriggered(ros::NodeHandle *nh, TimerSynced *timer,
                          const uint16_t rate_hz, const uint8_t dr_port_group,
@@ -29,6 +30,8 @@ public:
   bool publish() override;
 
 private:
+  enum class CalibrationStatus { kInit, kRunning, kCalibrating, kResetAvg, kFinished };
+
   Adis16448 imu_;
 
   // ROS
@@ -41,6 +44,9 @@ private:
   sensor_msgs::Temperature *temp_msg_ = NULL;
 
   ros::Time stamp_;
+
+  CalibrationStatus calibration_ = CalibrationStatus::kInit;
+  ros::Time calibration_start_;
 };
 
 #endif
