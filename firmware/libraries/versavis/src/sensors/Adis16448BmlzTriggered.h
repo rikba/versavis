@@ -30,7 +30,13 @@ public:
   bool publish() override;
 
 private:
-  enum class CalibrationStatus { kInit, kRunning, kCalibrating, kResetAvg, kFinished, kCalibrated };
+  enum class CalibrationStatus {
+    kInit,
+    kRunning,
+    kCalibrating,
+    kResetAvg,
+    kFinished
+  };
 
   Adis16448 imu_;
 

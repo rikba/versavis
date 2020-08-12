@@ -156,15 +156,12 @@ bool Adis16448BmlzTriggered::publish() {
         }
         case CalibrationStatus::kFinished: {
           // Toggle LED to visualize finished status.
-          static uint8_t num_toggles = 0;
-          if (!(imu_msg_->header.seq % IMU_RATE)) {
+          static uint32_t start_toggle = imu_msg_->header.seq;
+          if ((imu_msg_->header.seq - start_toggle) > IMU_RATE) {
+            start_toggle = imu_msg_->header.seq;
             uint16_t led_status = imu_.regRead(GPIO_CTRL);
             led_status ^= 1 << 9;
             imu_.regWrite(GPIO_CTRL, led_status);
-            num_toggles++;
-          }
-          if (num_toggles == 6) {
-            calibration_ = CalibrationStatus::kCalibrated;
           }
           break;
         }
