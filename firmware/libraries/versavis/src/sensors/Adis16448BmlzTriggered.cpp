@@ -142,7 +142,7 @@ bool Adis16448BmlzTriggered::publish() {
           imu_.regWrite(GLOB_CMD, 0x1);
           calibration_ = CalibrationStatus::kResetAvg;
           break;
-        case CalibrationStatus::kCalibrating:
+        case CalibrationStatus::kResetAvg:
           nh_->loginfo("Disabling IMU averaging.");
           imu_.regWrite(SMPL_PRD, 0x0); // external clock, no samples averaging.
           calibration_ = CalibrationStatus::kFinished;
