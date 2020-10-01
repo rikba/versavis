@@ -6,6 +6,7 @@ rosrun rosserial_arduino make_libraries.py libraries
 # https://github.com/Open-Bionics/Beetroot/issues/6
 arduino --pref "sketchbook.path=/home/$HOSTNAME/catkin_ws/src/versavis/firmware"
 arduino --pref "boardsmanager.additional.urls=https://github.com/ethz-asl/versavis_hw/raw/master/package_VersaVIS_index.json"
+arduino --pref "build.path=/home/$HOSTNAME/catkin_ws/src/versavis/firmware/build"
 #arduino --install-boards arduino:samd
 #arduino --install-boards arduino:samd_beta
 #arduino --install-boards VersaVIS:samd
