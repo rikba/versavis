@@ -1,4 +1,4 @@
-# Installation via binary
+# Installation via Atmel Studio and .hex
 The easiest way to install the firmware is to flash the precompiled [.hex](https://github.com/rikba/versavis/tree/feature/gnss_sync/firmware/build) code directly onto the microcontroller.
 
 1. Connect VersaVIS both to j-link and USB (for power)
@@ -8,7 +8,7 @@ The easiest way to install the firmware is to flash the precompiled [.hex](https
 ![](https://lh3.googleusercontent.com/pw/ACtC-3ct4yqvjgeYgjDEAIB54owkFV8UGA7rZppGb_1rlTTuoj97Dknn3vRUbfQ7P7jdTTmujqgZU0nEGSzZWRXVpVLR8Pr-fIUJrHp94yAA6_6lTmUFIy7rhyIlcvd2MG5iwvjOoABg6ZnrHyPkODZW3b05=w1535-h772-no?authuser=0)
 4. Erase flash and program [bootloader](https://github.com/rikba/versavis/blob/feature/gnss_sync/firmware/build/samd21_sam_ba_versavis.hex)
 ![](https://lh3.googleusercontent.com/pw/ACtC-3c14hC-yApYa9c4MiOtqt1DvxkUqBIXg_mHwPzyuxuvujSwnJYTWhdcb699UdUOS-gBWFO6FZS53xku1YarGqAG01bYqcs24I5zsO_Fj0NKLxAHt36Sabo4kc7NhsM0KuaDgrCxA49ELMMKzgywGP3s=w1532-h779-no?authuser=0)
-5. Do not erase flash and program [firmware](https://github.com/rikba/versavis/blob/feature/gnss_sync/firmware/build/versavis_rtc.ino.hex)
+5. Program [firmware](https://github.com/rikba/versavis/blob/feature/gnss_sync/firmware/build/versavis_rtc.ino.hex). **Do not erase flash.**
 ![](https://lh3.googleusercontent.com/pw/ACtC-3eT89OY5lqtHjehr4w7I9veWCVw9UyBbXR9k9N-OsImobqUZxiwXccaGnPK4FZ2JwOwC5PXJQjJK2Cac7BKrHrKPejn2pnofym8hTOZIyddU_f66g-lfn2Z0bAO3iWTIQdrgaTiqk876UMVQC3m78rW=w1537-h778-no?authuser=0)
 6. Reset Arduino. It should now be recognized by the system.
 
