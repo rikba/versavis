@@ -72,12 +72,12 @@
 #define PROD_ID 0x56    // Product identifier
 #define SERIAL_NUM 0x58 // Lot-specific serial number
 
-#define GRAVITY 9.81;
+#define GRAVITY 9.807;
 #define DEGTORAD M_PI / 180.0;
 #define GAUSSTOTESLA 1.0e-4;
 #define MILLBARTOPASCAL 1.0e2;
 
-#define ACCELSCALE 0.000833 * GRAVITY
+#define ACCELSCALE GRAVITY / 1200.0
 #define GYROSCALE 0.01 * DEGTORAD
 #define PRESSURESCALE 0.02 * MILLBARTOPASCAL
 #define MAGSCALE 0.0001429 * GAUSSTOTESLA
