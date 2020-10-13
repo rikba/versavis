@@ -267,23 +267,43 @@ int16_t *Adis16448::sensorReadAll() {
 ////////////////////////////////////////////////////////////////////////////////
 int16_t *Adis16448::sensorReadAllCRC() {
   // Read registers using SPI
-  static uint8_t data[28];
-  data[0] = GLOB_CMD; // Initial command.
-  for (uint8_t i = 1; i < 28; ++i)
-    data[i] = 0x00;
-  // Burst read all bytes.
+  // Write each requested register address and read back it's data
   beginTransaction();
-  for (uint8_t i = 0; i < 28; ++i)
-    data[i] = SPI.transfer(data[i]);
-  endTransaction();
+  SPI.transfer(GLOB_CMD); // Initial SPI read. Returned data for this transfer
+                          // is invalid
+  SPI.transfer(0x00); // Write 0x00 to the SPI bus fill the 16 bit transaction
+  // requirement
 
-  // Copy and merge data.
   static int16_t joinedData[13];
-  uint8_t *p = data + 2; // Set pointer to third transfered byte.
-  for (uint8_t i = 0; i < 13; ++i) {
-    joinedData[i] = (*(p++) << 8);    // MSB
-    joinedData[i] |= (*(p++) & 0xFF); // LSB
-  }
+  // DIAG_STAT
+  joinedData[0] = (SPI.transfer(0x00) << 8) | (SPI.transfer(0x00) & 0xFF);
+
+  // XGYRO_OUT
+  joinedData[1] = (SPI.transfer(0x00) << 8) | (SPI.transfer(0x00) & 0xFF);
+  // YGYRO_OUT
+  joinedData[2] = (SPI.transfer(0x00) << 8) | (SPI.transfer(0x00) & 0xFF);
+  // ZGYRO_OUT
+  joinedData[3] = (SPI.transfer(0x00) << 8) | (SPI.transfer(0x00) & 0xFF);
+  // XACCL_OUT
+  joinedData[4] = (SPI.transfer(0x00) << 8) | (SPI.transfer(0x00) & 0xFF);
+  // YACCL_OUT
+  joinedData[5] = (SPI.transfer(0x00) << 8) | (SPI.transfer(0x00) & 0xFF);
+  // ZACCL_OUT
+  joinedData[6] = (SPI.transfer(0x00) << 8) | (SPI.transfer(0x00) & 0xFF);
+  // XMAGN_OUT
+  joinedData[7] = (SPI.transfer(0x00) << 8) | (SPI.transfer(0x00) & 0xFF);
+  // YMAGN_OUT
+  joinedData[8] = (SPI.transfer(0x00) << 8) | (SPI.transfer(0x00) & 0xFF);
+  // ZMAGN_OUT
+  joinedData[9] = (SPI.transfer(0x00) << 8) | (SPI.transfer(0x00) & 0xFF);
+  // BARO_OUT
+  joinedData[10] = (SPI.transfer(0x00) << 8) | (SPI.transfer(0x00) & 0xFF);
+  // TEMP_OUT
+  joinedData[11] = (SPI.transfer(0x00) << 8) | (SPI.transfer(0x00) & 0xFF);
+  // CRC-16
+  joinedData[12] = (SPI.transfer(0x00) << 8) | (SPI.transfer(0x00) & 0xFF);
+
+  endTransaction();
 
   return (joinedData); // Return pointer with data
 }
