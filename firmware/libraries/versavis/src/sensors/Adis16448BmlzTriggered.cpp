@@ -80,15 +80,15 @@ bool Adis16448BmlzTriggered::publish() {
   if (imu_msg_ && timer_ && timer_->getDataReady(NULL)) {
     int16_t *imu_data = imu_.sensorReadAllCRC();
 
-    if ((imu_.checksum(imu_data) == imu_data[12])) {
+    if ((imu_.checksum(imu_data) == imu_data[13])) {
       new_measurement = true;
-      bool has_mag_and_baro = imu_data[0] & (1 << 7);
+      bool has_mag_and_baro = imu_data[1] & (1 << 7);
 
       // BARO.
       if (has_mag_and_baro && baro_msg_) {
         baro_msg_->header.stamp = stamp_;
         baro_msg_->header.seq = imu_msg_->header.seq / 16;
-        baro_msg_->fluid_pressure = imu_.pressureScale(imu_data[10]);
+        baro_msg_->fluid_pressure = imu_.pressureScale(imu_data[11]);
         baro_msg_->variance = -1.0;
 
         if (baro_pub_) {
@@ -103,17 +103,17 @@ bool Adis16448BmlzTriggered::publish() {
         imu_msg_->header.stamp -= ros::Duration(0, IMU_DELAY_NS);
         imu_msg_->orientation_covariance[0] = -1.0;
 
-        imu_msg_->angular_velocity.x = imu_.gyroScale(imu_data[1]);
-        imu_msg_->angular_velocity.y = imu_.gyroScale(imu_data[2]);
-        imu_msg_->angular_velocity.z = imu_.gyroScale(imu_data[3]);
+        imu_msg_->angular_velocity.x = imu_.gyroScale(imu_data[2]);
+        imu_msg_->angular_velocity.y = imu_.gyroScale(imu_data[3]);
+        imu_msg_->angular_velocity.z = imu_.gyroScale(imu_data[4]);
         // TODO(rikba): Determine covariance, e.g., Allan deviation.
         imu_msg_->angular_velocity_covariance[0] = 6e-9;
         imu_msg_->angular_velocity_covariance[4] = 6e-9;
         imu_msg_->angular_velocity_covariance[8] = 6e-9;
 
-        imu_msg_->linear_acceleration.x = imu_.accelScale(imu_data[4]);
-        imu_msg_->linear_acceleration.y = imu_.accelScale(imu_data[5]);
-        imu_msg_->linear_acceleration.z = imu_.accelScale(imu_data[6]);
+        imu_msg_->linear_acceleration.x = imu_.accelScale(imu_data[5]);
+        imu_msg_->linear_acceleration.y = imu_.accelScale(imu_data[6]);
+        imu_msg_->linear_acceleration.z = imu_.accelScale(imu_data[7]);
         imu_msg_->linear_acceleration_covariance[0] = 0.043864908;
         imu_msg_->linear_acceleration_covariance[4] = 0.043864908;
         imu_msg_->linear_acceleration_covariance[8] = 0.043864908;
@@ -139,9 +139,9 @@ bool Adis16448BmlzTriggered::publish() {
         }
         case CalibrationStatus::kCalibrating: {
           nh_->loginfo("Calibrating IMU bias.");
-          uint16_t xgyro_off = -imu_data[1];
-          uint16_t ygyro_off = -imu_data[2];
-          uint16_t zgyro_off = -imu_data[3];
+          uint16_t xgyro_off = -imu_data[2];
+          uint16_t ygyro_off = -imu_data[3];
+          uint16_t zgyro_off = -imu_data[4];
           imu_.regWrite(XGYRO_OFF, xgyro_off);
           imu_.regWrite(YGYRO_OFF, ygyro_off);
           imu_.regWrite(ZGYRO_OFF, zgyro_off);
@@ -174,9 +174,9 @@ bool Adis16448BmlzTriggered::publish() {
         mag_msg_->header.stamp = stamp_;
         mag_msg_->header.seq = imu_msg_->header.seq / 16;
 
-        mag_msg_->magnetic_field.x = imu_.magnetometerScale(imu_data[7]);
-        mag_msg_->magnetic_field.y = imu_.magnetometerScale(imu_data[8]);
-        mag_msg_->magnetic_field.z = imu_.magnetometerScale(imu_data[9]);
+        mag_msg_->magnetic_field.x = imu_.magnetometerScale(imu_data[8]);
+        mag_msg_->magnetic_field.y = imu_.magnetometerScale(imu_data[9]);
+        mag_msg_->magnetic_field.z = imu_.magnetometerScale(imu_data[10]);
         mag_msg_->magnetic_field_covariance[0] = -1.0;
 
         if (mag_pub_) {
@@ -187,7 +187,7 @@ bool Adis16448BmlzTriggered::publish() {
       // TEMP.
       if (temp_msg_) {
         temp_msg_->header = imu_msg_->header;
-        temp_msg_->temperature = imu_.tempScale(imu_data[11]);
+        temp_msg_->temperature = imu_.tempScale(imu_data[12]);
         temp_msg_->variance = -1.0;
 
         if (temp_pub_) {

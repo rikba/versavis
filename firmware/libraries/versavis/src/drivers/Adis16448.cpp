@@ -266,43 +266,13 @@ int16_t *Adis16448::sensorReadAll() {
 // return - (pointer) array of signed 16 bit 2's complement numbers
 ////////////////////////////////////////////////////////////////////////////////
 int16_t *Adis16448::sensorReadAllCRC() {
+  static int16_t joinedData[14];
+  // Initial SPI read.
+  joinedData[0] = (GLOB_CMD << 8);
   // Read registers using SPI
   // Write each requested register address and read back it's data
   beginTransaction();
-  SPI.transfer(GLOB_CMD); // Initial SPI read. Returned data for this transfer
-                          // is invalid
-  SPI.transfer(0x00); // Write 0x00 to the SPI bus fill the 16 bit transaction
-  // requirement
-
-  static int16_t joinedData[13];
-  // DIAG_STAT
-  joinedData[0] = (SPI.transfer(0x00) << 8) | (SPI.transfer(0x00) & 0xFF);
-
-  // XGYRO_OUT
-  joinedData[1] = (SPI.transfer(0x00) << 8) | (SPI.transfer(0x00) & 0xFF);
-  // YGYRO_OUT
-  joinedData[2] = (SPI.transfer(0x00) << 8) | (SPI.transfer(0x00) & 0xFF);
-  // ZGYRO_OUT
-  joinedData[3] = (SPI.transfer(0x00) << 8) | (SPI.transfer(0x00) & 0xFF);
-  // XACCL_OUT
-  joinedData[4] = (SPI.transfer(0x00) << 8) | (SPI.transfer(0x00) & 0xFF);
-  // YACCL_OUT
-  joinedData[5] = (SPI.transfer(0x00) << 8) | (SPI.transfer(0x00) & 0xFF);
-  // ZACCL_OUT
-  joinedData[6] = (SPI.transfer(0x00) << 8) | (SPI.transfer(0x00) & 0xFF);
-  // XMAGN_OUT
-  joinedData[7] = (SPI.transfer(0x00) << 8) | (SPI.transfer(0x00) & 0xFF);
-  // YMAGN_OUT
-  joinedData[8] = (SPI.transfer(0x00) << 8) | (SPI.transfer(0x00) & 0xFF);
-  // ZMAGN_OUT
-  joinedData[9] = (SPI.transfer(0x00) << 8) | (SPI.transfer(0x00) & 0xFF);
-  // BARO_OUT
-  joinedData[10] = (SPI.transfer(0x00) << 8) | (SPI.transfer(0x00) & 0xFF);
-  // TEMP_OUT
-  joinedData[11] = (SPI.transfer(0x00) << 8) | (SPI.transfer(0x00) & 0xFF);
-  // CRC-16
-  joinedData[12] = (SPI.transfer(0x00) << 8) | (SPI.transfer(0x00) & 0xFF);
-
+  SPI.transfer(joinedData, sizeof(joinedData));
   endTransaction();
 
   return (joinedData); // Return pointer with data
