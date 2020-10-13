@@ -267,7 +267,7 @@ int16_t *Adis16448::sensorReadAll() {
 ////////////////////////////////////////////////////////////////////////////////
 int16_t *Adis16448::sensorReadAllCRC() {
   // Read registers using SPI
-  uint8_t data[28];
+  static uint8_t data[28];
   data[0] = GLOB_CMD; // Initial command.
   // Burst read all bytes.
   beginTransaction();
@@ -278,8 +278,8 @@ int16_t *Adis16448::sensorReadAllCRC() {
   static int16_t joinedData[13];
   uint8_t *p = data + 2; // Set pointer to third transfered byte.
   for (uint8_t i = 0; i < 13; ++i) {
-    joinedData[i] = *p++ << 8;    // MSB
-    joinedData[i] |= *p++ & 0xFF; // LSB
+    joinedData[i] = (*(p++) << 8);    // MSB
+    joinedData[i] |= (*(p++) & 0xFF); // LSB
   }
 
   return (joinedData); // Return pointer with data
