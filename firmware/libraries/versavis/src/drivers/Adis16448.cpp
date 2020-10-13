@@ -337,7 +337,7 @@ int16_t Adis16448::checksum(int16_t *burstArray) {
   // Compute CRC on burst data starting from XGYRO_OUT and ending with TEMP_OUT.
   // Start with the lower byte and then the upper byte of each word.
   // i.e. Compute XGYRO_OUT_LSB CRC first and then compute XGYRO_OUT_MSB CRC.
-  for (i = 1; i < 12; i++) {
+  for (i = 2; i < 13; i++) {
     upperByte = (burstArray[i] >> 8) & 0xFF;
     lowerByte = (burstArray[i] & 0xFF);
     updateCRC(&crc, &lowerByte, POLY);
