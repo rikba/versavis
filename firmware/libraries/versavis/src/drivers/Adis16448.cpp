@@ -266,14 +266,21 @@ int16_t *Adis16448::sensorReadAll() {
 // return - (pointer) array of signed 16 bit 2's complement numbers
 ////////////////////////////////////////////////////////////////////////////////
 int16_t *Adis16448::sensorReadAllCRC() {
-  static int16_t joinedData[14];
-  // Initial SPI read.
-  joinedData[0] = (GLOB_CMD << 8);
   // Read registers using SPI
-  // Write each requested register address and read back it's data
+  uint8_t data[28];
+  data[0] = GLOB_CMD; // Initial command.
+  // Burst read all bytes.
   beginTransaction();
-  SPI.transfer(joinedData, sizeof(joinedData));
+  SPI.transfer(data, sizeof(data));
   endTransaction();
+
+  // Copy and merge data.
+  static int16_t joinedData[13];
+  uint8_t *p = data + 2; // Set pointer to third transfered byte.
+  for (uint8_t i = 0; i < 13; ++i) {
+    joinedData[i] = *p++ << 8;    // MSB
+    joinedData[i] |= *p++ & 0xFF; // LSB
+  }
 
   return (joinedData); // Return pointer with data
 }
@@ -337,7 +344,7 @@ int16_t Adis16448::checksum(int16_t *burstArray) {
   // Compute CRC on burst data starting from XGYRO_OUT and ending with TEMP_OUT.
   // Start with the lower byte and then the upper byte of each word.
   // i.e. Compute XGYRO_OUT_LSB CRC first and then compute XGYRO_OUT_MSB CRC.
-  for (i = 2; i < 13; i++) {
+  for (i = 1; i < 12; i++) {
     upperByte = (burstArray[i] >> 8) & 0xFF;
     lowerByte = (burstArray[i] & 0xFF);
     updateCRC(&crc, &lowerByte, POLY);
