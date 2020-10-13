@@ -269,6 +269,7 @@ int16_t *Adis16448::sensorReadAllCRC() {
   // Read registers using SPI
   static uint8_t data[28];
   data[0] = GLOB_CMD; // Initial command.
+  for (uint8_t i = 1; i < 28; ++i) data[i] = 0x00;
   // Burst read all bytes.
   beginTransaction();
   SPI.transfer(data, sizeof(data));
