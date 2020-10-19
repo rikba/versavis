@@ -77,6 +77,13 @@ void Adis16448::setup() {
   SPI.begin(); // Initialize SPI bus
   setDefault();
 
+  // Factory calibration.
+  regWrite(GLOB_CMD, 0b10);
+
+  // Software reset.
+  regWrite(GLOB_CMD, 0b10000000);
+  delay(300);
+
   regWrite(MSC_CTRL, 0x56); // Point of percussion alignment, DR with active
                             // HIGH on DIO1, activate CRC
   delay(20);
