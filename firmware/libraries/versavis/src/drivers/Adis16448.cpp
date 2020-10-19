@@ -424,7 +424,8 @@ void Adis16448::updateCRC(unsigned int *crc, unsigned int *data,
 // return - (float) signed/scaled accelerometer in g's
 ////////////////////////////////////////////////////////////////////////////////
 float Adis16448::accelScale(int16_t sensorData) {
-  return sensorData * ACCELSCALE;
+  static const double kAccelScale = GRAVITY / 1200.0;
+  return sensorData * kAccelScale;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -435,7 +436,8 @@ float Adis16448::accelScale(int16_t sensorData) {
 // return - (float) signed/scaled gyro in degrees/sec
 ////////////////////////////////////////////////////////////////////////////////
 float Adis16448::gyroScale(int16_t sensorData) {
-  return sensorData * GYROSCALE;
+  static const double kGyroScale = 0.01 * DEGTORAD;
+  return sensorData * kGyroScale;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -446,7 +448,9 @@ float Adis16448::gyroScale(int16_t sensorData) {
 // return - (float) signed/scaled temperature in degrees Celcius
 ////////////////////////////////////////////////////////////////////////////////
 float Adis16448::tempScale(int16_t sensorData) {
-  return (sensorData * 0.07386) + 31.0;
+  static const double kTempScale = 0.07386;
+  static const double kTempOffset = 31.0;
+  return (sensorData * kTempScale) + kTempOffset;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -457,7 +461,8 @@ float Adis16448::tempScale(int16_t sensorData) {
 // return - (float) signed/scaled pressure in Pascals
 ////////////////////////////////////////////////////////////////////////////////
 float Adis16448::pressureScale(int16_t sensorData) {
-  return sensorData * PRESSURESCALE;
+  static const double kPressureScale = 0.02 * MILLBARTOPASCAL;
+  return sensorData * kPressureScale;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -468,5 +473,6 @@ float Adis16448::pressureScale(int16_t sensorData) {
 // return - (float) signed/scaled magnetometer data in gauss
 ////////////////////////////////////////////////////////////////////////////////
 float Adis16448::magnetometerScale(int16_t sensorData) {
-  return sensorData * MAGSCALE;
+  static const double kMagScale = 0.0001429 * GAUSSTOTESLA;
+  return sensorData * kMagScale;
 }
