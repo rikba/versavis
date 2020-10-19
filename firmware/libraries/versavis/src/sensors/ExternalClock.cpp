@@ -3,8 +3,8 @@
 #include "clock_sync/Tcc0Synced.h"
 #include "sensors/ExternalClock.h"
 
-#define DACTOVOLT RTC_CLK_SYNC_U_REF / RTC_CLK_SYNC_DAC_RANGE
-#define VOLTTODAC RTC_CLK_SYNC_DAC_RANGE / RTC_CLK_SYNC_U_REF
+const float kDacToVolt = RTC_CLK_SYNC_U_REF / RTC_CLK_SYNC_DAC_RANGE;
+const float kVoltToDac = RTC_CLK_SYNC_DAC_RANGE / RTC_CLK_SYNC_U_REF;
 #define SYNC_TOPIC "time_sync"
 
 ExternalClock::ExternalClock(ros::NodeHandle *nh)
@@ -25,7 +25,7 @@ ExternalClock::ExternalClock(ros::NodeHandle *nh)
   DAC->CTRLB.reg |= DAC_CTRLB_EOEN;        // Enable voltage output.
 
   DAC->DATA.reg |= static_cast<uint16_t>(
-      VOLTTODAC * RTC_CLK_SYNC_X1); // 1.5V nominal current
+      kVoltToDac * RTC_CLK_SYNC_X1); // 1.5V nominal current
   while (DAC->STATUS.bit.SYNCBUSY) {
   }
 
@@ -152,7 +152,7 @@ void ExternalClock::updateFilter() {
               P_pred_[3], P_pred_[4], P_pred_[5], P_pred_[6], P_pred_[7],
               P_pred_[8], clock_msg_->P);
     clock_msg_->ppm =
-        (DACTOVOLT * clock_msg_->dac - clock_msg_->x[1]) * clock_msg_->x[2];
+        (kDacToVolt * clock_msg_->dac - clock_msg_->x[1]) * clock_msg_->x[2];
   }
 
   last_update_ = clock_msg_->receive_time;
@@ -173,7 +173,7 @@ void ExternalClock::controlClock() {
 #ifdef RTC_CLK_SYNC
     // LQR control.
     float dac = -(RTC_CLK_SYNC_LQR_GAIN * clock_msg_->x[0]);
-    dac += clock_msg_->x[1] * VOLTTODAC; // Trim.
+    dac += clock_msg_->x[1] * kVoltToDac; // Trim.
     dac = dac < RTC_CLK_SYNC_DAC_MIN ? RTC_CLK_SYNC_DAC_MIN : dac;
     dac = dac > RTC_CLK_SYNC_DAC_MAX ? RTC_CLK_SYNC_DAC_MAX : dac;
     clock_msg_->dac = static_cast<uint16_t>(roundf(dac));
@@ -200,7 +200,7 @@ void ExternalClock::controlClock() {
 void ExternalClock::resetFilter() {
   if (clock_msg_) {
     *clock_msg_ = versavis::ExtClk();
-    clock_msg_->dac = static_cast<uint16_t>(VOLTTODAC * RTC_CLK_SYNC_X1);
+    clock_msg_->dac = static_cast<uint16_t>(kVoltToDac * RTC_CLK_SYNC_X1);
     clock_msg_->sync = false;
   }
   last_update_ = ros::Time();
