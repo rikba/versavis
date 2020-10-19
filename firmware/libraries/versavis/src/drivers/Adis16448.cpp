@@ -48,9 +48,34 @@ Adis16448::~Adis16448() {
   SPI.end();
 }
 
+void Adis16448::setDefault() {
+  // Set all registers that are stored in flash backup to default values.
+  regWrite(XGYRO_OFF, 0x0);
+  regWrite(YGYRO_OFF, 0x0);
+  regWrite(ZGYRO_OFF, 0x0);
+  regWrite(XACCL_OFF, 0x0);
+  regWrite(YACCL_OFF, 0x0);
+  regWrite(ZACCL_OFF, 0x0);
+  regWrite(XMAGN_HIC, 0x0);
+  regWrite(YMAGN_HIC, 0x0);
+  regWrite(ZMAGN_HIC, 0x0);
+  regWrite(XMAGN_SIC, 0x0);
+  regWrite(YMAGN_SIC, 0x0);
+  regWrite(ZMAGN_SIC, 0x0);
+  regWrite(MSC_CTRL, 0x0006);
+  regWrite(SMPL_PRD, 0x0001);
+  regWrite(SENS_AVG, 0x0402);
+  regWrite(ALM_MAG1, 0x0);
+  regWrite(ALM_MAG2, 0x0);
+  regWrite(ALM_SMPL1, 0x0);
+  regWrite(ALM_SMPL2, 0x0);
+  regWrite(ALM_CTRL, 0x0);
+}
+
 void Adis16448::setup() {
   // Configure SPI.
   SPI.begin(); // Initialize SPI bus
+  setDefault();
 
   regWrite(MSC_CTRL, 0x56); // Point of percussion alignment, DR with active
                             // HIGH on DIO1, activate CRC

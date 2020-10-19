@@ -95,6 +95,7 @@ public:
   ~Adis16448();
 
   void setup();
+  void setDefault();
 
   // Read register (two bytes) Returns signed 16 bit data.
   int16_t regRead(uint8_t regAddr);
