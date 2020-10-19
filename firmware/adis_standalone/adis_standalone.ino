@@ -66,6 +66,9 @@ void setup() {
   interrupts();
 
   nh.advertise(imu_pub);
+  char pub_id_str[25];
+  sprintf(pub_id_str, "PUB ID: %d", imu_pub.id_); 
+  nh.loginfo(pub_id_str);
 }
 
 void imuReady() { imu_ready = true; }
@@ -190,12 +193,12 @@ void publishIMUData() {
     }
   }
   
-  //sprintf(spi_timing, "SPI: %d us", spi_stop - spi_start); 
-  //sprintf(crc_timing, "CRC: %d us", crc_stop - crc_start); 
-  //sprintf(scale_timing, "Scale: %d us", scale_stop - scale_start); 
-  //sprintf(pub_timing, "Publish: %d us", pub_stop - pub_start); 
-  //nh.loginfo(spi_timing);
-  //nh.loginfo(crc_timing);
-  //nh.loginfo(scale_timing);
-  //nh.loginfo(pub_timing);
+  sprintf(spi_timing, "SPI: %d us", spi_stop - spi_start); 
+  sprintf(crc_timing, "CRC: %d us", crc_stop - crc_start); 
+  sprintf(scale_timing, "Scale: %d us", scale_stop - scale_start); 
+  sprintf(pub_timing, "Publish: %d us", pub_stop - pub_start); 
+  nh.loginfo(spi_timing);
+  nh.loginfo(crc_timing);
+  nh.loginfo(scale_timing);
+  nh.loginfo(pub_timing);
 }
