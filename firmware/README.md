@@ -10,3 +10,8 @@ The easiest way to install the firmware is to flash the precompiled [.hex](https
 
 ## Known limitations
 At the moment it is not possible to upload the binary with bootloader as one file https://github.com/arduino/arduino-builder/issues/359.
+
+# Hardware clock extension
+The 10 MHz oscillator is connected to 5V and the DAC output on the back of the VersaVIS.
+
+<img src="https://lh3.googleusercontent.com/pw/ACtC-3ckeMMcqSuujXA3ojo0O4R_krmXlQ3emo41agas0tnLb6KrBFlrnpiEbgN6wQBfvRRk8fYoTQxKyxTMulHwP8pcRJR8ML7D0hgZUEnXI98rnLNagDnC9VIUnKycZykYSMEcYyIpxFx98VlmIg4RXWp4=w718-h957-no?authuser=0" width="240"> <img src="https://lh3.googleusercontent.com/pw/ACtC-3e5h4-QpysZocPvySDVaXmMf5J6JJLyFmZx2vJyzP-HbynUZ9b-epJqZNRCUD9CuzZwGMxW927-YqoN6UMMmihTQkl_RpZ2ucfs8pr9PCAPsAOFTZx-KdAhQqP48PSIyELZKJCaUwpeIHjOFivFnCzf=w718-h957-no?authuser=0" width="240">
