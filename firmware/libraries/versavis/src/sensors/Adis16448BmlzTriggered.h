@@ -15,9 +15,9 @@
 #include "drivers/Adis16448.h"
 #include "sensors/ImuSynced.h"
 
-#include <sensor_msgs/FluidPressure.h>
-#include <sensor_msgs/MagneticField.h>
-#include <sensor_msgs/Temperature.h>
+#include <versavis/MagneticMicro.h>
+#include <versavis/PressureMicro.h>
+#include <versavis/TemperatureMicro.h>
 
 class Adis16448BmlzTriggered : public ImuSynced {
 
@@ -25,8 +25,8 @@ public:
   Adis16448BmlzTriggered(ros::NodeHandle *nh, TimerSynced *timer,
                          const uint16_t rate_hz, const uint8_t dr_port_group,
                          const uint8_t dr_pin, const uint8_t chip_select);
-  void setupRos(char *frame_id, char *rate_topic, char *imu_topic,
-                char *baro_topic, char *mag_topic, char *temp_topic);
+  void setupRos(char *rate_topic, char *imu_topic, char *baro_topic,
+                char *mag_topic, char *temp_topic);
   bool publish() override;
 
 private:
@@ -45,9 +45,9 @@ private:
   ros::Publisher *baro_pub_ = NULL;
   ros::Publisher *temp_pub_ = NULL;
 
-  sensor_msgs::FluidPressure *baro_msg_ = NULL;
-  sensor_msgs::MagneticField *mag_msg_ = NULL;
-  sensor_msgs::Temperature *temp_msg_ = NULL;
+  versavis::PressureMicro *baro_msg_ = NULL;
+  versavis::MagneticMicro *mag_msg_ = NULL;
+  versavis::TemperatureMicro *temp_msg_ = NULL;
 
   ros::Time stamp_;
 

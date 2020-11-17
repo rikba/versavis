@@ -9,7 +9,7 @@ void ImuSynced::setupRos(char *rate_topic, char *imu_topic) {
   SensorSynced::setupRos(rate_sub);
   if (nh_) {
     // Create static ROS message.
-    static sensor_msgs::Imu imu_msg;
+    static versavis::ImuMicro imu_msg;
     imu_msg_ = &imu_msg;
 
     // Create static ROS publisher.

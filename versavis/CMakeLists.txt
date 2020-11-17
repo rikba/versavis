@@ -30,7 +30,9 @@ add_message_files(
   TemperatureMicro.msg
   TimeNumbered.msg
   LidarLite.msg
+  LidarLiteMicro.msg
   UsD1.msg
+  UsD1Micro.msg
 )
 
 generate_messages(

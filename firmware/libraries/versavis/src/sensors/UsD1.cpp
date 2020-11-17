@@ -4,8 +4,6 @@
 
 const uint8_t kHeader = 0xFE;
 const uint8_t kVersionId = 0x02;
-const float kVarianceLow = pow(0.06 / 3, 2);
-const float kVarianceHigh = pow(0.04 / 3, 2);
 
 UsD1::UsD1(ros::NodeHandle *nh, Uart *uart) : nh_(nh), uart_(uart) {
   if (uart_) {
@@ -13,10 +11,10 @@ UsD1::UsD1(ros::NodeHandle *nh, Uart *uart) : nh_(nh), uart_(uart) {
   }
 }
 
-void UsD1::setupRos(char *frame_id, char *data_topic) {
+void UsD1::setupRos(char *data_topic) {
   if (nh_) {
     // Create static ROS msg.
-    static versavis::UsD1 msg;
+    static versavis::UsD1Micro msg;
 
     // Assign topic pointer.
     msg_ = &msg;
@@ -29,18 +27,6 @@ void UsD1::setupRos(char *frame_id, char *data_topic) {
 
     // Advertise.
     nh_->advertise(*publisher_);
-  }
-
-  // Initialize.
-  if (msg_) {
-    msg_->range.header.frame_id = frame_id;
-
-    // https://cdn.shopify.com/s/files/1/0113/0414/0900/files/User_Manual_US-D1.pdf?16288212927919010227
-    // TODO(rikba): Fix sensor type https://github.com/ros/common_msgs/pull/153
-    msg_->range.radiation_type = sensor_msgs::Range::INFRARED;
-    msg_->range.field_of_view = 0.35;
-    msg_->range.min_range = 0.5;
-    msg_->range.max_range = 50.0;
   }
 }
 
@@ -55,7 +41,7 @@ bool UsD1::publish() {
     switch (state_) {
     case UsD1State::kHeader: {
       if (c == kHeader) {
-        msg_->range.header.stamp = RtcSync::getInstance().getTimeNow();
+        msg_->time.data = RtcSync::getInstance().getTimeNow();
         cs_ = 0; // Reset checksum.
         state_ = UsD1State::kVersion;
       }
@@ -84,13 +70,7 @@ bool UsD1::publish() {
       break;
     }
     case UsD1State::kMsb: {
-      msg_->range.range = ((c << 8) + lsb_) * 0.01;
-
-      if (msg_->range.range < 1.0) {
-        msg_->variance = kVarianceLow;
-      } else {
-        msg_->variance = kVarianceHigh;
-      }
+      msg_->range = ((c << 8) + lsb_);
       cs_ += c;
       state_ = UsD1State::kSnr;
       break;
@@ -107,7 +87,7 @@ bool UsD1::publish() {
         if (publisher_) {
           publisher_->publish(msg_);
         }
-        msg_->range.header.seq++;
+        msg_->number++;
       } else if (!buffer_empty) {
         if (nh_)
           nh_->logwarn("Rejecting US-D1 message. New available.");

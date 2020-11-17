@@ -14,24 +14,24 @@
 #define Sensors_LidarLite_h
 
 #include "sensors/SensorSynced.h"
-#include <versavis/LidarLite.h>
+#include <versavis/LidarLiteMicro.h>
 
 class LidarLite : public SensorSynced {
 public:
   LidarLite(ros::NodeHandle *nh, TimerSynced *timer, const uint16_t rate_hz);
-  void setupRos(char *frame_id, char *rate_topic, char *data_topic);
+  void setupRos(char *rate_topic, char *data_topic);
   bool publish() override;
 
 private:
   uint32_t last_msg_ = 0xFFFFFFFF;
 
   // I2C interface.
-  bool readData(versavis::LidarLite *msg) const;
+  bool readData(versavis::LidarLiteMicro *msg) const;
   bool readSignalStrength(uint8_t *signal_strength) const;
   uint8_t write(uint8_t reg_adr, uint8_t data) const;
   bool busy() const;
 
-  versavis::LidarLite *msg_ = NULL;
+  versavis::LidarLiteMicro *msg_ = NULL;
 };
 
 #endif

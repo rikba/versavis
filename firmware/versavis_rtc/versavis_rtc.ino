@@ -16,16 +16,14 @@
 
 #include <Arduino.h>
 
-#define IMU_FRAME_ID "adis16448bmlz"
-#define IMU_RATE_TOPIC "adis16448bmlz/imu/set_rate"
-#define IMU_IMU_TOPIC "adis16448bmlz/imu/data_raw"
-#define IMU_BARO_TOPIC "adis16448bmlz/imu/baro"
-#define IMU_MAG_TOPIC "adis16448bmlz/imu/mag"
-#define IMU_TEMP_TOPIC "adis16448bmlz/imu/temp"
+#define IMU_RATE_TOPIC "adis16448bmlz/set_rate"
+#define IMU_IMU_TOPIC "adis16448bmlz/imu_micro"
+#define IMU_BARO_TOPIC "adis16448bmlz/baro_micro"
+#define IMU_MAG_TOPIC "adis16448bmlz/mag_micro"
+#define IMU_TEMP_TOPIC "adis16448bmlz/temp_micro"
 
-#define LIDAR_FRAME_ID "lidar_lite"
 #define LIDAR_RATE_TOPIC "lidar_lite/set_rate"
-#define LIDAR_DATA_TOPIC "lidar_lite/data"
+#define LIDAR_DATA_TOPIC "lidar_lite/data_micro"
 
 #define CAM_FRAME_ID "bfly"
 #define CAM_RATE_TOPIC "bfly/set_rate"
@@ -33,8 +31,7 @@
 #define CAM_IMG_TOPIC "bfly/header"
 #define CAM_EXP_COMPENSATION true
 
-#define RADAR_FRAME_ID "us_d1"
-#define RADAR_DATA_TOPIC "us_d1/data"
+#define RADAR_DATA_TOPIC "us_d1/data_micro"
 
 // ROS
 ros::NodeHandle *nh = NULL;
@@ -57,8 +54,8 @@ void setup() {
     ;
 
   // Sensors
-  static Adis16448BmlzTriggered adis_16448(nh, &Tc3Synced::getInstance(), IMU_RATE,
-                                           PORTA, 13, 10);
+  static Adis16448BmlzTriggered adis_16448(nh, &Tc3Synced::getInstance(),
+                                           IMU_RATE, PORTA, 13, 10);
   imu = &adis_16448;
 
   static CamSyncedExposure bfly(nh, &Tcc0Synced::getInstance(), 10, false, true,
@@ -77,14 +74,14 @@ void setup() {
   // ROS
   RtcSync::getInstance().setupRos(nh);
 
-  imu->setupRos(IMU_FRAME_ID, IMU_RATE_TOPIC, IMU_IMU_TOPIC, IMU_BARO_TOPIC,
-                IMU_MAG_TOPIC, IMU_TEMP_TOPIC);
+  imu->setupRos(IMU_RATE_TOPIC, IMU_IMU_TOPIC, IMU_BARO_TOPIC, IMU_MAG_TOPIC,
+                IMU_TEMP_TOPIC);
 
   cam0->setupRos(CAM_FRAME_ID, CAM_RATE_TOPIC, CAM_SEQ_TOPIC, CAM_IMG_TOPIC);
 
   ext_clock->setupRos();
-  radar->setupRos(RADAR_FRAME_ID, RADAR_DATA_TOPIC);
-  lidar->setupRos(LIDAR_FRAME_ID, LIDAR_RATE_TOPIC, LIDAR_DATA_TOPIC);
+  radar->setupRos(RADAR_DATA_TOPIC);
+  lidar->setupRos(LIDAR_RATE_TOPIC, LIDAR_DATA_TOPIC);
 }
 
 void loop() {

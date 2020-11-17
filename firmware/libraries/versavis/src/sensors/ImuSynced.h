@@ -14,7 +14,7 @@
 #define Sensors_ImuSynced_h
 
 #include "sensors/SensorSynced.h"
-#include <sensor_msgs/Imu.h>
+#include <versavis/ImuMicro.h>
 
 class ImuSynced : public SensorSynced {
 public:
@@ -22,7 +22,7 @@ public:
   void setupRos(char *rate_topic, char *imu_topic);
 
 protected:
-  sensor_msgs::Imu *imu_msg_ = NULL;
+  versavis::ImuMicro *imu_msg_ = NULL;
 };
 
 #endif

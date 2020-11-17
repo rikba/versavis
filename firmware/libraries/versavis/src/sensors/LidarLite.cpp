@@ -4,8 +4,6 @@
 
 const uint8_t kAddress = 0x62;
 const bool kStopTransmission = true;
-const float kVarianceLow = pow(0.025 / 3, 2);
-const float kVarianceHigh = pow(0.1 / 3, 2);
 
 LidarLite::LidarLite(ros::NodeHandle *nh, TimerSynced *timer,
                      const uint16_t rate_hz)
@@ -23,14 +21,14 @@ LidarLite::LidarLite(ros::NodeHandle *nh, TimerSynced *timer,
   write(0x00, 0x00);     // Default reset.
 }
 
-void LidarLite::setupRos(char *frame_id, char *rate_topic, char *data_topic) {
+void LidarLite::setupRos(char *rate_topic, char *data_topic) {
   static ros::Subscriber<std_msgs::UInt16, SensorSynced> rate_sub(
       rate_topic, &LidarLite::changeRateCb, this);
   SensorSynced::setupRos(rate_sub);
 
   if (nh_) {
     // Create static ROS msg.
-    static versavis::LidarLite msg;
+    static versavis::LidarLiteMicro msg;
 
     // Assign topic pointer.
     msg_ = &msg;
@@ -47,15 +45,7 @@ void LidarLite::setupRos(char *frame_id, char *rate_topic, char *data_topic) {
 
   // Initialize.
   if (msg_) {
-    msg_->range.header.frame_id = frame_id;
-
-    // https://static.garmin.com/pumac/LIDAR_Lite_v3_Operation_Manual_and_Technical_Specifications.pdf
-    msg_->range.radiation_type = sensor_msgs::Range::INFRARED;
-    msg_->range.field_of_view = 0.008;
-    msg_->range.min_range = 0.05;
-    msg_->range.max_range = 30.0;
-
-    last_msg_ = msg_->range.header.seq;
+    last_msg_ = msg_->number;
   }
 }
 
@@ -64,12 +54,11 @@ bool LidarLite::publish() {
 
   // Obtain new stamp after triggering.
   if (timer_ && msg_) {
-    timer_->getTimeLastTrigger(&msg_->range.header.stamp,
-                               &msg_->range.header.seq);
+    timer_->getTimeLastTrigger(&msg_->time.data, &msg_->number);
   }
 
   // If we have a new message number, try to obtain range message from I2C.
-  if (msg_ && (last_msg_ != msg_->range.header.seq) && !busy()) {
+  if (msg_ && (last_msg_ != msg_->number) && !busy()) {
     // Read measurement.
     if (readData(msg_) && publisher_) {
       publisher_->publish(msg_);
@@ -77,13 +66,13 @@ bool LidarLite::publish() {
 
     // Update state.
     new_measurement = true;
-    last_msg_ = msg_->range.header.seq;
+    last_msg_ = msg_->number;
   }
 
   return new_measurement;
 }
 
-bool LidarLite::readData(versavis::LidarLite *msg) const {
+bool LidarLite::readData(versavis::LidarLiteMicro *msg) const {
   Wire.beginTransmission(kAddress);
   Wire.write(0x8E); // Start from signal strength with auto-increment bit
   uint8_t nack = Wire.endTransmission(kStopTransmission);
@@ -100,14 +89,7 @@ bool LidarLite::readData(versavis::LidarLite *msg) const {
     uint8_t high = Wire.read();
     uint8_t low = Wire.read();
 
-    msg->range.range = ((high << 8) + low) * 0.01;
-
-    // Variance
-    if (msg->range.range < 5.0) {
-      msg->variance = kVarianceLow;
-    } else {
-      msg->variance = kVarianceHigh;
-    }
+    msg->range = ((high << 8) + low);
   }
   return (nack == 0);
 }

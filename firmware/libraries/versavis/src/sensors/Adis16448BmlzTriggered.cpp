@@ -21,16 +21,16 @@ Adis16448BmlzTriggered::Adis16448BmlzTriggered(ros::NodeHandle *nh,
   }
 }
 
-void Adis16448BmlzTriggered::setupRos(char *frame_id, char *rate_topic,
-                                      char *imu_topic, char *baro_topic,
-                                      char *mag_topic, char *temp_topic) {
+void Adis16448BmlzTriggered::setupRos(char *rate_topic, char *imu_topic,
+                                      char *baro_topic, char *mag_topic,
+                                      char *temp_topic) {
   ImuSynced::setupRos(rate_topic, imu_topic);
 
   if (nh_) {
     // Create static ROS msgs.
-    static sensor_msgs::FluidPressure baro_msg;
-    static sensor_msgs::MagneticField mag_msg;
-    static sensor_msgs::Temperature temp_msg;
+    static versavis::PressureMicro baro_msg;
+    static versavis::MagneticMicro mag_msg;
+    static versavis::TemperatureMicro temp_msg;
 
     // Assign topic pointers.
     mag_msg_ = &mag_msg;
@@ -52,29 +52,13 @@ void Adis16448BmlzTriggered::setupRos(char *frame_id, char *rate_topic,
     nh_->advertise(*baro_pub_);
     nh_->advertise(*temp_pub_);
   }
-
-  if (imu_msg_) {
-    imu_msg_->header.frame_id = frame_id;
-  }
-
-  if (mag_msg_) {
-    mag_msg_->header.frame_id = frame_id;
-  }
-
-  if (baro_msg_) {
-    baro_msg_->header.frame_id = frame_id;
-  }
-
-  if (temp_msg_) {
-    temp_msg_->header.frame_id = frame_id;
-  }
 }
 
 bool Adis16448BmlzTriggered::publish() {
   bool new_measurement = false;
 
   if (timer_ && imu_msg_) {
-    timer_->getTimeLastTrigger(&stamp_, &imu_msg_->header.seq);
+    timer_->getTimeLastTrigger(&stamp_, &imu_msg_->number);
   }
 
   if (imu_msg_ && timer_ && timer_->getDataReady(NULL)) {
@@ -86,10 +70,9 @@ bool Adis16448BmlzTriggered::publish() {
 
       // BARO.
       if (has_mag_and_baro && baro_msg_) {
-        baro_msg_->header.stamp = stamp_;
-        baro_msg_->header.seq = imu_msg_->header.seq / 16;
-        baro_msg_->fluid_pressure = imu_.pressureScale(imu_data[10]);
-        baro_msg_->variance = -1.0;
+        baro_msg_->time.data = stamp_;
+        baro_msg_->number = imu_msg_->number / 16;
+        baro_msg_->pressure = imu_data[10];
 
         if (baro_pub_) {
           baro_pub_->publish(baro_msg_);
@@ -99,23 +82,15 @@ bool Adis16448BmlzTriggered::publish() {
       // IMU.
       if (imu_msg_) {
         // TODO(rikba): Implement simple orientation filter.
-        imu_msg_->header.stamp = stamp_;
-        imu_msg_->orientation_covariance[0] = -1.0;
+        imu_msg_->time.data = stamp_;
 
-        imu_msg_->angular_velocity.x = imu_.gyroScale(imu_data[1]);
-        imu_msg_->angular_velocity.y = imu_.gyroScale(imu_data[2]);
-        imu_msg_->angular_velocity.z = imu_.gyroScale(imu_data[3]);
-        // TODO(rikba): Determine covariance, e.g., Allan deviation.
-        imu_msg_->angular_velocity_covariance[0] = 6e-9;
-        imu_msg_->angular_velocity_covariance[4] = 6e-9;
-        imu_msg_->angular_velocity_covariance[8] = 6e-9;
+        imu_msg_->gx = imu_data[1];
+        imu_msg_->gy = imu_data[2];
+        imu_msg_->gz = imu_data[3];
 
-        imu_msg_->linear_acceleration.x = imu_.accelScale(imu_data[4]);
-        imu_msg_->linear_acceleration.y = imu_.accelScale(imu_data[5]);
-        imu_msg_->linear_acceleration.z = imu_.accelScale(imu_data[6]);
-        imu_msg_->linear_acceleration_covariance[0] = 0.043864908;
-        imu_msg_->linear_acceleration_covariance[4] = 0.043864908;
-        imu_msg_->linear_acceleration_covariance[8] = 0.043864908;
+        imu_msg_->ax = imu_data[4];
+        imu_msg_->ay = imu_data[5];
+        imu_msg_->az = imu_data[6];
 
         if (publisher_) {
           publisher_->publish(imu_msg_);
@@ -155,9 +130,9 @@ bool Adis16448BmlzTriggered::publish() {
         }
         case CalibrationStatus::kFinished: {
           // Toggle LED to visualize finished status.
-          static uint32_t start_toggle = imu_msg_->header.seq;
-          if ((imu_msg_->header.seq - start_toggle) > IMU_RATE) {
-            start_toggle = imu_msg_->header.seq;
+          static uint32_t start_toggle = imu_msg_->number;
+          if ((imu_msg_->number - start_toggle) > IMU_RATE) {
+            start_toggle = imu_msg_->number;
             uint16_t led_status = imu_.regRead(GPIO_CTRL);
             led_status ^= 1 << 9;
             imu_.regWrite(GPIO_CTRL, led_status);
@@ -170,13 +145,12 @@ bool Adis16448BmlzTriggered::publish() {
 
       // MAG.
       if (has_mag_and_baro && mag_msg_) {
-        mag_msg_->header.stamp = stamp_;
-        mag_msg_->header.seq = imu_msg_->header.seq / 16;
+        mag_msg_->time.data = stamp_;
+        mag_msg_->number = imu_msg_->number / 16;
 
-        mag_msg_->magnetic_field.x = imu_.magnetometerScale(imu_data[7]);
-        mag_msg_->magnetic_field.y = imu_.magnetometerScale(imu_data[8]);
-        mag_msg_->magnetic_field.z = imu_.magnetometerScale(imu_data[9]);
-        mag_msg_->magnetic_field_covariance[0] = -1.0;
+        mag_msg_->mx = imu_data[7];
+        mag_msg_->my = imu_data[8];
+        mag_msg_->mz = imu_data[9];
 
         if (mag_pub_) {
           mag_pub_->publish(mag_msg_);
@@ -185,9 +159,8 @@ bool Adis16448BmlzTriggered::publish() {
 
       // TEMP.
       if (temp_msg_) {
-        temp_msg_->header = imu_msg_->header;
-        temp_msg_->temperature = imu_.tempScale(imu_data[11]);
-        temp_msg_->variance = -1.0;
+        temp_msg_->time.data = stamp_;
+        temp_msg_->temperature = imu_data[11];
 
         if (temp_pub_) {
           temp_pub_->publish(temp_msg_);
