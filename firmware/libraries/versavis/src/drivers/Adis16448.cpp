@@ -92,7 +92,7 @@ void Adis16448::setup() {
   regWrite(SMPL_PRD, 0x0); // external clock, no averaging.
   delay(20);
   regWrite(SENS_AVG,
-           0x104); // +-250 dps range, B=4 for 16 measurement bartlett window.
+           0x400); // +-1000 dps range, B=0 for no bartlett window.
   delay(20);
 }
 
@@ -443,7 +443,7 @@ float Adis16448::accelScale(int16_t sensorData) {
 // return - (float) signed/scaled gyro in degrees/sec
 ////////////////////////////////////////////////////////////////////////////////
 float Adis16448::gyroScale(int16_t sensorData) {
-  static const double kGyroScale = 0.01 * DEGTORAD;
+  static const double kGyroScale = 0.04 * DEGTORAD;
   return sensorData * kGyroScale;
 }
 

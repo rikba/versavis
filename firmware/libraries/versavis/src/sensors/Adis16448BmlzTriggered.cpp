@@ -100,7 +100,6 @@ bool Adis16448BmlzTriggered::publish() {
       if (imu_msg_) {
         // TODO(rikba): Implement simple orientation filter.
         imu_msg_->header.stamp = stamp_;
-        imu_msg_->header.stamp -= ros::Duration(0, IMU_DELAY_NS);
         imu_msg_->orientation_covariance[0] = -1.0;
 
         imu_msg_->angular_velocity.x = imu_.gyroScale(imu_data[1]);
