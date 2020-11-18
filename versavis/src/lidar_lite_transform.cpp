@@ -8,6 +8,7 @@
 namespace versavis {
 class LidarLiteTransform
     : public TopicTransform<versavis::LidarLiteMicro, versavis::LidarLite> {
+public:
   inline LidarLiteTransform() {
     nh_private_.param("frame_id", out_.range.header.frame_id);
     out_.range.radiation_type = sensor_msgs::Range::INFRARED;
@@ -42,7 +43,7 @@ private:
 // Standard C++ entry point
 int main(int argc, char **argv) {
   ros::init(argc, argv, "lidar_lite_transform");
-  versavis::LidarLiteTransform tf();
+  versavis::LidarLiteTransform tf;
   ros::spin();
   return 0;
 }

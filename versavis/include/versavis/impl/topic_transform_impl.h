@@ -14,6 +14,9 @@ TopicTransform<MsgIn, MsgOut>::TopicTransform() : nh_private_("~") {
   bool latch = true;
   nh_private_.getParam("latch", latch);
   pub_ = nh_.advertise<MsgOut>("out", queue_size, latch);
+
+  ROS_INFO("Topic transformer subscribing to: %s Publishing to: %s.",
+           sub_.getTopic().c_str(), pub_.getTopic().c_str());
 }
 
 template <class MsgIn, class MsgOut>

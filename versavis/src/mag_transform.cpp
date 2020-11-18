@@ -7,6 +7,7 @@
 namespace versavis {
 class MagTransform : public TopicTransform<versavis::MagneticMicro,
                                            sensor_msgs::MagneticField> {
+public:
   inline MagTransform() {
     nh_private_.param("frame_id", out_.header.frame_id);
 
@@ -35,7 +36,7 @@ private:
 // Standard C++ entry point
 int main(int argc, char **argv) {
   ros::init(argc, argv, "mag_transform");
-  versavis::MagTransform tf();
+  versavis::MagTransform tf;
   ros::spin();
   return 0;
 }

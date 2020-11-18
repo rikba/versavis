@@ -8,6 +8,7 @@
 namespace versavis {
 class UsD1Transform
     : public TopicTransform<versavis::UsD1Micro, versavis::UsD1> {
+public:
   inline UsD1Transform() {
     nh_private_.param("frame_id", out_.range.header.frame_id);
     // TODO(rikba): Fix sensor type https://github.com/ros/common_msgs/pull/153
@@ -45,7 +46,7 @@ private:
 // Standard C++ entry point
 int main(int argc, char **argv) {
   ros::init(argc, argv, "us_d1_transform");
-  versavis::UsD1Transform tf();
+  versavis::UsD1Transform tf;
   ros::spin();
   return 0;
 }

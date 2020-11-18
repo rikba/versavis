@@ -7,6 +7,7 @@
 namespace versavis {
 class TempTransform : public TopicTransform<versavis::TemperatureMicro,
                                             sensor_msgs::Temperature> {
+public:
   inline TempTransform() {
     nh_private_.param("frame_id", out_.header.frame_id);
     nh_private_.param("var", out_.variance);
@@ -31,7 +32,7 @@ private:
 // Standard C++ entry point
 int main(int argc, char **argv) {
   ros::init(argc, argv, "temp_transform");
-  versavis::TempTransform tf();
+  versavis::TempTransform tf;
   ros::spin();
   return 0;
 }

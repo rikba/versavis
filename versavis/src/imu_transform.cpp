@@ -7,6 +7,7 @@
 namespace versavis {
 class ImuTransform
     : public TopicTransform<versavis::ImuMicro, sensor_msgs::Imu> {
+public:
   inline ImuTransform() {
     nh_private_.param("frame_id", out_.header.frame_id);
 
@@ -49,7 +50,7 @@ private:
 // Standard C++ entry point
 int main(int argc, char **argv) {
   ros::init(argc, argv, "imu_transform");
-  versavis::ImuTransform tf();
+  versavis::ImuTransform tf;
   ros::spin();
   return 0;
 }
