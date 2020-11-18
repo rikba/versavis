@@ -6,21 +6,17 @@
   <arg name="us_d1_frame_id" default="us_d1"/>
 
   <group ns="$(arg mav_name)">
-    <node pkg="nodelet" type="nodelet" name="rosserial_nodelet_manager" args="manager" cwd="node" output="$(arg output)"/>
+    <node name="rosserial_server" pkg="rosserial_server" type="serial_node" args="_port:=/dev/versavis" respawn="true" output="$(arg output)"/>
 
-    <node pkg="nodelet" type="nodelet" name="rosserial_server_nodelet" args="load rosserial_server/SerialNodelet rosserial_nodelet_manager">
-      <param name="port" value="/dev/versavis"/>
-    </node>
-
-    <node pkg="nodelet" type="nodelet" name="baro_transform_nodelet" args="load versavis/BaroTransformNodelet rosserial_nodelet_manager" output="$(arg output)">
+    <!--node name="baro_transform_node" pkg="versavis" type="baro_transform_node" respawn="true" output="$(arg output)">
       <remap from="in" to="$(arg imu_frame_id)/baro_micro"/>
       <remap from="out" to="$(arg imu_frame_id)/baro"/>
       <param name="frame_id" type="string" value="$(arg imu_frame_id)"/>
       <param name="var" type="double" value="-1.0"/>
       <param name="scale" type="double" value="$(eval 0.02 * 1.0e2)"/>
-    </node>
+    </node-->
 
-    <node pkg="nodelet" type="nodelet" name="imu_transform_nodelet" args="load versavis/ImuTransformNodelet rosserial_nodelet_manager" output="$(arg output)">
+    <node name="imu_transform_node" pkg="versavis" type="imu_transform_node" respawn="true" output="$(arg output)">
       <remap from="in" to="$(arg imu_frame_id)/imu_micro"/>
       <remap from="out" to="$(arg imu_frame_id)/imu"/>
       <param name="frame_id" type="string" value="$(arg imu_frame_id)"/>
@@ -30,25 +26,25 @@
       <param name="gyro_scale" type="double" value="$(eval 0.04 * 3.14159265359 / 180.0)"/>
     </node>
 
-    <node pkg="nodelet" type="nodelet" name="mag_transform_nodelet" args="load versavis/MagTransformNodelet rosserial_nodelet_manager" output="$(arg output)">
+    <!--node name="mag_transform_node" pkg="versavis" type="mag_transform_node" respawn="true" output="$(arg output)">
       <remap from="in" to="$(arg imu_frame_id)/mag_micro"/>
       <remap from="out" to="$(arg imu_frame_id)/mag"/>
       <param name="frame_id" type="string" value="$(arg imu_frame_id)"/>
       <param name="var" type="double" value="-1.0"/>
       <param name="scale" type="double" value="$(eval 0.0001429 * 1.0e-4)"/>
-    </node>
+    </node-->
 
-    <node pkg="nodelet" type="nodelet" name="temp_transform_nodelet" args="load versavis/TempTransformNodelet rosserial_nodelet_manager" output="$(arg output)">
+    <!--node name="temp_transform_node" pkg="versavis" type="temp_transform_node" respawn="true" output="$(arg output)">
       <remap from="in" to="$(arg imu_frame_id)/temp_micro"/>
       <remap from="out" to="$(arg imu_frame_id)/temp"/>
       <param name="frame_id" type="string" value="$(arg imu_frame_id)"/>
       <param name="var" type="double" value="-1.0"/>
       <param name="scale" type="double" value="0.07386"/>
       <param name="offset" type="double" value="31.0"/>
-    </node>
+    </node-->
 
     <!-- https://static.garmin.com/pumac/LIDAR_Lite_v3_Operation_Manual_and_Technical_Specifications.pdf -->
-    <node pkg="nodelet" type="nodelet" name="lidar_lite_transform_nodelet" args="load versavis/LidarLiteTransformNodelet rosserial_nodelet_manager" output="$(arg output)">
+    <node name="lidar_lite_transform_node" pkg="versavis" type="lidar_lite_transform_node" respawn="true" output="$(arg output)">
       <remap from="in" to="$(arg lidar_lite_frame_id)/data_micro"/>
       <remap from="out" to="$(arg lidar_lite_frame_id)/data"/>
       <param name="frame_id" type="string" value="$(arg lidar_lite_frame_id)"/>
@@ -62,7 +58,7 @@
     </node>
 
     <!-- https://cdn.shopify.com/s/files/1/0113/0414/0900/files/User_Manual_US-D1.pdf?16288212927919010227 -->
-    <node pkg="nodelet" type="nodelet" name="us_d1_transform_nodelet" args="load versavis/UsD1TransformNodelet rosserial_nodelet_manager" output="$(arg output)">
+    <node name="us_d1_transform_node" pkg="versavis" type="us_d1_transform_node" respawn="true" output="$(arg output)">
       <remap from="in" to="$(arg us_d1_frame_id)/data_micro"/>
       <remap from="out" to="$(arg us_d1_frame_id)/data"/>
       <param name="frame_id" type="string" value="$(arg us_d1_frame_id)"/>
