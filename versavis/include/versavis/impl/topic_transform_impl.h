@@ -4,7 +4,9 @@
 namespace versavis {
 
 template <class MsgIn, class MsgOut>
-TopicTransform<MsgIn, MsgOut>::TopicTransform() : nh_private_("~") {
+TopicTransform<MsgIn, MsgOut>::TopicTransform(const ros::NodeHandle &nh,
+                                              const ros::NodeHandle &nh_private)
+    : nh_(nh), nh_private_(nh_private) {
   // Subscribe.
   int queue_size = 1000;
   nh_private_.getParam("queue_size", queue_size);
@@ -23,7 +25,8 @@ template <class MsgIn, class MsgOut>
 void TopicTransform<MsgIn, MsgOut>::callback(
     const typename MsgIn::ConstPtr &in) {
   update(in);
-  pub_.publish(out_);
+  typename MsgOut::ConstPtr out_ptr(new MsgOut(out_));
+  pub_.publish(out_ptr);
 }
 
 } // namespace versavis

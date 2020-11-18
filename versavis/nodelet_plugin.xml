@@ -13,4 +13,46 @@
   This is the VersaVIS image relay nodelet.
   </description>
   </class>
+  <class name="versavis/BaroTransformNodelet"
+    type="versavis::BaroTransformNodelet"
+    base_class_type="nodelet::Nodelet">
+  <description>
+  Nodelet to transform raw baro measurements to ROS sensor msg message.
+  </description>
+  </class>
+  <class name="versavis/ImuTransformNodelet"
+    type="versavis::ImuTransformNodelet"
+    base_class_type="nodelet::Nodelet">
+  <description>
+  Nodelet to transform raw imu measurements to ROS sensor message.
+  </description>
+  </class>
+  <class name="versavis/MagTransformNodelet"
+    type="versavis::MagTransformNodelet"
+    base_class_type="nodelet::Nodelet">
+  <description>
+  Nodelet to transform raw mag measurements to ROS sensor message.
+  </description>
+  </class>
+  <class name="versavis/TempTransformNodelet"
+    type="versavis::TempTransformNodelet"
+    base_class_type="nodelet::Nodelet">
+  <description>
+  Nodelet to transform raw temp measurements to ROS sensor message.
+  </description>
+  </class>
+  <class name="versavis/LidarLiteTransformNodelet"
+    type="versavis::LidarLiteTransformNodelet"
+    base_class_type="nodelet::Nodelet">
+  <description>
+  Nodelet to transform raw lidar lite measurements to ROS sensor message.
+  </description>
+  </class>
+  <class name="versavis/UsD1TransformNodelet"
+    type="versavis::UsD1TransformNodelet"
+    base_class_type="nodelet::Nodelet">
+  <description>
+  Nodelet to transform raw US D1 measurements to ROS sensor message.
+  </description>
+  </class>
 </library>

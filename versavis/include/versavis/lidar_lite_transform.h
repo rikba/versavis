@@ -1,7 +1,9 @@
+#ifndef VERSAVIS_LIDAR_LITE_TRANSFORM_H_
+#define VERSAVIS_LIDAR_LITE_TRANSFORM_H_
+
 #include "versavis/LidarLiteMicro.h"
 #include "versavis/topic_transform.h"
 
-#include <ros/ros.h>
 #include <sensor_msgs/Range.h>
 #include <versavis/LidarLite.h>
 
@@ -9,18 +11,20 @@ namespace versavis {
 class LidarLiteTransform
     : public TopicTransform<versavis::LidarLiteMicro, versavis::LidarLite> {
 public:
-  inline LidarLiteTransform() {
-    nh_private_.param("frame_id", out_.range.header.frame_id);
+  inline LidarLiteTransform(const ros::NodeHandle &nh,
+                            const ros::NodeHandle &nh_private)
+      : TopicTransform(nh, nh_private) {
+    nh_private_.getParam("frame_id", out_.range.header.frame_id);
     out_.range.radiation_type = sensor_msgs::Range::INFRARED;
 
-    nh_private_.param("fov", out_.range.field_of_view);
-    nh_private_.param("min_range", out_.range.min_range);
-    nh_private_.param("max_range", out_.range.max_range);
-    nh_private_.param("var_low", var_low_);
-    nh_private_.param("var_high", var_high_);
+    nh_private_.getParam("fov", out_.range.field_of_view);
+    nh_private_.getParam("min_range", out_.range.min_range);
+    nh_private_.getParam("max_range", out_.range.max_range);
+    nh_private_.getParam("var_low", var_low_);
+    nh_private_.getParam("var_high", var_high_);
 
-    nh_private_.param("scale", scale_);
-    nh_private_.param("close_range", close_range_);
+    nh_private_.getParam("scale", scale_);
+    nh_private_.getParam("close_range", close_range_);
   }
 
 private:
@@ -40,10 +44,4 @@ private:
 
 } // namespace versavis
 
-// Standard C++ entry point
-int main(int argc, char **argv) {
-  ros::init(argc, argv, "lidar_lite_transform");
-  versavis::LidarLiteTransform tf;
-  ros::spin();
-  return 0;
-}
+#endif // VERSAVIS_LIDAR_LITE_TRANSFORM_H_

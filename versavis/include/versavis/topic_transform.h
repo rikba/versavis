@@ -7,7 +7,7 @@ namespace versavis {
 
 template <class MsgIn, class MsgOut> class TopicTransform {
 public:
-  TopicTransform();
+  TopicTransform(const ros::NodeHandle& nh, const ros::NodeHandle& nh_private);
 
 protected:
   virtual void update(const typename MsgIn::ConstPtr &in) = 0;

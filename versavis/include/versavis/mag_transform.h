@@ -1,21 +1,26 @@
+#ifndef VERSAVIS_MAG_TRANSFORM_H_
+#define VERSAVIS_MAG_TRANSFORM_H_
+
 #include "versavis/MagneticMicro.h"
 #include "versavis/topic_transform.h"
 
-#include <ros/ros.h>
 #include <sensor_msgs/MagneticField.h>
 
 namespace versavis {
 class MagTransform : public TopicTransform<versavis::MagneticMicro,
                                            sensor_msgs::MagneticField> {
 public:
-  inline MagTransform() {
-    nh_private_.param("frame_id", out_.header.frame_id);
+  inline MagTransform(const ros::NodeHandle &nh,
+                      const ros::NodeHandle &nh_private)
+      : TopicTransform(nh, nh_private) {
+    nh_private_.getParam("frame_id", out_.header.frame_id);
 
-    nh_private_.param("cov", out_.magnetic_field_covariance[0], -1.0);
-    nh_private_.param("cov", out_.magnetic_field_covariance[4]);
-    nh_private_.param("cov", out_.magnetic_field_covariance[8]);
+    out_.magnetic_field_covariance[0] = -1.0;
+    nh_private_.getParam("cov", out_.magnetic_field_covariance[0]);
+    nh_private_.getParam("cov", out_.magnetic_field_covariance[4]);
+    nh_private_.getParam("cov", out_.magnetic_field_covariance[8]);
 
-    nh_private_.param("scale", scale_);
+    nh_private_.getParam("scale", scale_);
   }
 
 private:
@@ -33,10 +38,4 @@ private:
 
 } // namespace versavis
 
-// Standard C++ entry point
-int main(int argc, char **argv) {
-  ros::init(argc, argv, "mag_transform");
-  versavis::MagTransform tf;
-  ros::spin();
-  return 0;
-}
+#endif // VERSAVIS_MAG_TRANSFORM_H_

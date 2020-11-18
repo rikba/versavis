@@ -1,18 +1,22 @@
+#ifndef VERSAVIS_TEMP_TRANSFORM_H_
+#define VERSAVIS_TEMP_TRANSFORM_H_
+
 #include "versavis/TemperatureMicro.h"
 #include "versavis/topic_transform.h"
 
-#include <ros/ros.h>
 #include <sensor_msgs/Temperature.h>
 
 namespace versavis {
 class TempTransform : public TopicTransform<versavis::TemperatureMicro,
                                             sensor_msgs::Temperature> {
 public:
-  inline TempTransform() {
-    nh_private_.param("frame_id", out_.header.frame_id);
-    nh_private_.param("var", out_.variance);
-    nh_private_.param("scale", scale_);
-    nh_private_.param("offset", offset_);
+  inline TempTransform(const ros::NodeHandle &nh,
+                       const ros::NodeHandle &nh_private)
+      : TopicTransform(nh, nh_private) {
+    nh_private_.getParam("frame_id", out_.header.frame_id);
+    nh_private_.getParam("var", out_.variance);
+    nh_private_.getParam("scale", scale_);
+    nh_private_.getParam("offset", offset_);
   }
 
 private:
@@ -29,10 +33,4 @@ private:
 
 } // namespace versavis
 
-// Standard C++ entry point
-int main(int argc, char **argv) {
-  ros::init(argc, argv, "temp_transform");
-  versavis::TempTransform tf;
-  ros::spin();
-  return 0;
-}
+#endif // VERSAVIS_TEMP_TRANSFORM_H_
