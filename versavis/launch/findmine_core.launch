@@ -1,123 +1,75 @@
 <launch>
   <arg name="mav_name" default="$(env HOSTNAME)"/>
   <arg name="output" default="screen"/>
-
-  <!-- ADIS16448 scaling -->
   <arg name="imu_frame_id" default="adis16448bmlz"/>
-  <arg name="imu_gyro_cov" default="4.0e-06"/>
-  <arg name="imu_acc_cov" default="0.0002"/>
-  <arg name="imu_acc_scale" default="9.807 / 1200.0"/>
-  <arg name="imu_gyro_scale" default="0.04 * 3.14159265359 / 180.0"/>
-
-  <arg name="mag_cov" default="0.0"/>
-  <arg name="mag_scale" default="0.0001429 * 1.0e-4"/>
-
-  <arg name="temp_var" default="0.0"/>
-  <arg name="temp_scale" default="0.07386"/>
-  <arg name="temp_offset" default="31.0"/>
-
-  <arg name="baro_var" default="0.0"/>
-  <arg name="baro_scale" default="0.02 * 1.0e2"/>
-
-  <!-- Lidar Lite scaling -->
-  <!-- https://static.garmin.com/pumac/LIDAR_Lite_v3_Operation_Manual_and_Technical_Specifications.pdf -->
   <arg name="lidar_lite_frame_id" default="lidar_lite"/>
-  <arg name="lidar_lite_scale" default="0.01"/>
-  <arg name="lidar_lite_fov" default="0.008"/>
-  <arg name="lidar_lite_min_range" default="0.05"/>
-  <arg name="lidar_lite_max_range" default="30.0"/>
-  <arg name="lidar_lite_close_range" default="500"/>
-  <arg name="lidar_lite_var_low" default="(0.025 / 3.0)**2"/>
-  <arg name="lidar_lite_var_high" default="(0.1 / 3.0)**2"/>
-
-  <!-- UsD1 scaling -->
-  <!-- https://cdn.shopify.com/s/files/1/0113/0414/0900/files/User_Manual_US-D1.pdf?16288212927919010227 -->
   <arg name="us_d1_frame_id" default="us_d1"/>
-  <arg name="us_d1_scale" default="0.01"/>
-  <arg name="us_d1_fov" default="0.35"/>
-  <arg name="us_d1_min_range" default="0.5"/>
-  <arg name="us_d1_max_range" default="50.0"/>
-  <arg name="us_d1_close_range" default="1.0"/>
-  <arg name="us_d1_var_low" default="(0.06 / 3.0)**2"/>
-  <arg name="us_d1_var_high" default="(0.04 / 3.0)**2"/>
 
-  <!-- VersaVIS. -->
   <group ns="$(arg mav_name)">
     <node name="rosserial_server" pkg="rosserial_server" type="serial_node" args="_port:=/dev/versavis" respawn="true" output="$(arg output)"/>
 
-    <node
-      name="imu_scaling"
-      pkg="topic_tools"
-      type="transform"
-      output="$(arg output)"
-      args="$(arg imu_frame_id)/imu_micro $(arg imu_frame_id)/imu sensor_msgs/Imu
-      'sensor_msgs.msg.Imu(header=std_msgs.msg.Header(seq=m.number, stamp=m.time.data, frame_id=&quot;$(arg imu_frame_id)&quot;),
-                           orientation_covariance=[-1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-                           angular_velocity=geometry_msgs.msg.Vector3($(arg imu_gyro_scale) * m.gx, $(arg imu_gyro_scale) * m.gy, $(arg imu_gyro_scale) * m.gz),
-                           angular_velocity_covariance=[$(arg imu_gyro_cov), 0.0, 0.0, 0.0, $(arg imu_gyro_cov), 0.0, 0.0, 0.0, $(arg imu_gyro_cov)],
-                           linear_acceleration=geometry_msgs.msg.Vector3($(arg imu_acc_scale) * m.ax, $(arg imu_acc_scale) * m.ay, $(arg imu_acc_scale) * m.az),
-                           linear_acceleration_covariance=[$(arg imu_acc_cov), 0.0, 0.0, 0.0, $(arg imu_acc_cov), 0.0, 0.0, 0.0, $(arg imu_acc_cov)])' --import std_msgs sensor_msgs geometry_msgs"/>
+    <node name="baro_transform" pkg="versavis" type="baro_transform" respawn="true" output="$(arg output)">
+      <remap from="in" to="$(arg imu_frame_id)/baro_micro"/>
+      <remap from="out" to="$(arg imu_frame_id)/baro"/>
+      <param name="frame_id" type="string" value="$(arg imu_frame_id)"/>
+      <param name="var" type="double" value="-1.0"/>
+      <param name="scale" type="double" value="$(eval 0.02 * 1.0e2)"/>
+    </node>
 
-    <node
-      name="mag_scaling"
-      pkg="topic_tools"
-      type="transform"
-      output="$(arg output)"
-      args="$(arg imu_frame_id)/mag_micro $(arg imu_frame_id)/mag sensor_msgs/MagneticField
-      'sensor_msgs.msg.MagneticField(header=std_msgs.msg.Header(seq=m.number, stamp=m.time.data, frame_id=&quot;$(arg imu_frame_id)&quot;),
-                                     magnetic_field=geometry_msgs.msg.Vector3($(arg mag_scale) * m.mx, $(arg mag_scale) * m.my, $(arg mag_scale) * m.mz),
-                                     magnetic_field_covariance=[$(arg mag_cov), 0.0, 0.0, 0.0, $(arg mag_cov), 0.0, 0.0, 0.0, $(arg mag_cov)])' --import std_msgs sensor_msgs geometry_msgs"/>
+    <node name="imu_transform" pkg="versavis" type="imu_transform" respawn="true" output="$(arg output)">
+      <remap from="in" to="$(arg imu_frame_id)/imu_micro"/>
+      <remap from="out" to="$(arg imu_frame_id)/imu"/>
+      <param name="frame_id" type="string" value="$(arg imu_frame_id)"/>
+      <param name="gyro_cov" type="double" value="4.0e-06"/>
+      <param name="acc_cov" type="double" value="0.0002"/>
+      <param name="acc_scale" type="double" value="$(eval 9.807 / 1200.0)"/>
+      <param name="gyro_scale" type="double" value="$(eval 0.04 * 3.14159265359 / 180.0)"/>
+    </node>
 
-    <node
-      name="temp_scaling"
-      pkg="topic_tools"
-      type="transform"
-      output="$(arg output)"
-      args="$(arg imu_frame_id)/temp_micro $(arg imu_frame_id)/temp sensor_msgs/Temperature
-      'sensor_msgs.msg.Temperature(header=std_msgs.msg.Header(seq=m.number, stamp=m.time.data, frame_id=&quot;$(arg imu_frame_id)&quot;),
-                                   temperature=$(arg temp_scale) * m.temperature + $(arg temp_offset),
-                                   variance=$(arg temp_var))' --import std_msgs sensor_msgs"/>
+    <node name="mag_transform" pkg="versavis" type="mag_transform" respawn="true" output="$(arg output)">
+      <remap from="in" to="$(arg imu_frame_id)/mag_micro"/>
+      <remap from="out" to="$(arg imu_frame_id)/mag"/>
+      <param name="frame_id" type="string" value="$(arg imu_frame_id)"/>
+      <param name="var" type="double" value="-1.0"/>
+      <param name="scale" type="double" value="$(eval 0.0001429 * 1.0e-4)"/>
+    </node>
 
-    <node
-      name="baro_scaling"
-      pkg="topic_tools"
-      type="transform"
-      output="$(arg output)"
-      args="$(arg imu_frame_id)/baro_micro $(arg imu_frame_id)/baro sensor_msgs/FluidPressure
-      'sensor_msgs.msg.FluidPressure(header=std_msgs.msg.Header(seq=m.number, stamp=m.time.data, frame_id=&quot;$(arg imu_frame_id)&quot;),
-                                     fluid_pressure=$(arg baro_scale) * m.pressure,
-                                     variance=$(arg baro_var))' --import std_msgs sensor_msgs"/>
+    <node name="temp_transform" pkg="versavis" type="temp_transform" respawn="true" output="$(arg output)">
+      <remap from="in" to="$(arg imu_frame_id)/temp_micro"/>
+      <remap from="out" to="$(arg imu_frame_id)/temp"/>
+      <param name="frame_id" type="string" value="$(arg imu_frame_id)"/>
+      <param name="var" type="double" value="-1.0"/>
+      <param name="scale" type="double" value="0.07386"/>
+      <param name="offset" type="double" value="31.0"/>
+    </node>
 
-    <node
-      name="lidar_lite_scaling"
-      pkg="topic_tools"
-      type="transform"
-      output="$(arg output)"
-      args="$(arg lidar_lite_frame_id)/data_micro $(arg lidar_lite_frame_id)/data versavis/LidarLite
-      'versavis.msg.LidarLite(range=sensor_msgs.msg.Range(header=std_msgs.msg.Header(seq=m.number, stamp=m.time.data, frame_id=&quot;$(arg lidar_lite_frame_id)&quot;),
-                                                          radiation_type=sensor_msgs.msg.Range.INFRARED,
-                                                          field_of_view=$(arg lidar_lite_fov),
-                                                          min_range=$(arg lidar_lite_min_range),
-                                                          max_range=$(arg lidar_lite_max_range),
-                                                          range=m.range * $(arg lidar_lite_scale)),
-                              signal_strength=m.signal_strength,
-                              variance=$(arg lidar_lite_var_low) if (m.range &lt; $(arg lidar_lite_close_range)) else $(arg lidar_lite_var_high))' --import std_msgs sensor_msgs versavis"/>
+    <!-- https://static.garmin.com/pumac/LIDAR_Lite_v3_Operation_Manual_and_Technical_Specifications.pdf -->
+    <node name="lidar_lite_transform" pkg="versavis" type="lidar_lite_transform" respawn="true" output="$(arg output)">
+      <remap from="in" to="$(arg lidar_lite_frame_id)/data_micro"/>
+      <remap from="out" to="$(arg lidar_lite_frame_id)/data"/>
+      <param name="frame_id" type="string" value="$(arg lidar_lite_frame_id)"/>
+      <param name="fov" type="double" value="0.008"/>
+      <param name="min_range" type="double" value="0.05"/>
+      <param name="max_range" type="double" value="30.0"/>
+      <param name="var_low" type="double" value="$(eval (0.025 / 3.0)**2)"/>
+      <param name="var_high" type="double" value="$(eval (0.1 / 3.0)**2)"/>
+      <param name="scale" type="double" value="0.01"/>
+      <param name="close_range" type="double" value="5.0"/>
+    </node>
 
-    <!-- TODO(rikba): Fix sensor type https://github.com/ros/common_msgs/pull/153 -->
-    <node
-    name="us_d1_scaling"
-    pkg="topic_tools"
-    type="transform"
-    output="$(arg output)"
-    args="$(arg us_d1_frame_id)/data_micro $(arg us_d1_frame_id)/data versavis/UsD1
-    'versavis.msg.UsD1(range=sensor_msgs.msg.Range(header=std_msgs.msg.Header(seq=m.number, stamp=m.time.data, frame_id=&quot;$(arg us_d1_frame_id)&quot;),
-                                                       radiation_type=sensor_msgs.msg.Range.INFRARED,
-                                                       field_of_view=$(arg us_d1_fov),
-                                                       min_range=$(arg us_d1_min_range),
-                                                       max_range=$(arg us_d1_max_range),
-                                                       range=m.range * $(arg us_d1_scale)),
-                           snr=m.snr,
-                           variance=$(arg us_d1_var_low) if (m.range &lt; $(arg us_d1_close_range)) else $(arg us_d1_var_high))' --import std_msgs sensor_msgs versavis"/>
+    <!-- https://cdn.shopify.com/s/files/1/0113/0414/0900/files/User_Manual_US-D1.pdf?16288212927919010227 -->
+    <node name="us_d1_transform" pkg="versavis" type="us_d1_transform" respawn="true" output="$(arg output)">
+      <remap from="in" to="$(arg us_d1_frame_id)/data_micro"/>
+      <remap from="out" to="$(arg us_d1_frame_id)/data"/>
+      <param name="frame_id" type="string" value="$(arg us_d1_frame_id)"/>
+      <param name="fov" type="double" value="0.35"/>
+      <param name="min_range" type="double" value="0.5"/>
+      <param name="max_range" type="double" value="50.0"/>
+      <param name="var_low" type="double" value="$(eval (0.06 / 3.0)**2)"/>
+      <param name="var_high" type="double" value="$(eval (0.04 / 3.0)**2)"/>
+      <param name="scale" type="double" value="0.01"/>
+      <param name="close_range" type="double" value="1.0"/>
+    </node>
 
   </group>
 

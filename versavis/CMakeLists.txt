@@ -77,6 +77,24 @@ target_link_libraries(versavis_synchronizer_node ${catkin_LIBRARIES})
 add_executable(relay src/relay_node.cpp)
 target_link_libraries(relay ${PROJECT_NAME}_nodelet)
 
+add_executable(imu_transform src/imu_transform.cpp)
+target_link_libraries(imu_transform ${PROJECT_NAME}_nodelet)
+
+add_executable(mag_transform src/mag_transform.cpp)
+target_link_libraries(mag_transform ${PROJECT_NAME}_nodelet)
+
+add_executable(temp_transform src/temp_transform.cpp)
+target_link_libraries(temp_transform ${PROJECT_NAME}_nodelet)
+
+add_executable(baro_transform src/baro_transform.cpp)
+target_link_libraries(baro_transform ${PROJECT_NAME}_nodelet)
+
+add_executable(lidar_lite_transform src/lidar_lite_transform.cpp)
+target_link_libraries(lidar_lite_transform ${PROJECT_NAME}_nodelet)
+
+add_executable(us_d1_transform src/us_d1_transform.cpp)
+target_link_libraries(us_d1_transform ${PROJECT_NAME}_nodelet)
+
 add_executable(versavis_imu_receiver
    src/versavis_imu_receiver.cpp
 )
