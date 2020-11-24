@@ -168,7 +168,7 @@ bool Adis16448BmlzTriggered::publish() {
         }
       }
     } else if (nh_) {
-      nh_->logwarn("IMU checksum error.");
+      // nh_->logwarn("IMU checksum error.");
     }
   }
 
