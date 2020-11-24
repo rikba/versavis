@@ -34,8 +34,14 @@ ExternalClock::ExternalClock(ros::NodeHandle *nh)
   }
 
   if (timer_) {
-    const bool kInvert = false;
-    static_cast<Tcc0Synced *>(timer_)->setupPps(kInvert);
+    MeasurementState state = {SensorInterface::kSingleCapture,
+                              SensorInterface::kSingleCapture,
+                              SensorInterface::kSingleCapture,
+                              false,
+                              false,
+                              false};
+    static_cast<TccSynced *>(timer_)->setPpsMeasurementState(state);
+    static_cast<Tcc0Synced *>(timer_)->setupPps();
   }
   if (nh_) {
     timer_->activateLogging(nh_);
@@ -65,8 +71,9 @@ bool ExternalClock::publish() {
   switch (state_) {
   case State::kWaitForPulse: {
     if (timer_ && clock_msg_ &&
-        static_cast<TccSynced *>(timer_)->getTimeLastPps(
-            &clock_msg_->receive_time, &clock_msg_->pps_cnt)) {
+        static_cast<TccSynced *>(timer_)->getPpsMeasurement(&measurement_)) {
+      clock_msg_->receive_time = measurement_.start;
+      clock_msg_->pps_cnt = measurement_.num;
       state_ = State::kWaitForRemoteTime;
     }
     break;

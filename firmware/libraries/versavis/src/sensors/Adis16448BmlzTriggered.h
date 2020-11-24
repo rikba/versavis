@@ -49,8 +49,6 @@ private:
   versavis::MagneticMicro *mag_msg_ = NULL;
   versavis::TemperatureMicro *temp_msg_ = NULL;
 
-  ros::Time stamp_;
-
   CalibrationStatus calibration_ = CalibrationStatus::kInit;
   uint16_t smpl_prd_settings_;
 };

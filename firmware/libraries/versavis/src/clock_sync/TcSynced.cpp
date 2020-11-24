@@ -61,7 +61,7 @@ void TcSynced::setupMpwmWaveform() {
   }
 
   // Invert pulse if desired.
-  if (trigger_state_.invert_) {
+  if (measurement_state_.trigger_inverted_) {
     tc_->CTRLC.reg |= TC_CTRLC_INVEN1;
     while (tc_->STATUS.bit.SYNCBUSY) {
     }
@@ -121,7 +121,7 @@ void TcSynced::setupMfrqWaveform() {
   }
 
   // Negate to emit the first pulse at the first tick.
-  if (!trigger_state_.invert_) {
+  if (!measurement_state_.trigger_inverted_) {
     tc_->CTRLC.reg |= TC_CTRLC_INVEN0;
     while (tc_->STATUS.bit.SYNCBUSY) {
     }
@@ -171,14 +171,14 @@ void TcSynced::handleInterrupt() {
   // Handle trigger which comes at the same time as overflow.
   else if (tc_->INTFLAG.bit.MC0) {
     tc_->INTFLAG.reg = TC_INTFLAG_MC0;
-    if (getWaveOutPinValue() ^ trigger_state_.invert_) {
+    if (getWaveOutPinValue() ^ measurement_state_.trigger_inverted_) {
       // Set new trigger timestamp.
-      trigger_state_.setTime(time_);
+      measurement_state_.trigger(time_);
     }
   }
   // Handle MPWM end of pulse to stamp new message.
   else if (tc_->INTFLAG.bit.MC1) {
     tc_->INTFLAG.reg = TC_INTFLAG_MC1;
-    trigger_state_.setTime(time_);
+    measurement_state_.trigger(time_);
   }
 }

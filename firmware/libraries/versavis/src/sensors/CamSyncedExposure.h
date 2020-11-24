@@ -22,14 +22,10 @@ public:
                     const bool invert_exposure, const bool exposure_compensation);
   bool publish() override;
 
-protected:
-  void setSeqCb(const std_msgs::UInt32 &seq_msg) override;
-
 private:
   void compensateExposure();
   bool exposure_compensation_ = false;
-  ros::Time expected_stamp_;
-  ros::Time prev_expected_stamp_;
+  ros::Time prev_stamp_;
 };
 
 #endif

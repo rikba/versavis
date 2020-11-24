@@ -10,9 +10,15 @@ LidarLite::LidarLite(ros::NodeHandle *nh, TimerSynced *timer,
     : SensorSynced(nh, timer) {
   // Setup MODE_PIN to trigger measurements.
   if (timer_) {
-    const bool kInvert = true; // Change from high to low triggers measurement.
+    MeasurementState state = {SensorInterface::kSingleCapture,
+                              SensorInterface::kSingleCapture,
+                              SensorInterface::kSingleCapture};
+    state.trigger_inverted_ =
+        true; // Change from high to low triggers measurement.
+    timer_->setMeasurementState(state);
+
     const uint16_t kPulseUs = 40;
-    timer_->setupMpwm(rate_hz, kPulseUs, kInvert);
+    timer_->setupMpwm(rate_hz, kPulseUs);
   }
 
   // Configure I2C sensor.
@@ -53,8 +59,9 @@ bool LidarLite::publish() {
   bool new_measurement = false;
 
   // Obtain new stamp after triggering.
-  if (timer_ && msg_) {
-    timer_->getTimeLastTrigger(&msg_->time.data, &msg_->number);
+  if (timer_ && msg_ && timer_->getMeasurement(&measurement_)) {
+    msg_->time.data = measurement_.start;
+    msg_->number = measurement_.num;
   }
 
   // If we have a new message number, try to obtain range message from I2C.

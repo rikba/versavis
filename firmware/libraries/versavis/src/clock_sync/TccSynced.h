@@ -10,7 +10,7 @@
 
 #include <Arduino.h>
 
-#include "clock_sync/MeasurementStateExposure.h"
+#include "clock_sync/MeasurementState.h"
 #include "clock_sync/TimerSynced.h"
 
 class TccSynced : public TimerSynced {
@@ -28,17 +28,16 @@ public:
   void setupMfrqWaveform() override;
   void setupMpwmWaveform() override;
   void updateRate(const uint16_t rate_hz) override;
-  void setupExposure(const bool invert);
-  // TODO(rikba): Make this a function of TimerSynced.
-  void setExposureStateNum(const uint32_t num);
+  void setupExposure();
 
   void handleInterrupt() override;
 
-  // Returns true only once per image.
-  bool getTimeLastExposure(ros::Time *time, uint32_t *num, ros::Duration *exp);
-
-  // Returns true only once per pps.
-  bool getTimeLastPps(ros::Time *time, uint32_t *pps_num);
+  // Receive oldest PPS measurement. Only returns valid measurements. Clears
+  // this and older measurements from buffer.
+  bool getPpsMeasurement(Measurement *meas);
+  inline void setPpsMeasurementState(const MeasurementState &state) {
+    pps_state_ = state;
+  }
 
 protected:
   virtual void setupExposureEvsys() const = 0;
@@ -48,6 +47,9 @@ protected:
   // Pointer to the actual timer.
   Tcc *tcc_ = NULL;
 
+  // PPS state.
+  MeasurementState pps_state_;
+
 private:
   bool getExposurePinValue() const;
 
@@ -55,11 +57,8 @@ private:
   void updateTopCompare() override;
 
   // Exposure state.
-  MeasurementStateExposure exposure_state_;
+  MeasurementState exposure_state_;
   const ExposurePin exposure_pin_;
-
-  // PPS state.
-  MeasurementStateStamped pps_state_;
 
   // Wrap around state after half a clock cycle to handle ambiguities.
   ros::Time time_2_ = time_;
