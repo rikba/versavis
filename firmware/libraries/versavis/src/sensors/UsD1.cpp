@@ -11,7 +11,7 @@ UsD1::UsD1(ros::NodeHandle *nh, Uart *uart) : nh_(nh), uart_(uart) {
   }
 }
 
-void UsD1::setupRos(char *data_topic) {
+void UsD1::setupRos(const char *data_topic) {
   if (nh_) {
     // Create static ROS msg.
     static versavis::UsD1Micro msg;

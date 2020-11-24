@@ -43,12 +43,6 @@ private:
     return 1.0e6 * (float)duration.sec + 1.0e-3 * (float)duration.nsec;
   };
 
-  inline ros::Duration fromUSec(float t) {
-    uint32_t sec = 1.0e-6 * (uint32_t)floor(t);
-    uint32_t nsec = (uint32_t)round((1.0e-6 * t - sec) * 1e9);
-    ros::Duration duration(sec, nsec);
-  };
-
   inline float computeDt() const {
     if (clock_msg_) {
       return (clock_msg_->receive_time - last_update_).toSec();

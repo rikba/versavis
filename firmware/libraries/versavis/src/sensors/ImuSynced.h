@@ -19,7 +19,7 @@
 class ImuSynced : public SensorSynced {
 public:
   ImuSynced(ros::NodeHandle *nh, TimerSynced *timer);
-  void setupRos(char *rate_topic, char *imu_topic);
+  void setupRos(const char *rate_topic, const char *imu_topic);
 
 protected:
   versavis::ImuMicro *imu_msg_ = NULL;

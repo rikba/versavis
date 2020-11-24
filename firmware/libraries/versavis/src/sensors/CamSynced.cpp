@@ -17,8 +17,8 @@ CamSynced::CamSynced(ros::NodeHandle *nh, TimerSynced *timer,
                  SensorInterface::kSingleCapture,
                  SensorInterface::kSingleCapture, invert, false, false}) {}
 
-void CamSynced::setupRos(char *frame_id, char *rate_topic, char *seq_topic,
-                         char *img_topic) {
+void CamSynced::setupRos(const char *frame_id, const char *rate_topic,
+                         const char *seq_topic, const char *img_topic) {
   static ros::Subscriber<std_msgs::UInt16, SensorSynced> rate_sub(
       rate_topic, &CamSynced::changeRateCb, this);
   SensorSynced::setupRos(rate_sub);

@@ -3,7 +3,7 @@
 ImuSynced::ImuSynced(ros::NodeHandle *nh, TimerSynced *timer)
     : SensorSynced(nh, timer) {}
 
-void ImuSynced::setupRos(char *rate_topic, char *imu_topic) {
+void ImuSynced::setupRos(const char *rate_topic, const char *imu_topic) {
   static ros::Subscriber<std_msgs::UInt16, SensorSynced> rate_sub(
       rate_topic, &ImuSynced::changeRateCb, this);
   SensorSynced::setupRos(rate_sub);

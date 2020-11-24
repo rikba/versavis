@@ -27,7 +27,7 @@ LidarLite::LidarLite(ros::NodeHandle *nh, TimerSynced *timer,
   write(0x00, 0x00);     // Default reset.
 }
 
-void LidarLite::setupRos(char *rate_topic, char *data_topic) {
+void LidarLite::setupRos(const char *rate_topic, const char *data_topic) {
   static ros::Subscriber<std_msgs::UInt16, SensorSynced> rate_sub(
       rate_topic, &LidarLite::changeRateCb, this);
   SensorSynced::setupRos(rate_sub);

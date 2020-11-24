@@ -21,7 +21,7 @@ enum class UsD1State { kHeader, kVersion, kLsb, kMsb, kSnr, kCs };
 class UsD1 {
 public:
   UsD1(ros::NodeHandle *nh, Uart *uart);
-  void setupRos(char *data_topic);
+  void setupRos(const char *data_topic);
   bool publish();
 
 private:

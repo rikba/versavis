@@ -14,7 +14,7 @@
 #include "helper.h"
 
 #include <RingBufCPP.h>
-#include <cstdint>>
+#include <cstdint>
 #include <ros/time.h>
 
 #include "clock_sync/atomic.h"
@@ -44,10 +44,10 @@ public:
                    const SensorInterface &stamp_indicator,
                    const bool trigger_inverted, const bool dr_inverted,
                    const bool strobe_inverted)
-      : new_measurement_indicator_(new_measurement_indicator),
-        dr_indicator_(dr_indicator), stamp_indicator_(stamp_indicator),
-        trigger_inverted_(trigger_inverted), dr_inverted_(dr_inverted),
-        strobe_inverted_(strobe_inverted) {}
+      : trigger_inverted_(trigger_inverted), dr_inverted_(dr_inverted),
+        strobe_inverted_(strobe_inverted),
+        new_measurement_indicator_(new_measurement_indicator),
+        dr_indicator_(dr_indicator), stamp_indicator_(stamp_indicator) {}
 
   MeasurementState(const SensorInterface &new_measurement_indicator,
                    const SensorInterface &dr_indicator,

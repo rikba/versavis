@@ -79,7 +79,7 @@ bool ExternalClock::publish() {
     break;
   }
   case State::kWaitForRemoteTime: {
-    bool is_active = true;
+    is_active = true;
     auto remote_time_status = setRemoteTime();
     if (remote_time_status == RemoteTimeStatus::kReceived) {
       state_ = State::kUpdateFilter;
@@ -89,14 +89,14 @@ bool ExternalClock::publish() {
     break;
   }
   case State::kUpdateFilter: {
-    bool is_active = true;
+    is_active = true;
     updateFilter();
     controlClock();
     state_ = State::kPublishFilterState;
     break;
   }
   case State::kPublishFilterState: {
-    bool is_active = true;
+    is_active = true;
     if (publisher_) {
       publisher_->publish(clock_msg_);
     }
@@ -171,7 +171,7 @@ void ExternalClock::controlClock() {
     RtcSync::getInstance().setSec(clock_msg_->remote_time.sec);
 
     char info[255];
-    sprintf(info, "Set RTC. Sec: %u, NSec: %u", clock_msg_->remote_time.sec,
+    sprintf(info, "Set RTC. Sec: %lu, NSec: %lu", clock_msg_->remote_time.sec,
             clock_msg_->remote_time.nsec);
     nh_->loginfo(info);
 

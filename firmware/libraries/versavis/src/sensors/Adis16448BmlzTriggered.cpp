@@ -23,9 +23,11 @@ Adis16448BmlzTriggered::Adis16448BmlzTriggered(ros::NodeHandle *nh,
   }
 }
 
-void Adis16448BmlzTriggered::setupRos(char *rate_topic, char *imu_topic,
-                                      char *baro_topic, char *mag_topic,
-                                      char *temp_topic) {
+void Adis16448BmlzTriggered::setupRos(const char *rate_topic,
+                                      const char *imu_topic,
+                                      const char *baro_topic,
+                                      const char *mag_topic,
+                                      const char *temp_topic) {
   ImuSynced::setupRos(rate_topic, imu_topic);
 
   if (nh_) {
