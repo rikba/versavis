@@ -10,7 +10,7 @@
 #ifndef Clock_Sync_MeasurementState_
 #define Clock_Sync_MeasurementState_
 
-#define BUFFER_SIZE 10
+#define BUFFER_SIZE 2
 #include "helper.h"
 
 #include <RingBufCPP.h>
