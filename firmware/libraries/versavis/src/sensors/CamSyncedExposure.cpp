@@ -8,7 +8,7 @@ CamSyncedExposure::CamSyncedExposure(ros::NodeHandle *nh, TccSynced *timer,
     : CamSynced(nh, timer, rate_hz,
                 {SensorInterface::kStrobe, SensorInterface::kStrobe,
                  SensorInterface::kStrobe, invert_trigger, false,
-                 invert_exposure}),
+                 invert_exposure, false}),
       exposure_compensation_(exposure_compensation) {
 
   // Setup timers.

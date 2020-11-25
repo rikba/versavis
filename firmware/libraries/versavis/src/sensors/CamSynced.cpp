@@ -12,10 +12,10 @@ CamSynced::CamSynced(ros::NodeHandle *nh, TimerSynced *timer,
 
 CamSynced::CamSynced(ros::NodeHandle *nh, TimerSynced *timer,
                      const uint16_t rate_hz, const bool invert)
-    : CamSynced(nh, timer, rate_hz,
-                {SensorInterface::kSingleCapture,
-                 SensorInterface::kSingleCapture,
-                 SensorInterface::kSingleCapture, invert, false, false}) {}
+    : CamSynced(
+          nh, timer, rate_hz,
+          {SensorInterface::kSingleCapture, SensorInterface::kSingleCapture,
+           SensorInterface::kSingleCapture, invert, false, false, false}) {}
 
 void CamSynced::setupRos(const char *frame_id, const char *rate_topic,
                          const char *seq_topic, const char *img_topic) {

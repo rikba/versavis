@@ -13,9 +13,9 @@ Adis16448BmlzTriggered::Adis16448BmlzTriggered(ros::NodeHandle *nh,
 
   // Setup timers.
   if (timer_) {
-    timer_->setMeasurementState({SensorInterface::kSingleCapture,
-                                 SensorInterface::kExternal,
-                                 SensorInterface::kSingleCapture});
+    timer_->setMeasurementState(
+        {SensorInterface::kSingleCapture, SensorInterface::kExternal,
+         SensorInterface::kSingleCapture, false, false, false, true});
     timer_->setupMfrq(rate_hz);
 
     const auto dr_logic = InterruptLogic::kRise;

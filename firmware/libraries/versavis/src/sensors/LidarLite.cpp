@@ -12,9 +12,8 @@ LidarLite::LidarLite(ros::NodeHandle *nh, TimerSynced *timer,
   if (timer_) {
     MeasurementState state = {SensorInterface::kSingleCapture,
                               SensorInterface::kSingleCapture,
-                              SensorInterface::kSingleCapture};
-    state.trigger_inverted_ =
-        true; // Change from high to low triggers measurement.
+                              SensorInterface::kSingleCapture,
+                              true, false, false, true};
     timer_->setMeasurementState(state);
 
     const uint16_t kPulseUs = 40;

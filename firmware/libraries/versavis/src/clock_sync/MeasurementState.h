@@ -10,7 +10,7 @@
 #ifndef Clock_Sync_MeasurementState_
 #define Clock_Sync_MeasurementState_
 
-#define BUFFER_SIZE 2
+#define BUFFER_SIZE 10
 #include "helper.h"
 
 #include <RingBufCPP.h>
@@ -43,9 +43,9 @@ public:
                    const SensorInterface &dr_indicator,
                    const SensorInterface &stamp_indicator,
                    const bool trigger_inverted, const bool dr_inverted,
-                   const bool strobe_inverted)
+                   const bool strobe_inverted, const bool clear_on_dr)
       : trigger_inverted_(trigger_inverted), dr_inverted_(dr_inverted),
-        strobe_inverted_(strobe_inverted),
+        strobe_inverted_(strobe_inverted), clear_on_dr_(clear_on_dr),
         new_measurement_indicator_(new_measurement_indicator),
         dr_indicator_(dr_indicator), stamp_indicator_(stamp_indicator) {}
 
@@ -63,6 +63,12 @@ public:
                    .start = time,
                    .stop = time},
                   true);
+      // Invalidate old measurements.
+      if (clear_on_dr_ && (dr_indicator_ == SensorInterface::kSingleCapture)) {
+        while (buffer_.numElements() > 1) {
+          buffer_.pull(NULL);
+        }
+      }
     }
   }
 
@@ -82,6 +88,12 @@ public:
       }
       if (dr_indicator_ == SensorInterface::kStrobe) {
         buffer_.peek(buffer_.numElements() - 1)->dr = true;
+        // Invalidate old measurements.
+        if (clear_on_dr_) {
+          while (buffer_.numElements() > 1) {
+            buffer_.pull(NULL);
+          }
+        }
       }
     }
   }
@@ -91,6 +103,12 @@ public:
     if (buffer_.numElements() &&
         (dr_indicator_ == SensorInterface::kExternal)) {
       buffer_.peek(buffer_.numElements() - 1)->dr = true;
+      // Invalidate old measurements.
+      if (clear_on_dr_) {
+        while (buffer_.numElements() > 1) {
+          buffer_.pull(NULL);
+        }
+      }
     }
   }
 
@@ -125,6 +143,8 @@ public:
   volatile bool trigger_inverted_ = false;
   volatile bool dr_inverted_ = false;
   volatile bool strobe_inverted_ = false;
+  // Clear old measurements when DR is set manually.
+  volatile bool clear_on_dr_ = false;
 
 private:
   RingBufCPP<struct Measurement, BUFFER_SIZE> buffer_;

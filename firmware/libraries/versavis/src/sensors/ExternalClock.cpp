@@ -39,7 +39,8 @@ ExternalClock::ExternalClock(ros::NodeHandle *nh)
                               SensorInterface::kSingleCapture,
                               false,
                               false,
-                              false};
+                              false,
+                              true};
     static_cast<TccSynced *>(timer_)->setPpsMeasurementState(state);
     static_cast<Tcc0Synced *>(timer_)->setupPps();
   }

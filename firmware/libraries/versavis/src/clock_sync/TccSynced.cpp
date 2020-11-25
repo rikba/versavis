@@ -5,7 +5,7 @@
 
 TccSynced::TccSynced(const MfrqPin &mfrq_pin, const ExposurePin &exp_pin,
                      Tcc *tcc)
-    : TimerSynced(mfrq_pin), exposure_pin_(exp_pin), tcc_(tcc) {
+    : TimerSynced(mfrq_pin), tcc_(tcc), exposure_pin_(exp_pin) {
   setup();
 }
 
