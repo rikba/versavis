@@ -4,3 +4,6 @@
 [submodule "firmware/libraries/RTClib"]
 	path = firmware/libraries/RTClib
 	url = git@github.com:adafruit/RTClib.git
+[submodule "firmware/libraries/Embedded_RingBuf_CPP"]
+	path = firmware/libraries/Embedded_RingBuf_CPP
+	url = https://github.com/rikba/Embedded_RingBuf_CPP.git

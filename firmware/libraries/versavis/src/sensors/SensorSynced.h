@@ -16,6 +16,7 @@
 #include <ros.h>
 #include <std_msgs/UInt16.h>
 
+#include "clock_sync/MeasurementState.h"
 #include "clock_sync/TimerSynced.h"
 
 class SensorSynced {
@@ -52,6 +53,7 @@ protected:
 
   // Timer
   TimerSynced *timer_ = NULL;
+  Measurement measurement_;
 
 private:
 };

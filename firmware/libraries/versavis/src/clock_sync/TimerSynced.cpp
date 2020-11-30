@@ -59,9 +59,8 @@ void TimerSynced::setClosestRate(const uint16_t freq) {
   }
 }
 
-void TimerSynced::setupMfrq(const uint16_t rate_hz, const bool invert) {
+void TimerSynced::setupMfrq(const uint16_t rate_hz) {
   // Set parameters.
-  trigger_state_.invert_ = invert;
   prescaler_ = RtcSync::getInstance().findMinPrescalerFrq(rate_hz, top_max_);
   setClosestRate(2 * rate_hz);
 
@@ -72,10 +71,8 @@ void TimerSynced::setupMfrq(const uint16_t rate_hz, const bool invert) {
   setupWaveOutPin();
 }
 
-void TimerSynced::setupMpwm(const uint16_t rate_hz, const uint16_t pulse_us,
-                            const bool invert) {
+void TimerSynced::setupMpwm(const uint16_t rate_hz, const uint16_t pulse_us) {
   // Set parameters.
-  trigger_state_.invert_ = invert;
   prescaler_ = RtcSync::getInstance().findMinPrescalerPwm(rate_hz, top_max_);
   setClosestRate(rate_hz);
 
@@ -90,8 +87,8 @@ void TimerSynced::setupMpwm(const uint16_t rate_hz, const uint16_t pulse_us,
   setupWaveOutPin();
 }
 
-void TimerSynced::setTriggerStateNum(const uint32_t num) {
-  trigger_state_.setNum(num);
+void TimerSynced::setLatestMeasurementNum(const uint32_t num) {
+  measurement_state_.setNum(num);
 }
 
 uint16_t TimerSynced::computeLeapTicks() {
@@ -225,26 +222,13 @@ bool TimerSynced::getWaveOutPinValue() const {
   return getPinValue(mfrq_pin_.group, mfrq_pin_.pin);
 }
 
-bool TimerSynced::getTimeLastTrigger(ros::Time *time, uint32_t *num) {
-  return trigger_state_.getTime(time, num);
-}
-
-bool TimerSynced::getTimeLastNominalTrigger(ros::Time *time, uint32_t *num) {
-  bool triggered = getTimeLastTrigger(time, num);
-  if (triggered) {
-    (*time) -=
-        RtcSync::getInstance().computeDuration(accumulated_offset_, prescaler_);
-  }
-  return triggered;
-}
-
-bool TimerSynced::getDataReady(uint32_t *num) {
-  return data_ready_.getDataReady(num);
+bool TimerSynced::getMeasurement(Measurement *meas) {
+  return measurement_state_.getMeasurement(meas);
 }
 
 void TimerSynced::handleEic() {
   if (EIC->INTFLAG.vec.EXTINT & (1 << (dr_pin_ % 16))) {
-    data_ready_.setMeasurement();
+    measurement_state_.setDataReady();
     EIC->INTFLAG.reg |= EIC_INTFLAG_EXTINT(1 << (dr_pin_ % 16));
   }
 }

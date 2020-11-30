@@ -23,7 +23,6 @@
 #include <ros.h>
 
 #include "clock_sync/MeasurementState.h"
-#include "clock_sync/MeasurementStateStamped.h"
 #include "clock_sync/RtcSync.h"
 #include "versavis_configuration.h"
 
@@ -48,25 +47,25 @@ public:
   TimerSynced(const MfrqPin &mfrq_pin);
 
   // Setup the timer.
+  inline void setMeasurementState(const MeasurementState &state) {
+    measurement_state_ = state;
+  }
   virtual void setupDataReady(const uint8_t port_group, const uint8_t pin,
                               const InterruptLogic &logic) = 0;
-  void setupMfrq(const uint16_t rate_hz, const bool invert);
-  void setupMpwm(const uint16_t rate_hz, const uint16_t pulse_us,
-                 const bool invert);
-  void setTriggerStateNum(const uint32_t num);
+  void setupMfrq(const uint16_t rate_hz);
+  void setupMpwm(const uint16_t rate_hz, const uint16_t pulse_us);
+  void setLatestMeasurementNum(const uint32_t num);
   void offsetTrigger(const double sec);
 
   virtual void handleInterrupt() = 0;
   void handleEic();
 
-  // Returns true only once per trigger.
-  bool getTimeLastTrigger(ros::Time *time, uint32_t *num);
-  bool getTimeLastNominalTrigger(ros::Time *time, uint32_t *num);
+  // Receive oldest measurement. Only returns valid measurements. Clears this
+  // and older measurements from buffer.
+  bool getMeasurement(Measurement *meas);
 
   // Change rate to the closest possible rate.
   virtual void updateRate(const uint16_t rate_hz) = 0;
-
-  bool getDataReady(uint32_t *num); // Returns true only once per data ready.
 
   inline void activateLogging(ros::NodeHandle *nh) { nh_ = nh; }
 
@@ -102,9 +101,8 @@ protected:
   uint16_t pulse_ticks_ = 0; // Pulse length in PWM mode.
   ros::Time time_ = {1, 0};  // Timers are started by RTC at first second.
 
-  // TODO(rikba): Make these states pointers.
-  // Trigger state.
-  MeasurementStateStamped trigger_state_;
+  // The default measurement state handling a single sensor input.
+  MeasurementState measurement_state_;
 
   // Trigger pin.
   const MfrqPin mfrq_pin_;
@@ -112,7 +110,6 @@ protected:
   int32_t accumulated_offset_ = 0;
 
   // Data ready state.
-  MeasurementState data_ready_;
   uint8_t dr_port_group_ = 0;
   uint8_t dr_pin_ = 0;
 

@@ -10,7 +10,7 @@
 #ifndef Sensors_ExternalClock_h
 #define Sensors_ExternalClock_h
 
-#include "clock_sync/MeasurementStateExposure.h"
+#include "clock_sync/MeasurementState.h"
 #include "sensors/SensorSynced.h"
 #include <versavis/ExtClk.h>
 
@@ -41,12 +41,6 @@ private:
 
   inline float toUSec(const ros::Duration &duration) const {
     return 1.0e6 * (float)duration.sec + 1.0e-3 * (float)duration.nsec;
-  };
-
-  inline ros::Duration fromUSec(float t) {
-    uint32_t sec = 1.0e-6 * (uint32_t)floor(t);
-    uint32_t nsec = (uint32_t)round((1.0e-6 * t - sec) * 1e9);
-    ros::Duration duration(sec, nsec);
   };
 
   inline float computeDt() const {
@@ -83,6 +77,8 @@ private:
   float measured_offset_s_ = 0.0;
   ros::Time last_update_;
   uint8_t counter_converged_ = 0;
+
+  Measurement measurement_;
 };
 
 #endif

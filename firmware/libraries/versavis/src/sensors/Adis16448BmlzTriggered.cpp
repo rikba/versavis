@@ -13,17 +13,21 @@ Adis16448BmlzTriggered::Adis16448BmlzTriggered(ros::NodeHandle *nh,
 
   // Setup timers.
   if (timer_) {
-    const bool kInvert = false;
-    timer_->setupMfrq(rate_hz, kInvert);
+    timer_->setMeasurementState(
+        {SensorInterface::kSingleCapture, SensorInterface::kExternal,
+         SensorInterface::kSingleCapture, false, false, false, true});
+    timer_->setupMfrq(rate_hz);
 
     const auto dr_logic = InterruptLogic::kRise;
     timer_->setupDataReady(dr_port_group, dr_pin, dr_logic);
   }
 }
 
-void Adis16448BmlzTriggered::setupRos(char *rate_topic, char *imu_topic,
-                                      char *baro_topic, char *mag_topic,
-                                      char *temp_topic) {
+void Adis16448BmlzTriggered::setupRos(const char *rate_topic,
+                                      const char *imu_topic,
+                                      const char *baro_topic,
+                                      const char *mag_topic,
+                                      const char *temp_topic) {
   ImuSynced::setupRos(rate_topic, imu_topic);
 
   if (nh_) {
@@ -57,12 +61,9 @@ void Adis16448BmlzTriggered::setupRos(char *rate_topic, char *imu_topic,
 bool Adis16448BmlzTriggered::publish() {
   bool new_measurement = false;
 
-  if (timer_ && imu_msg_) {
-    timer_->getTimeLastTrigger(&stamp_, &imu_msg_->number);
-  }
-
-  if (imu_msg_ && timer_ && timer_->getDataReady(NULL)) {
+  if (imu_msg_ && timer_ && timer_->getMeasurement(&measurement_)) {
     int16_t *imu_data = imu_.sensorReadAllCRC();
+    imu_msg_->number = measurement_.num;
 
     if ((imu_.checksum(imu_data) == imu_data[12])) {
       new_measurement = true;
@@ -70,7 +71,7 @@ bool Adis16448BmlzTriggered::publish() {
 
       // BARO.
       if (has_mag_and_baro && baro_msg_) {
-        baro_msg_->time.data = stamp_;
+        baro_msg_->time.data = measurement_.start;
         baro_msg_->number = imu_msg_->number / 16;
         baro_msg_->pressure = imu_data[10];
 
@@ -82,7 +83,7 @@ bool Adis16448BmlzTriggered::publish() {
       // IMU.
       if (imu_msg_) {
         // TODO(rikba): Implement simple orientation filter.
-        imu_msg_->time.data = stamp_;
+        imu_msg_->time.data = measurement_.start;
 
         imu_msg_->gx = imu_data[1];
         imu_msg_->gy = imu_data[2];
@@ -145,7 +146,7 @@ bool Adis16448BmlzTriggered::publish() {
 
       // MAG.
       if (has_mag_and_baro && mag_msg_) {
-        mag_msg_->time.data = stamp_;
+        mag_msg_->time.data = measurement_.start;
         mag_msg_->number = imu_msg_->number / 16;
 
         mag_msg_->mx = imu_data[7];
@@ -159,7 +160,7 @@ bool Adis16448BmlzTriggered::publish() {
 
       // TEMP.
       if (temp_msg_) {
-        temp_msg_->time.data = stamp_;
+        temp_msg_->time.data = measurement_.start;
         temp_msg_->temperature = imu_data[11];
 
         if (temp_pub_) {
@@ -167,7 +168,7 @@ bool Adis16448BmlzTriggered::publish() {
         }
       }
     } else if (nh_) {
-      nh_->logwarn("IMU checksum error.");
+      // nh_->logwarn("IMU checksum error.");
     }
   }
 

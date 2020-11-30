@@ -45,14 +45,15 @@ void Tcc0Synced::setupExposureEvsys() const {
   }
 }
 
-void Tcc0Synced::setupPps(const bool invert) {
+void Tcc0Synced::setupPps() {
   DEBUG_PRINT("[Tcc0Synced]: Configuring pps pin ");
   DEBUG_PRINT(pps_pin_.pin);
   DEBUG_PRINT(" of group ");
   DEBUG_PRINTLN(pps_pin_.group);
 
   DEBUG_PRINTLN("[Tcc0Synced]: Setup pps interrupt pin.");
-  const auto logic = invert ? InterruptLogic::kFall : InterruptLogic::kRise;
+  const auto logic = pps_state_.trigger_inverted_ ? InterruptLogic::kFall
+                                                  : InterruptLogic::kRise;
   setupInterruptPin(pps_pin_.group, pps_pin_.pin, logic, true);
   setupPpsEvsys();
 

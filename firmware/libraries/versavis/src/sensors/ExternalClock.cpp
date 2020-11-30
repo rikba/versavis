@@ -34,8 +34,15 @@ ExternalClock::ExternalClock(ros::NodeHandle *nh)
   }
 
   if (timer_) {
-    const bool kInvert = false;
-    static_cast<Tcc0Synced *>(timer_)->setupPps(kInvert);
+    MeasurementState state = {SensorInterface::kSingleCapture,
+                              SensorInterface::kSingleCapture,
+                              SensorInterface::kSingleCapture,
+                              false,
+                              false,
+                              false,
+                              true};
+    static_cast<TccSynced *>(timer_)->setPpsMeasurementState(state);
+    static_cast<Tcc0Synced *>(timer_)->setupPps();
   }
   if (nh_) {
     timer_->activateLogging(nh_);
@@ -65,14 +72,15 @@ bool ExternalClock::publish() {
   switch (state_) {
   case State::kWaitForPulse: {
     if (timer_ && clock_msg_ &&
-        static_cast<TccSynced *>(timer_)->getTimeLastPps(
-            &clock_msg_->receive_time, &clock_msg_->pps_cnt)) {
+        static_cast<TccSynced *>(timer_)->getPpsMeasurement(&measurement_)) {
+      clock_msg_->receive_time = measurement_.start;
+      clock_msg_->pps_cnt = measurement_.num;
       state_ = State::kWaitForRemoteTime;
     }
     break;
   }
   case State::kWaitForRemoteTime: {
-    bool is_active = true;
+    is_active = true;
     auto remote_time_status = setRemoteTime();
     if (remote_time_status == RemoteTimeStatus::kReceived) {
       state_ = State::kUpdateFilter;
@@ -82,14 +90,14 @@ bool ExternalClock::publish() {
     break;
   }
   case State::kUpdateFilter: {
-    bool is_active = true;
+    is_active = true;
     updateFilter();
     controlClock();
     state_ = State::kPublishFilterState;
     break;
   }
   case State::kPublishFilterState: {
-    bool is_active = true;
+    is_active = true;
     if (publisher_) {
       publisher_->publish(clock_msg_);
     }
@@ -164,7 +172,7 @@ void ExternalClock::controlClock() {
     RtcSync::getInstance().setSec(clock_msg_->remote_time.sec);
 
     char info[255];
-    sprintf(info, "Set RTC. Sec: %u, NSec: %u", clock_msg_->remote_time.sec,
+    sprintf(info, "Set RTC. Sec: %lu, NSec: %lu", clock_msg_->remote_time.sec,
             clock_msg_->remote_time.nsec);
     nh_->loginfo(info);
 

@@ -25,8 +25,9 @@ public:
   Adis16448BmlzTriggered(ros::NodeHandle *nh, TimerSynced *timer,
                          const uint16_t rate_hz, const uint8_t dr_port_group,
                          const uint8_t dr_pin, const uint8_t chip_select);
-  void setupRos(char *rate_topic, char *imu_topic, char *baro_topic,
-                char *mag_topic, char *temp_topic);
+  void setupRos(const char *rate_topic, const char *imu_topic,
+                const char *baro_topic, const char *mag_topic,
+                const char *temp_topic);
   bool publish() override;
 
 private:
@@ -48,8 +49,6 @@ private:
   versavis::PressureMicro *baro_msg_ = NULL;
   versavis::MagneticMicro *mag_msg_ = NULL;
   versavis::TemperatureMicro *temp_msg_ = NULL;
-
-  ros::Time stamp_;
 
   CalibrationStatus calibration_ = CalibrationStatus::kInit;
   uint16_t smpl_prd_settings_;

@@ -25,7 +25,7 @@ public:
   Tcc0Synced(Tcc0Synced const &) = delete;
   void operator=(Tcc0Synced const &) = delete;
 
-  void setupPps(const bool invert);
+  void setupPps();
 
 private:
   Tcc0Synced();

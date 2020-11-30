@@ -5,7 +5,7 @@
 
 TccSynced::TccSynced(const MfrqPin &mfrq_pin, const ExposurePin &exp_pin,
                      Tcc *tcc)
-    : TimerSynced(mfrq_pin), exposure_pin_(exp_pin), tcc_(tcc) {
+    : TimerSynced(mfrq_pin), tcc_(tcc), exposure_pin_(exp_pin) {
   setup();
 }
 
@@ -56,7 +56,7 @@ void TccSynced::setupMfrqWaveform() {
   }
 
   // Negate to emit the first pulse at the first tick.
-  if (!trigger_state_.invert_) {
+  if (!measurement_state_.trigger_inverted_) {
     tcc_->DRVCTRL.reg |= TCC_DRVCTRL_INVEN0;
     while (tcc_->SYNCBUSY.bit.ENABLE) {
     }
@@ -92,17 +92,11 @@ void TccSynced::updateRate(const uint16_t rate_hz) {
   }
 }
 
-void TccSynced::setExposureStateNum(const uint32_t num) {
-  exposure_state_.setNum(num);
-}
-
-void TccSynced::setupExposure(const bool invert) {
+void TccSynced::setupExposure() {
   DEBUG_PRINT("[TccSynced]: Configuring exposure pin ");
   DEBUG_PRINT(exposure_pin_.pin);
   DEBUG_PRINT(" of group ");
   DEBUG_PRINTLN(exposure_pin_.group);
-
-  exposure_state_.invert_ = invert;
 
   DEBUG_PRINTLN("[TccSynced]: Setup interrupt pin.");
   setupInterruptPin(exposure_pin_.group, exposure_pin_.pin,
@@ -145,13 +139,8 @@ bool TccSynced::getExposurePinValue() const {
   return getPinValue(exposure_pin_.group, exposure_pin_.pin);
 }
 
-bool TccSynced::getTimeLastPps(ros::Time *time, uint32_t *num) {
-  return pps_state_.getTime(time, num);
-}
-
-bool TccSynced::getTimeLastExposure(ros::Time *time, uint32_t *num,
-                                    ros::Duration *exp) {
-  return exposure_state_.getTime(time, num, exp);
+bool TccSynced::getPpsMeasurement(Measurement *meas) {
+  return pps_state_.getMeasurement(meas);
 }
 
 void TccSynced::updateTopCompare() {
@@ -179,9 +168,9 @@ void TccSynced::handleInterrupt() {
   // Handle trigger which comes at the same time as overflow.
   else if (tcc_->INTFLAG.bit.MC0) {
     tcc_->INTFLAG.reg = TCC_INTFLAG_MC0;
-    if (getWaveOutPinValue() ^ trigger_state_.invert_) {
+    if (getWaveOutPinValue() ^ measurement_state_.trigger_inverted_) {
       // Capture new trigger pulse.
-      trigger_state_.setTime(time_);
+      measurement_state_.trigger(time_);
     }
   } else if (tcc_->INTFLAG.bit.MC1) { // Capture exposure.
     // TODO(rikba): Find a way to solve half cycle ambiguity for TCC1 and TCC2.
@@ -190,19 +179,20 @@ void TccSynced::handleInterrupt() {
     auto cc = tcc_->CC[1].reg;
     // TODO(rikba): Make sure to not miss any.
     if (missed_start ||
-        getExposurePinValue() ^ exposure_state_.invert_) { // Start exposure.
+        getExposurePinValue() ^
+            measurement_state_.strobe_inverted_) { // Start exposure.
       auto time = cc < time_2_cc_ ? time_ : time_2_;
       time += RtcSync::getInstance().computeDuration(cc, prescaler_);
-      exposure_state_.setStart(time);
+      measurement_state_.startStrobe(time);
     } else { // Stop exposure.
       auto time = cc < time_2_cc_ ? time_ : time_2_;
       time += RtcSync::getInstance().computeDuration(cc, prescaler_);
-      exposure_state_.setEnd(time);
+      measurement_state_.stopStrobe(time);
     }
   } else if (tcc_->INTFLAG.bit.MC2) { // Handle PPS.
     tcc_->INTFLAG.reg = TCC_INTFLAG_MC2;
     auto time = tcc_->CC[2].reg < time_2_cc_ ? time_ : time_2_;
     time += RtcSync::getInstance().computeDuration(tcc_->CC[2].reg, prescaler_);
-    pps_state_.setTime(time);
+    pps_state_.trigger(time);
   }
 }

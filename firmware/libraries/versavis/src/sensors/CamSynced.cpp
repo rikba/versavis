@@ -1,23 +1,33 @@
 #include "sensors/CamSynced.h"
 
 CamSynced::CamSynced(ros::NodeHandle *nh, TimerSynced *timer,
-                     const uint16_t rate_hz, const bool invert)
+                     const uint16_t rate_hz, const MeasurementState &meas_state)
     : SensorSynced(nh, timer) {
   // Setup trigger.
   if (timer) {
-    timer->setupMfrq(rate_hz, invert);
+    timer->setMeasurementState(meas_state);
+    timer->setupMfrq(rate_hz);
   }
 }
 
-void CamSynced::setupRos(char *frame_id, char *rate_topic, char *seq_topic,
-                         char *img_topic) {
+CamSynced::CamSynced(ros::NodeHandle *nh, TimerSynced *timer,
+                     const uint16_t rate_hz, const bool invert)
+    : CamSynced(
+          nh, timer, rate_hz,
+          {SensorInterface::kSingleCapture, SensorInterface::kSingleCapture,
+           SensorInterface::kSingleCapture, invert, false, false, false}) {}
+
+void CamSynced::setupRos(const char *frame_id, const char *rate_topic,
+                         const char *seq_topic, const char *img_topic) {
   static ros::Subscriber<std_msgs::UInt16, SensorSynced> rate_sub(
       rate_topic, &CamSynced::changeRateCb, this);
   SensorSynced::setupRos(rate_sub);
+
+  // Create static ROS message.
+  static std_msgs::Header img_msg;
+  img_msg_ = &img_msg;
+
   if (nh_) {
-    // Create static ROS message.
-    static std_msgs::Header img_msg;
-    img_msg_ = &img_msg;
 
     // Create static ROS publisher.
     static ros::Publisher pub(img_topic, img_msg_);
@@ -37,9 +47,9 @@ void CamSynced::setupRos(char *frame_id, char *rate_topic, char *seq_topic,
 
 void CamSynced::setSeqCb(const std_msgs::UInt32 &seq_msg) {
   if (timer_) {
-    timer_->setTriggerStateNum(seq_msg.data);
+    timer_->setLatestMeasurementNum(seq_msg.data);
   }
   if (nh_) {
-    nh_->loginfo("Setting trigger header sequence.");
+    nh_->loginfo("Setting image header sequence.");
   }
 }
