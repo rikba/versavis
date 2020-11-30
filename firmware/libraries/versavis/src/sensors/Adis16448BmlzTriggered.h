@@ -28,6 +28,7 @@ public:
   void setupRos(const char *rate_topic, const char *imu_topic,
                 const char *baro_topic, const char *mag_topic,
                 const char *temp_topic);
+  bool read() override;
   bool publish() override;
 
 private:
@@ -49,6 +50,10 @@ private:
   versavis::PressureMicro *baro_msg_ = NULL;
   versavis::MagneticMicro *mag_msg_ = NULL;
   versavis::TemperatureMicro *temp_msg_ = NULL;
+
+  RingBufCPP<versavis::PressureMicro, BUFFER_SIZE> baro_buffer_;
+  RingBufCPP<versavis::MagneticMicro, BUFFER_SIZE> mag_buffer_;
+  RingBufCPP<versavis::TemperatureMicro, BUFFER_SIZE> temp_buffer_;
 
   CalibrationStatus calibration_ = CalibrationStatus::kInit;
   uint16_t smpl_prd_settings_;

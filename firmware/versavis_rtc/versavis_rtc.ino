@@ -85,16 +85,26 @@ void setup() {
 }
 
 void loop() {
-  // Prioritizing readout queue.
-  if (imu->publish())
+  // First try to readout sensors.
+  // Then empty buffer and publish messages.
+  // Always startover reading sensor data in between publishing.
+  if (imu->read())
+    ;
+  else if (ext_clock->publish())
+    ;
+  else if (cam0->read())
+    ;
+  else if (radar->read())
+    ;
+  else if (lidar->read())
+    ;
+  else if (imu->publish())
     ;
   else if (cam0->publish())
     ;
   else if (radar->publish())
     ;
   else if (lidar->publish())
-    ;
-  else if (ext_clock->publish())
     ;
   else if (RtcSync::getInstance().publish())
     ;

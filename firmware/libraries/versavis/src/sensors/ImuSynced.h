@@ -14,6 +14,7 @@
 #define Sensors_ImuSynced_h
 
 #include "sensors/SensorSynced.h"
+#include <RingBufCPP.h>
 #include <versavis/ImuMicro.h>
 
 class ImuSynced : public SensorSynced {
@@ -23,6 +24,8 @@ public:
 
 protected:
   versavis::ImuMicro *imu_msg_ = NULL;
+
+  RingBufCPP<versavis::ImuMicro, BUFFER_SIZE> imu_buffer_;
 };
 
 #endif

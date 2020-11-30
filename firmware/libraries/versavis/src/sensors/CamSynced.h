@@ -14,6 +14,7 @@
 #define Sensors_CamSynced_h
 
 #include "sensors/SensorSynced.h"
+#include <RingBufCPP.h>
 #include <std_msgs/Header.h>
 #include <std_msgs/UInt32.h>
 
@@ -28,6 +29,7 @@ public:
 
 protected:
   std_msgs::Header *img_msg_ = NULL;
+  RingBufCPP<std_msgs::Header, BUFFER_SIZE> buffer_;
 
 private:
   void setSeqCb(const std_msgs::UInt32 &seq_msg);

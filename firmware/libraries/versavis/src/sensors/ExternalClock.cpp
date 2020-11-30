@@ -80,7 +80,6 @@ bool ExternalClock::publish() {
     break;
   }
   case State::kWaitForRemoteTime: {
-    is_active = true;
     auto remote_time_status = setRemoteTime();
     if (remote_time_status == RemoteTimeStatus::kReceived) {
       state_ = State::kUpdateFilter;

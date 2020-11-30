@@ -13,8 +13,11 @@
 #ifndef Sensors_UsD1_h
 #define Sensors_UsD1_h
 
+#include <RingBufCPP.h>
 #include <ros.h>
 #include <versavis/UsD1Micro.h>
+
+#include "clock_sync/MeasurementState.h"
 
 enum class UsD1State { kHeader, kVersion, kLsb, kMsb, kSnr, kCs };
 
@@ -22,6 +25,7 @@ class UsD1 {
 public:
   UsD1(ros::NodeHandle *nh, Uart *uart);
   void setupRos(const char *data_topic);
+  bool read();
   bool publish();
 
 private:
@@ -30,6 +34,7 @@ private:
   ros::Publisher *publisher_ = NULL;
 
   versavis::UsD1Micro *msg_ = NULL;
+  RingBufCPP<versavis::UsD1Micro, BUFFER_SIZE> buffer_;
   Uart *uart_ = NULL;
 
   uint8_t lsb_ = 0xFF;
