@@ -14,12 +14,14 @@
 #define Sensors_LidarLite_h
 
 #include "sensors/SensorSynced.h"
+#include <RingBufCPP.h>
 #include <versavis/LidarLiteMicro.h>
 
 class LidarLite : public SensorSynced {
 public:
   LidarLite(ros::NodeHandle *nh, TimerSynced *timer, const uint16_t rate_hz);
   void setupRos(const char *rate_topic, const char *data_topic);
+  bool read() override;
   bool publish() override;
 
 private:
@@ -32,6 +34,7 @@ private:
   bool busy() const;
 
   versavis::LidarLiteMicro *msg_ = NULL;
+  RingBufCPP<versavis::LidarLiteMicro, BUFFER_SIZE> buffer_;
 };
 
 #endif

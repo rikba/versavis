@@ -24,6 +24,7 @@ public:
   inline SensorSynced(ros::NodeHandle *nh, TimerSynced *timer)
       : nh_(nh), timer_(timer) {}
   inline virtual bool publish() = 0;
+  inline virtual bool read() = 0;
 
 protected:
   inline void

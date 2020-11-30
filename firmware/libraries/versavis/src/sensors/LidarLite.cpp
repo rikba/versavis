@@ -13,7 +13,10 @@ LidarLite::LidarLite(ros::NodeHandle *nh, TimerSynced *timer,
     MeasurementState state = {SensorInterface::kSingleCapture,
                               SensorInterface::kSingleCapture,
                               SensorInterface::kSingleCapture,
-                              true, false, false, true};
+                              true,
+                              false,
+                              false,
+                              true};
     timer_->setMeasurementState(state);
 
     const uint16_t kPulseUs = 40;
@@ -54,7 +57,7 @@ void LidarLite::setupRos(const char *rate_topic, const char *data_topic) {
   }
 }
 
-bool LidarLite::publish() {
+bool LidarLite::read() {
   bool new_measurement = false;
 
   // Obtain new stamp after triggering.
@@ -66,8 +69,8 @@ bool LidarLite::publish() {
   // If we have a new message number, try to obtain range message from I2C.
   if (msg_ && (last_msg_ != msg_->number) && !busy()) {
     // Read measurement.
-    if (readData(msg_) && publisher_) {
-      publisher_->publish(msg_);
+    if (readData(msg_) && !buffer_.add(*msg_, true) && nh_) {
+      nh_->logwarn("Lidar Lite buffer full.");
     }
 
     // Update state.
@@ -76,6 +79,16 @@ bool LidarLite::publish() {
   }
 
   return new_measurement;
+}
+
+bool LidarLite::publish() {
+  static versavis::LidarLiteMicro temp;
+  bool publish = buffer_.pull(&temp);
+  if (publish && publisher_) {
+    publisher_->publish(&temp);
+  }
+
+  return publish;
 }
 
 bool LidarLite::readData(versavis::LidarLiteMicro *msg) const {

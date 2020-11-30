@@ -58,7 +58,7 @@ void Adis16448BmlzTriggered::setupRos(const char *rate_topic,
   }
 }
 
-bool Adis16448BmlzTriggered::publish() {
+bool Adis16448BmlzTriggered::read() {
   bool new_measurement = false;
 
   if (imu_msg_ && timer_ && timer_->getMeasurement(&measurement_)) {
@@ -75,8 +75,8 @@ bool Adis16448BmlzTriggered::publish() {
         baro_msg_->number = imu_msg_->number / 16;
         baro_msg_->pressure = imu_data[10];
 
-        if (baro_pub_) {
-          baro_pub_->publish(baro_msg_);
+        if (!baro_buffer_.add(*baro_msg_, true) && nh_) {
+          nh_->logwarn("Baro buffer full.");
         }
       }
 
@@ -93,8 +93,8 @@ bool Adis16448BmlzTriggered::publish() {
         imu_msg_->ay = imu_data[5];
         imu_msg_->az = imu_data[6];
 
-        if (publisher_) {
-          publisher_->publish(imu_msg_);
+        if (!imu_buffer_.add(*imu_msg_, true) && nh_) {
+          nh_->logwarn("IMU buffer full.");
         }
 
         // Calibrate gyro offset.
@@ -153,8 +153,8 @@ bool Adis16448BmlzTriggered::publish() {
         mag_msg_->my = imu_data[8];
         mag_msg_->mz = imu_data[9];
 
-        if (mag_pub_) {
-          mag_pub_->publish(mag_msg_);
+        if (!mag_buffer_.add(*mag_msg_, true) && nh_) {
+          nh_->logwarn("Mag buffer full.");
         }
       }
 
@@ -163,8 +163,8 @@ bool Adis16448BmlzTriggered::publish() {
         temp_msg_->time.data = measurement_.start;
         temp_msg_->temperature = imu_data[11];
 
-        if (temp_pub_) {
-          temp_pub_->publish(temp_msg_);
+        if (!temp_buffer_.add(*temp_msg_, true) && nh_) {
+          nh_->logwarn("Temp buffer full.");
         }
       }
     } else if (nh_) {
@@ -173,4 +173,33 @@ bool Adis16448BmlzTriggered::publish() {
   }
 
   return new_measurement;
+}
+
+bool Adis16448BmlzTriggered::publish() {
+
+  static versavis::ImuMicro imu;
+  bool publish_imu = imu_buffer_.pull(&imu);
+  if (publish_imu && publisher_) {
+    publisher_->publish(&imu);
+  }
+
+  static versavis::PressureMicro baro;
+  bool publish_baro = baro_buffer_.pull(&baro);
+  if (publish_baro && baro_pub_) {
+    baro_pub_->publish(&baro);
+  }
+
+  static versavis::MagneticMicro mag;
+  bool publish_mag = mag_buffer_.pull(&mag);
+  if (publish_mag && mag_pub_) {
+    mag_pub_->publish(&mag);
+  }
+
+  static versavis::TemperatureMicro temp;
+  bool publish_temp = temp_buffer_.pull(&temp);
+  if (publish_temp && temp_pub_) {
+    temp_pub_->publish(&temp);
+  }
+
+  return publish_imu || publish_baro || publish_mag || publish_temp;
 }

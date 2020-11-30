@@ -30,7 +30,7 @@ void UsD1::setupRos(const char *data_topic) {
   }
 }
 
-bool UsD1::publish() {
+bool UsD1::read() {
   bool new_char = false;
 
   if (msg_ && uart_ && uart_->available()) {
@@ -84,8 +84,8 @@ bool UsD1::publish() {
     case UsD1State::kCs: {
       bool buffer_empty = (uart_->available() == 0);
       if ((c == (cs_ & 0xFF)) && buffer_empty) {
-        if (publisher_) {
-          publisher_->publish(msg_);
+        if (!buffer_.add(*msg_, true) && nh_) {
+          nh_->logwarn("US D1 buffer full.");
         }
         msg_->number++;
       } else if (!buffer_empty) {
@@ -105,4 +105,14 @@ bool UsD1::publish() {
   }
 
   return new_char;
+}
+
+bool UsD1::publish() {
+  static versavis::UsD1Micro temp;
+  bool publish = buffer_.pull(&temp);
+  if (publish && publisher_) {
+    publisher_->publish(&temp);
+  }
+
+  return publish;
 }

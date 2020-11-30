@@ -17,7 +17,7 @@ CamSyncedExposure::CamSyncedExposure(ros::NodeHandle *nh, TccSynced *timer,
   }
 }
 
-bool CamSyncedExposure::publish() {
+bool CamSyncedExposure::read() {
   bool new_measurement = false;
 
   if (timer_ && img_msg_ && timer_->getMeasurement(&measurement_)) {
@@ -25,9 +25,10 @@ bool CamSyncedExposure::publish() {
     measurement_.computeStamp(&img_msg_->stamp);
     img_msg_->seq = measurement_.num;
 
-    if (publisher_) {
-      publisher_->publish(img_msg_);
+    if (!buffer_.add(*img_msg_, true) && nh_) {
+      nh_->logwarn("Image buffer full.");
     }
+
     if (exposure_compensation_) {
       compensateExposure();
     }
@@ -35,6 +36,16 @@ bool CamSyncedExposure::publish() {
   }
 
   return new_measurement;
+}
+
+bool CamSyncedExposure::publish() {
+  static std_msgs::Header temp;
+  bool publish = buffer_.pull(&temp);
+  if (publish && publisher_) {
+    publisher_->publish(&temp);
+  }
+
+  return publish;
 }
 
 // Check how far off the time stamp was from the exact second. Compensate for
