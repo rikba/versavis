@@ -76,7 +76,7 @@
       <!-- rectify -->
       <node pkg="nodelet" type="nodelet" name="rectify" args="load image_proc/rectify camera_nodelet_manager" output="$(arg output)">
         <remap from="image_mono" to="synced/image_mono"/>
-        <remap from="image_mono" to="synced/image_rect"/>
+        <remap from="image_rect" to="synced/image_rect"/>
       </node>
 
       <!-- rectify color -->
