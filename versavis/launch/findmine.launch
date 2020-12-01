@@ -17,7 +17,7 @@
       <node pkg="nodelet" type="nodelet" name="camera_nodelet_manager" args="manager" cwd="node" output="$(arg output)"/>
 
       <!-- Camera nodelet -->
-      <node pkg="nodelet" type="nodelet" name="spinnaker_camera_nodelet" args="load spinnaker_camera_driver/SpinnakerCameraNodelet camera_nodelet_manager">
+      <node pkg="nodelet" type="nodelet" name="spinnaker_camera_nodelet" args="load spinnaker_camera_driver/SpinnakerCameraNodelet camera_nodelet_manager" output="$(arg output)">
 
         <param name="frame_id" value="$(arg camera_name)"/>
 
