@@ -80,7 +80,7 @@
         </node>
 
         <!-- Add a throttle topic -->
-        <node name="bfly_throttle" type="throttle" pkg="topic_tools" args="messages image_synced $(arg throttled_rate) image_synced_throttled"/>
+        <node name="bfly_throttle" type="throttle" pkg="topic_tools" args="messages image_raw $(arg throttled_rate) image_raw_throttled"/>
       </group>
     </group>
   </group>
