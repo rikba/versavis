@@ -58,31 +58,36 @@
         <param name="camera_info_url" value="$(arg camera_info_url)"/>
       </node>
 
-      <group ns="synced">
-        <!-- Camera relay. -->
-        <node pkg="nodelet" type="nodelet" name="relay" args="load versavis/RelayNodelet camera_nodelet_manager" output="$(arg output)">
-          <remap from="image_numbered" to="/$(arg ns)/$(arg camera_name)/image_numbered"/>
-          <remap from="header" to="/$(arg ns)/$(arg camera_name)/header"/>
-          <remap from="image_synced" to="image_raw"/>
-          <param name="camera_name" value="$(arg camera_name)"/>
-          <param name="camera_info_url" value="$(arg camera_info_url)"/>
-          <param name="rate" value="$(arg rate)"/>
-        </node>
+      <!-- Camera relay. -->
+      <node pkg="nodelet" type="nodelet" name="relay" args="load versavis/RelayNodelet camera_nodelet_manager" output="$(arg output)">
+        <remap from="image_synced" to="synced/image_raw"/>
+        <param name="camera_name" value="$(arg camera_name)"/>
+        <param name="camera_info_url" value="$(arg camera_info_url)"/>
+        <param name="rate" value="$(arg rate)"/>
+      </node>
 
-        <!-- debayer -->
-        <node pkg="nodelet" type="nodelet" name="debayer" args="load image_proc/debayer camera_nodelet_manager" output="$(arg output)"/>
+      <!-- debayer -->
+      <node pkg="nodelet" type="nodelet" name="debayer" args="load image_proc/debayer camera_nodelet_manager" output="$(arg output)">
+        <remap from="image_raw" to="synced/image_raw"/>
+        <remap from="image_mono" to="synced/image_mono"/>
+        <remap from="image_color" to="synced/image_color"/>
+      </node>
 
-        <!-- rectify -->
-        <node pkg="nodelet" type="nodelet" name="rectify" args="load image_proc/rectify camera_nodelet_manager" output="$(arg output)"></node>
-        <!-- rectify color -->
-        <node pkg="nodelet" type="nodelet" name="rectify_color" args="load image_proc/rectify camera_nodelet_manager" output="$(arg output)">
-          <remap from="image_mono" to="image_color"/>
-          <remap from="image_rect" to="image_rect_color"/>
-        </node>
+      <!-- rectify -->
+      <node pkg="nodelet" type="nodelet" name="rectify" args="load image_proc/rectify camera_nodelet_manager" output="$(arg output)">
+        <remap from="image_mono" to="synced/image_mono"/>
+        <remap from="image_mono" to="synced/image_rect"/>
+      </node>
 
-        <!-- Add a throttle topic -->
-        <node name="bfly_throttle" type="throttle" pkg="topic_tools" args="messages image_raw $(arg throttled_rate) image_raw_throttled"/>
-      </group>
+      <!-- rectify color -->
+      <node pkg="nodelet" type="nodelet" name="rectify_color" args="load image_proc/rectify camera_nodelet_manager" output="$(arg output)">
+        <remap from="image_mono" to="synced/image_color"/>
+        <remap from="image_rect" to="synced/image_rect_color"/>
+      </node>
+
+      <!-- Add a throttle topic -->
+      <node name="bfly_throttle" type="throttle" pkg="topic_tools" args="messages synced/image_raw $(arg throttled_rate) synced/image_raw_throttled"/>
+
     </group>
   </group>
 </launch>
