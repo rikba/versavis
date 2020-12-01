@@ -72,7 +72,7 @@ void Relay::setRate(const int rate) {
   img_rate_pub_.publish(new_rate);
 }
 
-void Relay::imageHeaderCb(const std_msgs::Header &msg) {
+void Relay::imageHeaderCb(const std_msgs::Header::ConstPtr &msg) {
   ROS_INFO_ONCE("Received first image header from micro controller.");
   headers_.push_back(msg);
   if (state_ == State::kRunning) {
@@ -84,7 +84,7 @@ void Relay::imageHeaderCb(const std_msgs::Header &msg) {
   }
 }
 
-void Relay::imageCb(const image_numbered_msgs::ImageNumbered &msg) {
+void Relay::imageCb(const image_numbered_msgs::ImageNumbered::ConstPtr &msg) {
   ROS_INFO_ONCE("Received first image from camera.");
   images_.push_back(msg);
   if (state_ == State::kRunning) {
@@ -101,15 +101,17 @@ void Relay::associate() {
     // Find matching image numbers.
     auto header_it =
         std::find_if(headers_.begin(), headers_.end(), [&](const auto &header) {
-          return header.seq == img_it->number;
+          return header->seq == (*img_it)->number;
         });
 
     // On match, publish restamped image and erase matched entries.
     if (header_it != headers_.end()) {
-      img_it->image.header = *header_it;
+      // Create copy of image with new stamp.
+      sensor_msgs::Image img((*img_it)->image);
+      img.header = **header_it;
       sensor_msgs::CameraInfo ci(cinfo_->getCameraInfo());
-      ci.header = img_it->image.header;
-      img_pub_.publish(img_it->image, ci);
+      ci.header = img.header;
+      img_pub_.publish(img, ci);
       // Erase all images up to and including the current image.
       img_it = images_.erase(images_.begin(), img_it + 1);
       // Erase all headers up to and including the current stamp.
@@ -158,19 +160,19 @@ void Relay::initialize() {
       // Wait until an image-header-pair arrives that has close time stamps.
       bool corresponding = !headers_.empty() && !images_.empty();
       if (corresponding) {
-        corresponding &= std::fabs((headers_.back().stamp -
-                                    images_.back().image.header.stamp)
+        corresponding &= std::fabs((headers_.back()->stamp -
+                                    images_.back()->image.header.stamp)
                                        .toSec()) < kMaxImageDelayThreshold;
       }
 
       if (corresponding) {
         ROS_INFO("Found corresponding image %lu and header %u.",
-                 images_.back().number, headers_.back().seq);
+                 images_.back()->number, headers_.back()->seq);
 
-        ROS_INFO("Setting image number to %lu: %s", images_.back().number,
+        ROS_INFO("Setting image number to %lu: %s", images_.back()->number,
                  img_seq_pub_.getTopic().c_str());
         std_msgs::UInt32 new_seq;
-        new_seq.data = images_.back().number;
+        new_seq.data = images_.back()->number;
         img_seq_pub_.publish(new_seq);
 
         headers_.clear();

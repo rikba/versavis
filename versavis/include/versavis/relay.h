@@ -32,8 +32,8 @@ private:
   void subscribeToTopics();
   void advertiseTopics();
 
-  void imageHeaderCb(const std_msgs::Header &msg);
-  void imageCb(const image_numbered_msgs::ImageNumbered &msg);
+  void imageHeaderCb(const std_msgs::Header::ConstPtr &msg);
+  void imageCb(const image_numbered_msgs::ImageNumbered::ConstPtr &msg);
 
   void setRate(const int rate);
   void associate();
@@ -51,8 +51,8 @@ private:
   std::shared_ptr<camera_info_manager::CameraInfoManager> cinfo_;
   image_transport::CameraPublisher img_pub_;
 
-  std::deque<std_msgs::Header> headers_;
-  std::deque<image_numbered_msgs::ImageNumbered> images_;
+  std::deque<std_msgs::Header::ConstPtr> headers_;
+  std::deque<image_numbered_msgs::ImageNumbered::ConstPtr> images_;
 
   State state_ = State::kInitWaitFirstMsg;
 
