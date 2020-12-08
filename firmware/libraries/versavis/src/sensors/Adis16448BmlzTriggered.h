@@ -57,6 +57,12 @@ private:
 
   CalibrationStatus calibration_ = CalibrationStatus::kInit;
   uint16_t smpl_prd_settings_;
+
+  uint8_t dr_port_group_;
+  uint8_t dr_pin_;
+  inline bool isDr() const {
+    return timer_->getPinValue(dr_port_group_, dr_pin_);
+  }
 };
 
 #endif
