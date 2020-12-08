@@ -84,8 +84,7 @@ void Adis16448::setup() {
   regWrite(GLOB_CMD, 0b10000000);
   delay(300);
 
-  regWrite(MSC_CTRL, 0x56); // Point of percussion alignment, DR with active
-                            // HIGH on DIO1, activate CRC
+  regWrite(MSC_CTRL, 0x16); // DR with active, HIGH on DIO1, activate CRC
   delay(20);
   regWrite(GPIO_CTRL, 0x202); // DIO2 output (LED).
   delay(20);
