@@ -22,14 +22,16 @@ void TimerSynced::offsetTrigger(const double sec) {
 }
 
 bool TimerSynced::updateFreq() {
-  bool update = new_freq_ != freq_;
-  // Only update at change of second.
-  auto offset_time = time_;
-  offset_time -=
-      RtcSync::getInstance().computeDuration(accumulated_offset_, prescaler_);
-  update &= !offset_time.nsec;
+  bool update = (new_freq_ != freq_);
   if (update) {
-    setClosestRate(new_freq_);
+    // Only update at change of second.
+    auto offset_time = time_;
+    offset_time -=
+        RtcSync::getInstance().computeDuration(accumulated_offset_, prescaler_);
+    update &= !offset_time.nsec;
+    if (update) {
+      setClosestRate(new_freq_);
+    }
   }
   return update;
 }
