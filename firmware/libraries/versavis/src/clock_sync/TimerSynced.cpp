@@ -236,9 +236,8 @@ void TimerSynced::handleEic() {
 void TimerSynced::syncRtc() {
   // Do not sync exactly at second wrap around.
   if (time_.nsec > 2e8 && time_.nsec < 8e8) {
-    auto now = RtcSync::getInstance().getTimeNow();
-    if (now.sec != time_.sec) {
-      time_.sec = now.sec;
+    if (RtcSync::getInstance().getSec() != time_.sec) {
+      time_.sec = RtcSync::getInstance().getSec();
     }
   }
 }

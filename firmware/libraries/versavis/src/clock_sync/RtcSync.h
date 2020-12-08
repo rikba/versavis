@@ -51,6 +51,8 @@ public:
 
   // Setters
   void setSec(const uint32_t sec);
+  // NOT THREADSAFE! Only call within interrupt.
+  inline uint32_t getSec() const { return time_.sec; }
   void start() const;
   void handleEic();
 

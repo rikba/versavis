@@ -87,6 +87,7 @@ protected:
                          const InterruptLogic &logic,
                          const bool enable_interrupt) const;
   virtual void updateTopCompare() = 0;
+  // Not threadsafe. Only call within interrupt!
   void syncRtc();
 
   // States
