@@ -56,7 +56,7 @@ public:
   void start() const;
   void handleEic();
 
-  void incrementMicros();
+  void incrementTime();
   void startTimers() const;
   inline ros::Duration getTimeResolution() const { return ros_resolution_; }
 

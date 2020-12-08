@@ -245,7 +245,7 @@ uint8_t RtcSync::findMinPrescalerFrq(const uint16_t rate_hz,
   return findMinPrescalerPwm(2 * rate_hz, counter_max);
 }
 
-void RtcSync::incrementMicros() {
+void RtcSync::incrementTime() {
   time_ += ros_resolution_;
   if (time_.nsec == 0) {
     has_stamp_ = true;
@@ -277,7 +277,7 @@ void RTC_Handler() {
   if (RTC->MODE0.INTFLAG.bit.CMP0 && RTC->MODE0.INTFLAG.bit.OVF) {
     RTC->MODE0.INTFLAG.reg = RTC_MODE0_INTFLAG_CMP0;
     RTC->MODE0.INTFLAG.reg = RTC_MODE0_INTFLAG_OVF;
-    RtcSync::getInstance().incrementMicros();
+    RtcSync::getInstance().incrementTime();
     RtcSync::getInstance().startTimers();
   }
 }
