@@ -68,6 +68,7 @@ public:
   virtual void updateRate(const uint16_t rate_hz) = 0;
 
   inline void activateLogging(ros::NodeHandle *nh) { nh_ = nh; }
+  bool getPinValue(const uint8_t group, const uint8_t pin) const;
 
 protected:
   // Does not change prescaler. Sets rate to the closest possible rate.
@@ -77,7 +78,6 @@ protected:
   void updateRateMfrq(const uint16_t rate_hz);
   void updateRateMpwm(const uint16_t rate_hz);
   void setupWaveOutPin() const;
-  bool getPinValue(const uint8_t group, const uint8_t pin) const;
   bool getWaveOutPinValue() const;
   uint16_t computeLeapTicks();
 
@@ -87,6 +87,7 @@ protected:
                          const InterruptLogic &logic,
                          const bool enable_interrupt) const;
   virtual void updateTopCompare() = 0;
+  // Not threadsafe. Only call within interrupt!
   void syncRtc();
 
   // States
