@@ -7,7 +7,6 @@
 // https://asf.microchip.com/docs/latest/samd21/html/asfdoc_sam0_sercom_spi_dma_use_case.html
 //  assume normal SPI setup, then we take over with DMA
 
-
 #ifndef Drivers_Dmac_h
 #define Drivers_Dmac_h
 
