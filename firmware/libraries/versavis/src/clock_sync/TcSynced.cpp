@@ -159,7 +159,6 @@ void TcSynced::updateTopCompare() {
 }
 
 void TcSynced::handleInterrupt() {
-
   // Handle overflow.
   if (tc_->INTFLAG.bit.OVF) {
     tc_->INTFLAG.reg = TC_INTFLAG_OVF;

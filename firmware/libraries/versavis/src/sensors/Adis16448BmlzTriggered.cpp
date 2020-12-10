@@ -6,7 +6,8 @@ Adis16448BmlzTriggered::Adis16448BmlzTriggered(ros::NodeHandle *nh,
                                                const uint8_t dr_port_group,
                                                const uint8_t dr_pin,
                                                const uint8_t chip_select)
-    : ImuSynced(nh, timer), imu_(chip_select) {
+    : ImuSynced(nh, timer), imu_(chip_select), dr_port_group_(dr_port_group),
+      dr_pin_(dr_pin) {
 
   // Setup ADIS.
   imu_.setup();
@@ -60,8 +61,9 @@ void Adis16448BmlzTriggered::setupRos(const char *rate_topic,
 
 bool Adis16448BmlzTriggered::read() {
   bool new_measurement = false;
-
-  if (imu_msg_ && timer_ && timer_->getMeasurement(&measurement_)) {
+  // TODO(rikba): The DR validator should probably be placed in ISR instead.
+  if (imu_msg_ && timer_ && isDr() && timer_->getMeasurement(&measurement_) &&
+      isDr()) {
     int16_t *imu_data = imu_.sensorReadAllCRC();
     imu_msg_->number = measurement_.num;
 
@@ -168,7 +170,7 @@ bool Adis16448BmlzTriggered::read() {
         }
       }
     } else if (nh_) {
-      // nh_->logwarn("IMU checksum error.");
+      nh_->logwarn("IMU checksum error.");
     }
   }
 

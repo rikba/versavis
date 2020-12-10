@@ -51,10 +51,12 @@ public:
 
   // Setters
   void setSec(const uint32_t sec);
+  // NOT THREADSAFE! Only call within interrupt.
+  inline uint32_t getSec() const { return time_.sec; }
   void start() const;
   void handleEic();
 
-  void incrementMicros();
+  void incrementTime();
   void startTimers() const;
   inline ros::Duration getTimeResolution() const { return ros_resolution_; }
 
