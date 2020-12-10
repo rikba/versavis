@@ -25,6 +25,9 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "drivers/Adis16448.h"
+#include <project_DMA_SPI.h>
+
+DMA_SPI DMASPI(SERCOM4, 0, 1, SERCOM4_DMAC_ID_TX, SERCOM4_DMAC_ID_RX);
 
 ////////////////////////////////////////////////////////////////////////////
 // Constructor with configurable CS
@@ -45,6 +48,7 @@ Adis16448::Adis16448(uint8_t chip_select) {
 ////////////////////////////////////////////////////////////////////////////
 Adis16448::~Adis16448() {
   // Close SPI bus
+  DMASPI.disable();
   SPI.end();
 }
 
@@ -88,11 +92,13 @@ void Adis16448::setup() {
   delay(20);
   regWrite(GPIO_CTRL, 0x202); // DIO2 output (LED).
   delay(20);
-  regWrite(SMPL_PRD, 0x0); // external clock, no averaging.
+  // regWrite(SMPL_PRD, 0x0); // external clock, no averaging.
   delay(20);
   regWrite(SENS_AVG,
            0x400); // +-1000 dps range, B=0 for no bartlett window.
   delay(20);
+
+  DMASPI.init();
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -296,19 +302,29 @@ int16_t *Adis16448::sensorReadAll() {
 // regAddr - address of register to be read
 // return - (pointer) array of signed 16 bit 2's complement numbers
 ////////////////////////////////////////////////////////////////////////////////
-int16_t *Adis16448::sensorReadAllCRC() {
+int16_t *Adis16448::sensorReadAllCRC(uint8_t *tx, uint8_t *rx, size_t n) {
   // Read registers using SPI
-  static uint8_t data[28];
-  memset(data, 0, sizeof(data));
-  data[0] = GLOB_CMD; // Initial command.
+  memset(tx, 0, n);
+  tx[0] = GLOB_CMD; // Initial command.
   // Burst read all bytes.
+  uint8_t tx_tmp[1];
+  uint8_t rx_tmp[1];
   beginTransaction();
-  SPI.transfer(data, sizeof(data));
+  // SPI.transfer(tx, n);
+  for (size_t i = 0; i < n; ++i) {
+    tx_tmp[0] = tx[i];
+    DMASPI.transfer(tx_tmp, rx_tmp, 1);
+    while (!DMASPI.transferDone())
+      ;
+    rx[i] = rx_tmp[0];
+    DMASPI.disable();
+  }
   endTransaction();
+  // memcpy(rx, tx, n);
 
   // Copy and merge data.
   static int16_t joinedData[13];
-  uint8_t *p = data + 2; // Set pointer to third transfered byte.
+  uint8_t *p = rx + 2; // Set pointer to third transfered byte.
   for (uint8_t i = 0; i < 13; ++i) {
     joinedData[i] = (*(p++) << 8);    // MSB
     joinedData[i] |= (*(p++) & 0xFF); // LSB

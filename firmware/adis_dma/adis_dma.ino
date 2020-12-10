@@ -1,6 +1,7 @@
 #include "versavis_configuration.h"
-#include "drivers/Adis16448.h"
+
 #include "Arduino.h"
+#include "drivers/Adis16448.h"
 #include <ros.h>
 #include <ros/publisher.h>
 #include <sensor_msgs/Imu.h>
@@ -31,7 +32,9 @@ void setup() {
   sprintf(lot_id1_str, "LOT_ID1: %d", lot_id1);
   nh.loginfo(lot_id1_str);
   if ((lot_id1 & 0xFF) < 0x22) {
-    nh.logwarn("Silicon anomaly detected. https://www.analog.com/media/en/technical-documentation/data-sheets/ADIS16448-Silicon-Anomaly.pdf");
+    nh.logwarn("Silicon anomaly detected. "
+               "https://www.analog.com/media/en/technical-documentation/"
+               "data-sheets/ADIS16448-Silicon-Anomaly.pdf");
   }
 
   int16_t lot_id2 = imu.regRead(LOT_ID2);
@@ -65,8 +68,8 @@ void imuReady() { imu_ready = true; }
 void loop() {
   // Process IMU data.
   if (imu_ready) {
-     publishIMUData();
-     imu_ready = false;
+    publishIMUData();
+    imu_ready = false;
   }
 
   // Toggle IMU LED.
@@ -74,16 +77,16 @@ void loop() {
   nh.spinOnce();
 }
 
-void toggleNthBit(int pos, int16_t* word) { *word = *word ^ (1 << pos); }
+void toggleNthBit(int pos, int16_t *word) { *word = *word ^ (1 << pos); }
 
 void toggleImuLed() {
   static unsigned long previous_led_time = 0;
-  const unsigned long interval = 1000;  // ms to toggle LED.
+  const unsigned long interval = 1000; // ms to toggle LED.
   unsigned long current_led_time = millis();
   if (current_led_time - previous_led_time >= interval) {
     previous_led_time = current_led_time;
-    int16_t reg = imu.regRead(GPIO_CTRL);  // GPIO reg.
-    toggleNthBit(9, &reg);  // GPIO 2 data level.
+    int16_t reg = imu.regRead(GPIO_CTRL); // GPIO reg.
+    toggleNthBit(9, &reg);                // GPIO 2 data level.
     imu.regWrite(GPIO_CTRL, reg);
   }
 }
@@ -93,10 +96,29 @@ void publishIMUData() {
   // static char crc_timing[25];
   // static char scale_timing[25];
   // static char pub_timing[25];
-  // static uint32_t spi_start, spi_stop, crc_start, crc_stop, scale_start, scale_stop, pub_start, pub_stop;
+  // static uint32_t spi_start, spi_stop, crc_start, crc_stop, scale_start,
+  // scale_stop, pub_start, pub_stop;
 
   // spi_start = micros();
-  int16_t* imu_data = imu.sensorReadAllCRC();
+
+  size_t n = 28;
+  uint8_t tx[n];
+  uint8_t rx[n];
+  int16_t *imu_data = imu.sensorReadAllCRC(tx, rx, n);
+
+  nh.loginfo("Write");
+  for (size_t i = 0; i < 28; ++i) {
+    char buffer[50];
+    sprintf(buffer, "%d", uint8_t(tx[i]));
+    nh.loginfo(buffer);
+  }
+
+  nh.loginfo("Read");
+  for (size_t i = 0; i < 28; ++i) {
+    char buffer[50];
+    sprintf(buffer, "%d", uint8_t(rx[i]));
+    nh.loginfo(buffer);
+  }
   // spi_stop = micros();
 
   // crc_start = micros();
