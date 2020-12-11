@@ -41,6 +41,10 @@ Adis16448::Adis16448(uint8_t chip_select) {
   // Set default pin states.
   pinMode(_CS, OUTPUT);    // Set CS pin to be an output
   digitalWrite(_CS, HIGH); // Initialize CS pin to be high
+
+  // Set writing register.
+  memset(tx_, 0, BURST_LENGTH);
+  tx_[0] = GLOB_CMD; // Initial command.
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -303,18 +307,19 @@ int16_t *Adis16448::sensorReadAll() {
 // return - (pointer) array of signed 16 bit 2's complement numbers
 ////////////////////////////////////////////////////////////////////////////////
 int16_t *Adis16448::sensorReadAllCRC(uint8_t *tx, uint8_t *rx, size_t n) {
-  // Read registers using SPI
-  memset(tx, 0, n);
-  tx[0] = GLOB_CMD; // Initial command.
   // Burst read all bytes.
-  uint8_t tx_tmp[1];
-  uint8_t rx_tmp[1];
   beginTransaction();
-  DMASPI.transfer(tx, rx, n);
+  DMASPI.transfer(tx_, rx_, n);
   while (!DMASPI.transferDone())
     ;
   DMASPI.disable();
   endTransaction();
+  //delayMicroseconds(10);
+
+  if (rx)
+    rx = rx_;
+  if (tx)
+    tx = tx_;
 
   // Copy and merge data.
   static int16_t joinedData[13];

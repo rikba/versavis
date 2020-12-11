@@ -72,6 +72,8 @@
 #define PROD_ID 0x56    // Product identifier
 #define SERIAL_NUM 0x58 // Lot-specific serial number
 
+#define BURST_LENGTH 30
+
 // Adis16448 Class Definition
 class Adis16448 {
 public:
@@ -128,6 +130,9 @@ public:
 private:
   // Variables to store hardware pin assignments.
   int _CS;
+
+  uint8_t tx_[BURST_LENGTH];
+  uint8_t rx_[BURST_LENGTH];
 };
 
 #endif
