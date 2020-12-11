@@ -101,20 +101,20 @@ void publishIMUData() {
 
   // spi_start = micros();
 
-  size_t n = 28;
+  size_t n = 30;
   uint8_t tx[n];
   uint8_t rx[n];
   int16_t *imu_data = imu.sensorReadAllCRC(tx, rx, n);
 
   nh.loginfo("Write");
-  for (size_t i = 0; i < 28; ++i) {
+  for (size_t i = 0; i < n; ++i) {
     char buffer[50];
     sprintf(buffer, "%d", uint8_t(tx[i]));
     nh.loginfo(buffer);
   }
 
   nh.loginfo("Read");
-  for (size_t i = 0; i < 28; ++i) {
+  for (size_t i = 0; i < n; ++i) {
     char buffer[50];
     sprintf(buffer, "%d", uint8_t(rx[i]));
     nh.loginfo(buffer);

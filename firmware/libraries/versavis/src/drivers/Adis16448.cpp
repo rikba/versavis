@@ -310,17 +310,11 @@ int16_t *Adis16448::sensorReadAllCRC(uint8_t *tx, uint8_t *rx, size_t n) {
   uint8_t tx_tmp[1];
   uint8_t rx_tmp[1];
   beginTransaction();
-  // SPI.transfer(tx, n);
-  for (size_t i = 0; i < n; ++i) {
-    tx_tmp[0] = tx[i];
-    DMASPI.transfer(tx_tmp, rx_tmp, 1);
-    while (!DMASPI.transferDone())
-      ;
-    rx[i] = rx_tmp[0];
-    DMASPI.disable();
-  }
+  DMASPI.transfer(tx, rx, n);
+  while (!DMASPI.transferDone())
+    ;
+  DMASPI.disable();
   endTransaction();
-  // memcpy(rx, tx, n);
 
   // Copy and merge data.
   static int16_t joinedData[13];
