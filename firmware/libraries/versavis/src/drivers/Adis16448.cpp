@@ -80,6 +80,12 @@ void Adis16448::setDefault() {
   regWrite(ALM_CTRL, 0x0);
 }
 
+void Adis16448::transmissionFinished() {
+  // The select pin needs to be set timely, otherwise random data appears on the
+  // SPI and checksum will fail.
+  digitalWrite(10, HIGH);
+}
+
 void Adis16448::setup() {
   // Configure SPI.
   SPI.begin(); // Initialize SPI bus
@@ -103,6 +109,7 @@ void Adis16448::setup() {
   delay(20);
 
   DMASPI.init();
+  DMASPI.registerTXCallbacks(Adis16448::transmissionFinished);
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -310,11 +317,10 @@ int16_t *Adis16448::sensorReadAllCRC(uint8_t *tx, uint8_t *rx, size_t n) {
   // Burst read all bytes.
   beginTransaction();
   DMASPI.transfer(tx_, rx_, n);
-  while (!DMASPI.transferDone())
-    ;
+  while (!DMASPI.transferDone());
   DMASPI.disable();
-  endTransaction();
-  //delayMicroseconds(10);
+  SPI.endTransaction();
+  // delayMicroseconds(10);
 
   if (rx)
     rx = rx_;

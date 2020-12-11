@@ -127,6 +127,8 @@ public:
   void beginTransaction();
   void endTransaction();
 
+  static void transmissionFinished();
+
 private:
   // Variables to store hardware pin assignments.
   int _CS;
