@@ -43,7 +43,7 @@ Adis16448::Adis16448(uint8_t chip_select) {
   digitalWrite(_CS, HIGH); // Initialize CS pin to be high
 
   // Set writing register.
-  memset(tx_, 0, BURST_LENGTH);
+  memset(tx_, 0xff, BURST_LENGTH);
   tx_[0] = GLOB_CMD; // Initial command.
 }
 
@@ -317,10 +317,10 @@ int16_t *Adis16448::sensorReadAllCRC(uint8_t *tx, uint8_t *rx, size_t n) {
   // Burst read all bytes.
   beginTransaction();
   DMASPI.transfer(tx_, rx_, n);
-  while (!DMASPI.transferDone());
+  while (!DMASPI.transferDone())
+    ;
   DMASPI.disable();
   SPI.endTransaction();
-  // delayMicroseconds(10);
 
   if (rx)
     rx = rx_;
