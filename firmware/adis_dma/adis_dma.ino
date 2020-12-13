@@ -105,24 +105,26 @@ void publishIMUData() {
   uint8_t tx[n];
   uint8_t rx[n];
   int16_t *imu_data = imu.sensorReadAllCRC(tx, rx, n);
+  auto success = (imu_data[12] == imu.checksum(imu_data));
 
-  nh.loginfo("Write");
-  for (size_t i = 0; i < n; ++i) {
-    char buffer[50];
-    sprintf(buffer, "%d", uint8_t(tx[i]));
-    nh.loginfo(buffer);
-  }
+  if (!success) {
+    nh.loginfo("Write");
+    for (size_t i = 0; i < n; ++i) {
+      char buffer[50];
+      sprintf(buffer, "%d", uint8_t(tx[i]));
+      nh.loginfo(buffer);
+    }
 
-  nh.loginfo("Read");
-  for (size_t i = 0; i < n; ++i) {
-    char buffer[50];
-    sprintf(buffer, "%d", uint8_t(rx[i]));
-    nh.loginfo(buffer);
+    nh.loginfo("Read");
+    for (size_t i = 0; i < n; ++i) {
+      char buffer[50];
+      sprintf(buffer, "%d", uint8_t(rx[i]));
+      nh.loginfo(buffer);
+    }
   }
   // spi_stop = micros();
 
   // crc_start = micros();
-  auto success = (imu_data[12] == imu.checksum(imu_data));
   // crc_stop = micros();
 
   if (success) {
