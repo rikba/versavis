@@ -9,4 +9,4 @@
 	url = https://github.com/rikba/Embedded_RingBuf_CPP.git
 [submodule "firmware/libraries/SAMD_DMA_Helper"]
 	path = firmware/libraries/SAMD_DMA_Helper
-	url = https://github.com/AloyseTech/SAMD_DMA_Helper.git
+	url = https://github.com/rikba/SAMD_DMA_Helper.git
