@@ -80,12 +80,6 @@ void Adis16448::setDefault() {
   regWrite(ALM_CTRL, 0x0);
 }
 
-void Adis16448::transmissionFinished() {
-  // The select pin needs to be set timely, otherwise random data appears on the
-  // SPI and checksum will fail.
-  digitalWrite(10, HIGH);
-}
-
 void Adis16448::setup() {
   // Configure SPI.
   SPI.begin(); // Initialize SPI bus
@@ -102,14 +96,13 @@ void Adis16448::setup() {
   delay(20);
   regWrite(GPIO_CTRL, 0x202); // DIO2 output (LED).
   delay(20);
-  // regWrite(SMPL_PRD, 0x0); // external clock, no averaging.
+  regWrite(SMPL_PRD, 0x0); // external clock, no averaging.
   delay(20);
   regWrite(SENS_AVG,
            0x400); // +-1000 dps range, B=0 for no bartlett window.
   delay(20);
 
   DMASPI.init();
-  DMASPI.registerTXCallbacks(Adis16448::transmissionFinished);
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -320,6 +313,10 @@ int16_t *Adis16448::sensorReadAllCRC(uint8_t *tx, uint8_t *rx) {
   while (!DMASPI.transferDone())
     ;
   DMASPI.disable();
+  // TODO(rikba): Improve DMA library.
+  // DMASPI library finishes after TX done. Wait for last 16 bits.
+  delayMicroseconds(20);
+  digitalWrite(_CS, HIGH);
   SPI.endTransaction();
 
   if (rx)
@@ -329,7 +326,7 @@ int16_t *Adis16448::sensorReadAllCRC(uint8_t *tx, uint8_t *rx) {
 
   // Copy and merge data.
   static int16_t joinedData[13];
-  uint8_t *p = rx + 2; // Set pointer to third transfered byte.
+  uint8_t *p = rx_ + 2; // Set pointer to third transfered byte.
   for (uint8_t i = 0; i < 13; ++i) {
     joinedData[i] = (*(p++) << 8);    // MSB
     joinedData[i] |= (*(p++) & 0xFF); // LSB
