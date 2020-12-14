@@ -72,6 +72,8 @@
 #define PROD_ID 0x56    // Product identifier
 #define SERIAL_NUM 0x58 // Lot-specific serial number
 
+#define BURST_LENGTH 30
+
 // Adis16448 Class Definition
 class Adis16448 {
 public:
@@ -90,31 +92,11 @@ public:
   // Read register (two bytes) Returns signed 16 bit data.
   int16_t regRead(uint8_t regAddr);
 
-  int16_t *sensorRead();
-
-  // Burst read imu data.
-  int16_t *sensorReadAll();
-
   // Burst read imu data including checksum.
-  int16_t *sensorReadAllCRC();
+  int16_t *sensorReadAllCRC(uint8_t *tx = NULL, uint8_t *rx = NULL);
 
   // Write register (two bytes). Returns 1 when complete.
   int regWrite(uint8_t regAddr, int16_t regData);
-
-  // Scale accelerometer data. Returns scaled data as float.
-  float accelScale(int16_t sensorData);
-
-  // Scale gyro data. Returns scaled data as float.
-  float gyroScale(int16_t sensorData);
-
-  // Scale temperature data. Returns scaled data as float.
-  float tempScale(int16_t sensorData);
-
-  // Scale barometer data. Returns scaled data as float.
-  float pressureScale(int16_t sensorData);
-
-  // Scale magnetometer data. Returns scaled data as float.
-  float magnetometerScale(int16_t sensorData);
 
   // Calculate CRC-16 Checksum.
   int16_t checksum(int16_t *sensorData);
@@ -127,6 +109,9 @@ public:
 private:
   // Variables to store hardware pin assignments.
   int _CS;
+
+  uint8_t tx_[BURST_LENGTH];
+  uint8_t rx_[BURST_LENGTH];
 };
 
 #endif
