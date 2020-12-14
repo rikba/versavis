@@ -7,9 +7,6 @@
 [submodule "firmware/libraries/Embedded_RingBuf_CPP"]
 	path = firmware/libraries/Embedded_RingBuf_CPP
 	url = https://github.com/rikba/Embedded_RingBuf_CPP.git
-[submodule "firmware/libraries/Adafruit_ZeroDMA"]
-	path = firmware/libraries/Adafruit_ZeroDMA
-	url = https://github.com/adafruit/Adafruit_ZeroDMA.git
 [submodule "firmware/libraries/SAMD_DMA_Helper"]
 	path = firmware/libraries/SAMD_DMA_Helper
 	url = https://github.com/AloyseTech/SAMD_DMA_Helper.git
