@@ -313,10 +313,10 @@ int16_t *Adis16448::sensorReadAll() {
 // regAddr - address of register to be read
 // return - (pointer) array of signed 16 bit 2's complement numbers
 ////////////////////////////////////////////////////////////////////////////////
-int16_t *Adis16448::sensorReadAllCRC(uint8_t *tx, uint8_t *rx, size_t n) {
+int16_t *Adis16448::sensorReadAllCRC(uint8_t *tx, uint8_t *rx) {
   // Burst read all bytes.
   beginTransaction();
-  DMASPI.transfer(tx_, rx_, n);
+  DMASPI.transfer(tx_, rx_, BURST_LENGTH);
   while (!DMASPI.transferDone())
     ;
   DMASPI.disable();

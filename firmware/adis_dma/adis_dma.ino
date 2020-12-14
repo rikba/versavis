@@ -104,7 +104,7 @@ void publishIMUData() {
   size_t n = 30;
   uint8_t tx[n];
   uint8_t rx[n];
-  int16_t *imu_data = imu.sensorReadAllCRC(tx, rx, n);
+  int16_t *imu_data = imu.sensorReadAllCRC(tx, rx);
   auto success = (imu_data[12] == imu.checksum(imu_data));
 
   if (!success) {

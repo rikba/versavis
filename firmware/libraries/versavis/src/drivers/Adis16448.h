@@ -98,8 +98,7 @@ public:
   int16_t *sensorReadAll();
 
   // Burst read imu data including checksum.
-  int16_t *sensorReadAllCRC(uint8_t *tx = NULL, uint8_t *rx = NULL,
-                            size_t n = 0);
+  int16_t *sensorReadAllCRC(uint8_t *tx = NULL, uint8_t *rx = NULL);
 
   // Write register (two bytes). Returns 1 when complete.
   int regWrite(uint8_t regAddr, int16_t regData);
