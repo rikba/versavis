@@ -92,31 +92,11 @@ public:
   // Read register (two bytes) Returns signed 16 bit data.
   int16_t regRead(uint8_t regAddr);
 
-  int16_t *sensorRead();
-
-  // Burst read imu data.
-  int16_t *sensorReadAll();
-
   // Burst read imu data including checksum.
   int16_t *sensorReadAllCRC(uint8_t *tx = NULL, uint8_t *rx = NULL);
 
   // Write register (two bytes). Returns 1 when complete.
   int regWrite(uint8_t regAddr, int16_t regData);
-
-  // Scale accelerometer data. Returns scaled data as float.
-  float accelScale(int16_t sensorData);
-
-  // Scale gyro data. Returns scaled data as float.
-  float gyroScale(int16_t sensorData);
-
-  // Scale temperature data. Returns scaled data as float.
-  float tempScale(int16_t sensorData);
-
-  // Scale barometer data. Returns scaled data as float.
-  float pressureScale(int16_t sensorData);
-
-  // Scale magnetometer data. Returns scaled data as float.
-  float magnetometerScale(int16_t sensorData);
 
   // Calculate CRC-16 Checksum.
   int16_t checksum(int16_t *sensorData);
