@@ -5,7 +5,7 @@
   <arg name="camera_name" default="bfly"/>
   <arg name="camera_info_url" default="file://$(find versavis)/cfg/$(arg camera_name).yaml"/>
   <arg name="rate" default="2"/>
-  <arg name="throttle" default="2"/>
+  <arg name="throttle" default="1"/>
   <arg name="ns" default=""/>
   <arg name="output" default="log"/>
   <arg name="image_transport" default="true"/>
