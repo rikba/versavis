@@ -22,6 +22,9 @@ void Relay::loadParameters() {
   nh_private_.getParam("rate", rate_);
   ROS_INFO("Camera rate: %d", rate_);
 
+  nh_private_.getParam("throttle", throttle_);
+  ROS_INFO("Camera throttle: %d", throttle_);
+
   // Camera info.
   cinfo_.reset(
       new camera_info_manager::CameraInfoManager(nh_private_.getNamespace()));
@@ -56,6 +59,11 @@ void Relay::advertiseTopics() {
   img_pub_ = it_.advertiseCamera("image_synced", kBufferSize, kLatchTopic);
   ROS_INFO("Relaying images with corrected stamp to: %s",
            img_pub_.getTopic().c_str());
+
+  img_throttle_pub_ =
+      it_.advertiseCamera("image_synced_throttle", kBufferSize, kLatchTopic);
+  ROS_INFO("Relaying throttled images with corrected stamp to: %s",
+           img_throttle_pub_.getTopic().c_str());
 
   img_rate_pub_ =
       nh_.advertise<std_msgs::UInt16>("set_rate", kBufferSize, kLatchTopic);
@@ -112,6 +120,9 @@ void Relay::associate() {
       sensor_msgs::CameraInfo ci(cinfo_->getCameraInfo());
       ci.header = img.header;
       img_pub_.publish(img, ci);
+      if (throttle_ > 0 && (throttle_cnt_++ % throttle_) == 0) {
+        img_throttle_pub_.publish(img, ci);
+      }
       // Erase all images up to and including the current image.
       img_it = images_.erase(images_.begin(), img_it + 1);
       // Erase all headers up to and including the current stamp.
