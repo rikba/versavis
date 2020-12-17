@@ -15,10 +15,10 @@
     <group ns="$(arg camera_name)">
 
       <!-- Nodelet manager -->
-      <node pkg="nodelet" type="nodelet" name="camera_nodelet_manager" args="manager" cwd="node" output="$(arg output)"/>
+      <node pkg="nodelet" type="nodelet" name="camera_nodelet_manager" args="manager" cwd="node" output="$(arg output)" respawn="true"/>
 
       <!-- Camera nodelet -->
-      <node pkg="nodelet" type="nodelet" name="spinnaker_camera_nodelet" args="load spinnaker_camera_driver/SpinnakerCameraNodelet camera_nodelet_manager" output="$(arg output)">
+      <node pkg="nodelet" type="nodelet" name="spinnaker_camera_nodelet" args="load spinnaker_camera_driver/SpinnakerCameraNodelet camera_nodelet_manager" output="$(arg output)" respawn="true">
 
         <param name="frame_id" value="$(arg camera_name)"/>
 
@@ -60,7 +60,7 @@
       </node>
 
       <!-- Camera relay. -->
-      <node pkg="nodelet" type="nodelet" name="relay" args="load versavis/RelayNodelet camera_nodelet_manager" output="$(arg output)">
+      <node pkg="nodelet" type="nodelet" name="relay" args="load versavis/RelayNodelet camera_nodelet_manager" output="$(arg output)" respawn="true">
         <remap from="image_synced" to="synced/image_raw"/>
         <remap from="image_synced_throttle" to="synced_throttle/image_raw"/>
         <param name="camera_name" value="$(arg camera_name)"/>
@@ -71,20 +71,20 @@
 
       <group if="$(arg image_transport)">
         <!-- debayer -->
-        <node pkg="nodelet" type="nodelet" name="debayer" args="load image_proc/debayer camera_nodelet_manager" output="$(arg output)">
+        <node pkg="nodelet" type="nodelet" name="debayer" args="load image_proc/debayer camera_nodelet_manager" output="$(arg output)" respawn="true">
           <remap from="image_raw" to="synced/image_raw"/>
           <remap from="image_mono" to="synced/image_mono"/>
           <remap from="image_color" to="synced/image_color"/>
         </node>
 
         <!-- rectify -->
-        <node pkg="nodelet" type="nodelet" name="rectify" args="load image_proc/rectify camera_nodelet_manager" output="$(arg output)">
+        <node pkg="nodelet" type="nodelet" name="rectify" args="load image_proc/rectify camera_nodelet_manager" output="$(arg output)" respawn="true">
           <remap from="image_mono" to="synced/image_mono"/>
           <remap from="image_rect" to="synced/image_rect"/>
         </node>
 
         <!-- rectify color -->
-        <node pkg="nodelet" type="nodelet" name="rectify_color" args="load image_proc/rectify camera_nodelet_manager" output="$(arg output)">
+        <node pkg="nodelet" type="nodelet" name="rectify_color" args="load image_proc/rectify camera_nodelet_manager" output="$(arg output)" respawn="true">
           <remap from="image_mono" to="synced/image_color"/>
           <remap from="image_rect" to="synced/image_rect_color"/>
         </node>
