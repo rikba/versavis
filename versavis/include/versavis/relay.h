@@ -50,6 +50,7 @@ private:
   image_transport::ImageTransport it_;
   std::shared_ptr<camera_info_manager::CameraInfoManager> cinfo_;
   image_transport::CameraPublisher img_pub_;
+  image_transport::CameraPublisher img_throttle_pub_;
 
   std::deque<std_msgs::Header::ConstPtr> headers_;
   std::deque<image_numbered_msgs::ImageNumbered::ConstPtr> images_;
@@ -58,6 +59,10 @@ private:
 
   // Parameters.
   int rate_ = 10;
+
+  // Throttle counter
+  int throttle_ = -1;
+  int throttle_cnt_ = 0;
 };
 
 } // namespace versavis
