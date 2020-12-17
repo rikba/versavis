@@ -120,7 +120,7 @@ void Relay::associate() {
       sensor_msgs::CameraInfo ci(cinfo_->getCameraInfo());
       ci.header = img.header;
       img_pub_.publish(img, ci);
-      if (throttle_ > 0 && (throttle_cnt_++ % throttle_)) {
+      if (throttle_ > 0 && (throttle_cnt_++ % throttle_) == 0) {
         img_throttle_pub_.publish(img, ci);
       }
       // Erase all images up to and including the current image.
