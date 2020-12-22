@@ -16,7 +16,6 @@ namespace versavis {
 class Relay {
 public:
   Relay(const ros::NodeHandle &nh, const ros::NodeHandle &nh_private);
-  void initialize();
 
 private:
   enum class State {
@@ -31,6 +30,7 @@ private:
   void loadParameters();
   void subscribeToTopics();
   void advertiseTopics();
+  void initialize();
 
   void imageHeaderCb(const std_msgs::Header::ConstPtr &msg);
   void imageCb(const image_numbered_msgs::ImageNumbered::ConstPtr &msg);
@@ -56,6 +56,7 @@ private:
   std::deque<image_numbered_msgs::ImageNumbered::ConstPtr> images_;
 
   State state_ = State::kInitWaitFirstMsg;
+  ros::Time start_;
 
   // Parameters.
   int rate_ = 10;
