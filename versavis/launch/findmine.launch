@@ -7,7 +7,7 @@
   <arg name="rate" default="2"/>
   <arg name="throttle" default="2"/>
   <arg name="ns" default=""/>
-  <arg name="output" default="log"/>
+  <arg name="output" default="screen"/>
   <arg name="image_transport" default="true"/>
 
   <group ns="$(arg ns)">
