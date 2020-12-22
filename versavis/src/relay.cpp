@@ -194,6 +194,9 @@ void Relay::initialize() {
     }
     break;
   }
+  case State::kRunning: {
+    break; // Nothing to do.
+  }
   default: {
     ROS_FATAL("Unhandled state %d", static_cast<int>(state_));
     ros::shutdown();
