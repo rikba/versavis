@@ -11,7 +11,6 @@ int main(int argc, char **argv) {
   ros::NodeHandle nh_private("~");
   // Creating the relay with ros interface
   versavis::Relay relay(nh, nh_private);
-  relay.initialize();
   // Spinning (and processing service calls)
   ros::spin();
   // Exit tranquilly

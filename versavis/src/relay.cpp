@@ -90,6 +90,7 @@ void Relay::imageHeaderCb(const std_msgs::Header::ConstPtr &msg) {
     ROS_WARN("Header deque overflowing. Removing oldest.");
     headers_.pop_front();
   }
+  initialize();
 }
 
 void Relay::imageCb(const image_numbered_msgs::ImageNumbered::ConstPtr &msg) {
@@ -102,6 +103,7 @@ void Relay::imageCb(const image_numbered_msgs::ImageNumbered::ConstPtr &msg) {
     ROS_WARN("Image deque overflowing. Removing oldest.");
     images_.pop_front();
   }
+  initialize();
 }
 
 void Relay::associate() {
@@ -139,73 +141,64 @@ void Relay::associate() {
 // 3. Set microcontroller image number to current image number.
 // 4. Reset rate and exit.
 void Relay::initialize() {
-  ros::Rate loop_rate(1000);
-  ros::Time start;
-
-  while (ros::ok() && state_ != State::kRunning) {
-    switch (state_) {
-    case State::kInitWaitFirstMsg: {
-      if (!headers_.empty() && !images_.empty()) {
-        state_ = State::kInitSlowRate;
-      } else {
-        ROS_WARN_THROTTLE(1.0, "Waiting to receive first messages.");
-      }
-      break;
+  switch (state_) {
+  case State::kInitWaitFirstMsg: {
+    if (!headers_.empty() && !images_.empty()) {
+      state_ = State::kInitSlowRate;
+    } else {
+      ROS_WARN_THROTTLE(1.0, "Waiting to receive first messages.");
     }
-    case State::kInitSlowRate: {
-      setRate(1);
-      start = ros::Time::now();
-      state_ = State::kInitWaitSlowRate;
-      break;
+    break;
+  }
+  case State::kInitSlowRate: {
+    setRate(1);
+    start_ = ros::Time::now();
+    state_ = State::kInitWaitSlowRate;
+    break;
+  }
+  case State::kInitWaitSlowRate: {
+    ROS_INFO_ONCE("Waiting for rate change to take effect.");
+    if ((ros::Time::now() - start_).toSec() > 2.0) {
+      headers_.clear();
+      images_.clear();
+      state_ = State::kInitWaitForCorrespondance;
     }
-    case State::kInitWaitSlowRate: {
-      ROS_INFO_ONCE("Waiting for rate change to take effect.");
-      if ((ros::Time::now() - start).toSec() > 2.0) {
-        headers_.clear();
-        images_.clear();
-        state_ = State::kInitWaitForCorrespondance;
-      }
-      break;
-    }
-    case State::kInitWaitForCorrespondance: {
-      // Wait until an image-header-pair arrives that has close time stamps.
-      bool corresponding = !headers_.empty() && !images_.empty();
-      if (corresponding) {
-        corresponding &= std::fabs((headers_.back()->stamp -
-                                    images_.back()->image.header.stamp)
-                                       .toSec()) < kMaxImageDelayThreshold;
-      }
-
-      if (corresponding) {
-        ROS_INFO("Found corresponding image %lu and header %u.",
-                 images_.back()->number, headers_.back()->seq);
-
-        ROS_INFO("Setting image number to %lu: %s", images_.back()->number,
-                 img_seq_pub_.getTopic().c_str());
-        std_msgs::UInt32 new_seq;
-        new_seq.data = images_.back()->number;
-        img_seq_pub_.publish(new_seq);
-
-        headers_.clear();
-        images_.clear();
-
-        setRate(rate_);
-        state_ = State::kRunning;
-      } else {
-        ROS_INFO_THROTTLE(1.0,
-                          "Waiting for first image header correspondance.");
-      }
-      break;
-    }
-    default: {
-      ROS_FATAL("Unhandled state %d", static_cast<int>(state_));
-      ros::shutdown();
-      break;
-    }
+    break;
+  }
+  case State::kInitWaitForCorrespondance: {
+    // Wait until an image-header-pair arrives that has close time stamps.
+    bool corresponding = !headers_.empty() && !images_.empty();
+    if (corresponding) {
+      corresponding &= std::fabs((headers_.back()->stamp -
+                                  images_.back()->image.header.stamp)
+                                     .toSec()) < kMaxImageDelayThreshold;
     }
 
-    ros::spinOnce();
-    loop_rate.sleep();
+    if (corresponding) {
+      ROS_INFO("Found corresponding image %lu and header %u.",
+               images_.back()->number, headers_.back()->seq);
+
+      ROS_INFO("Setting image number to %lu: %s", images_.back()->number,
+               img_seq_pub_.getTopic().c_str());
+      std_msgs::UInt32 new_seq;
+      new_seq.data = images_.back()->number;
+      img_seq_pub_.publish(new_seq);
+
+      headers_.clear();
+      images_.clear();
+
+      setRate(rate_);
+      state_ = State::kRunning;
+    } else {
+      ROS_INFO("Waiting for first image header correspondance.");
+    }
+    break;
+  }
+  default: {
+    ROS_FATAL("Unhandled state %d", static_cast<int>(state_));
+    ros::shutdown();
+    break;
+  }
   }
 }
 
