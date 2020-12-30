@@ -36,7 +36,6 @@ private:
     kInit,
     kRunning,
     kCalibrating,
-    kResetAvg,
     kFinished
   };
 
@@ -57,6 +56,7 @@ private:
 
   CalibrationStatus calibration_ = CalibrationStatus::kInit;
   uint16_t smpl_prd_settings_;
+  uint16_t sens_avg_settings_;
 
   uint8_t dr_port_group_;
   uint8_t dr_pin_;

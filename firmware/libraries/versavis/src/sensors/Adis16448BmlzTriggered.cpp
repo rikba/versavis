@@ -102,11 +102,21 @@ bool Adis16448BmlzTriggered::read() {
         // Calibrate gyro offset.
         switch (calibration_) {
         case CalibrationStatus::kInit: {
+          // Set sensitivity to 0.01 deg/s/LSB
+          sens_avg_settings_ = imu_.regRead(SENS_AVG);
+          uint16_t sens_avg = (0b001 << 8) | (sens_avg_settings_ & 0xFF);
+          imu_.regWrite(SENS_AVG, sens_avg);
+
+          // Set number of samples.
           smpl_prd_settings_ = imu_.regRead(SMPL_PRD);
           uint8_t avg = IMU_CALIBRATION_SAMPLES;
           uint16_t smpl_prd = (avg << 8) | (smpl_prd_settings_ & 0xFF);
           imu_.regWrite(SMPL_PRD, smpl_prd);
-          nh_->loginfo("Start calibrating IMU bias.");
+          char buffer[150];
+          sprintf(buffer,
+                  "Start calibrating IMU gyro bias by averaging 2**%d samples.",
+                  avg);
+          nh_->loginfo(buffer);
           calibration_ = CalibrationStatus::kRunning;
           break;
         }
@@ -115,18 +125,18 @@ bool Adis16448BmlzTriggered::read() {
           break;
         }
         case CalibrationStatus::kCalibrating: {
-          nh_->loginfo("Calibrating IMU bias.");
+          char buffer[150];
+          sprintf(buffer, "Correcting IMU gyro bias [%u, %u, %u].",
+                  -imu_data[1], -imu_data[2], -imu_data[3]);
+          nh_->loginfo(buffer);
           uint16_t xgyro_off = -imu_data[1];
           uint16_t ygyro_off = -imu_data[2];
           uint16_t zgyro_off = -imu_data[3];
           imu_.regWrite(XGYRO_OFF, xgyro_off);
           imu_.regWrite(YGYRO_OFF, ygyro_off);
           imu_.regWrite(ZGYRO_OFF, zgyro_off);
-          calibration_ = CalibrationStatus::kResetAvg;
-          break;
-        }
-        case CalibrationStatus::kResetAvg: {
-          nh_->loginfo("Reset SMPL_PRD register.");
+          nh_->loginfo("Reset SENS_AVG and SMPL_PRD register.");
+          imu_.regWrite(SENS_AVG, sens_avg_settings_);
           imu_.regWrite(SMPL_PRD, smpl_prd_settings_);
           calibration_ = CalibrationStatus::kFinished;
           break;
