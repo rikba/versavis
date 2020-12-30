@@ -31,7 +31,9 @@ public:
     nh_private_.getParam("acc_cov", out_.linear_acceleration_covariance[8]);
 
     nh_private_.getParam("acc_scale", acc_scale_);
+    ROS_INFO("Accelerometer scale: %.6f", acc_scale_);
     nh_private_.getParam("gyro_scale", gyro_scale_);
+    ROS_INFO("Gyro scale: %.6f", gyro_scale_);
   }
 
 private:
