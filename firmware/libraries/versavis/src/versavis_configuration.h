@@ -39,7 +39,7 @@
 #define USE_ADIS16460
 #define IMU_TOPIC "/versavis/imu_micro"
 #define IMU_RATE 1000
-#define IMU_CALIBRATION_SAMPLES 9 // Power of 2**9 = 512 samples
+#define IMU_CALIBRATION_SAMPLES 12 // Power of 2**12 = 4096 samples
 
 /* ----- ExternalEvent -----*/
 #define EXT_EVENT
