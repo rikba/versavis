@@ -88,7 +88,7 @@
           <remap from="image_mono" to="synced/image_color"/>
           <remap from="image_rect" to="synced/image_rect_color"/>
         </node>
-      </group>  
+      </group>
 
     </group>
   </group>
