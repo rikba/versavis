@@ -26,11 +26,3 @@ generate_messages(
 catkin_package(
   CATKIN_DEPENDS message_runtime
 )
-
-############
-## EXPORT ##
-############
-# Install xml files
-install(FILES nodelet_plugin.xml
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
-)
