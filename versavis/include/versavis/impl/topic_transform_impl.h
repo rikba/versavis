@@ -24,9 +24,11 @@ TopicTransform<MsgIn, MsgOut>::TopicTransform(const ros::NodeHandle &nh,
 template <class MsgIn, class MsgOut>
 void TopicTransform<MsgIn, MsgOut>::callback(
     const typename MsgIn::ConstPtr &in) {
-  update(in);
-  typename MsgOut::ConstPtr out_ptr(new MsgOut(out_));
-  pub_.publish(out_ptr);
+  if (in->time.data != ros::Time()) {
+    update(in);
+    typename MsgOut::ConstPtr out_ptr(new MsgOut(out_));
+    pub_.publish(out_ptr);
+  }
 }
 
 } // namespace versavis

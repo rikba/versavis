@@ -81,7 +81,7 @@ void setup() {
 
   ext_clock->setupRos();
   radar->setupRos(RADAR_DATA_TOPIC);
-  lidar->setupRos(LIDAR_RATE_TOPIC, LIDAR_DATA_TOPIC);
+  lidar->setupRos(LIDAR_RATE_TOPIC, LIDAR_DATA_TOPIC);  
 }
 
 void loop() {
