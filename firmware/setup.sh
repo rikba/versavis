@@ -11,17 +11,20 @@ read install_arduino
 if [[ $install_arduino == "Y" || $install_arduino == "y" ]]; then
   wget https://downloads.arduino.cc/arduino-1.8.13-linux64.tar.xz
   tar -xf arduino-1.8.13-linux64.tar.xz
+  sudo ./arduino-1.8.13/install.sh
 fi
 
-./arduino-1.8.13/arduino --pref "sketchbook.path=/home/$HOSTNAME/catkin_ws/src/versavis/firmware"
-./arduino-1.8.13/arduino --pref "boardsmanager.additional.urls=https://github.com/ethz-asl/versavis_hw/raw/master/package_VersaVIS_index.json"
-./arduino-1.8.13/arduino --pref "build.path=/home/$HOSTNAME/catkin_ws/src/versavis/firmware/build"
+arduino --pref "sketchbook.path=/home/$HOSTNAME/catkin_ws/src/versavis/firmware"
+arduino --pref "boardsmanager.additional.urls=https://github.com/ethz-asl/versavis_hw/raw/master/package_VersaVIS_index.json"
+arduino --pref "build.path=/home/$HOSTNAME/catkin_ws/src/versavis/firmware/build"
 
 echo "Do you wish to install additional arduino boards? [y or Y to accept]"
 read install_boards
 if [[ $install_boards == "Y" || $install_boards == "y" ]]; then
-  ./arduino-1.8.13/arduino --install-boards arduino:samd
-  ./arduino-1.8.13/arduino --install-boards arduino:samd_beta
-  ./arduino-1.8.13/arduino --install-boards VersaVIS:samd
+  arduino --install-boards arduino:samd
+  arduino --install-boards arduino:samd_beta
+  arduino --install-boards VersaVIS:samd
 fi
-./arduino-1.8.13/arduino --upload --board VersaVIS:samd:VersaVIS --port /dev/versavis versavis_rtc/versavis_rtc.ino
+
+echo "Start building firmware."
+arduino --upload --board VersaVIS:samd:VersaVIS --port /dev/versavis versavis_rtc/versavis_rtc.ino
