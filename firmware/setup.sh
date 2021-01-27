@@ -18,17 +18,13 @@ if [[ $install_arduino == "Y" || $install_arduino == "y" ]]; then
   cd $CURRENT_DIR
 fi
 
-arduino --pref "sketchbook.path=/home/$HOSTNAME/catkin_ws/src/versavis/firmware"
-arduino --pref "boardsmanager.additional.urls=https://github.com/ethz-asl/versavis_hw/raw/master/package_VersaVIS_index.json"
-arduino --pref "build.path=/home/$HOSTNAME/catkin_ws/src/versavis/firmware/build"
-
 echo "Do you wish to install additional arduino boards? [y or Y to accept]"
 read install_boards
 if [[ $install_boards == "Y" || $install_boards == "y" ]]; then
   arduino --install-boards arduino:samd
   arduino --install-boards arduino:samd_beta
-  arduino --install-boards VersaVIS:samd
+  arduino --pref "boardsmanager.additional.urls=https://github.com/ethz-asl/versavis_hw/raw/master/package_VersaVIS_index.json" --install-boards VersaVIS:samd
 fi
 
 echo "Start building firmware."
-arduino --upload --board VersaVIS:samd:VersaVIS --port /dev/versavis versavis_rtc/versavis_rtc.ino
+arduino --upload --pref "sketchbook.path=/home/$HOSTNAME/catkin_ws/src/versavis/firmware" --pref "build.path=/home/$HOSTNAME/catkin_ws/src/versavis/firmware/build" --board VersaVIS:samd:VersaVIS --port /dev/versavis versavis_rtc/versavis_rtc.ino
