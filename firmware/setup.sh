@@ -8,7 +8,7 @@ rosrun rosserial_arduino make_libraries.py libraries
 
 echo "Do you wish to install the arduino CLI? [y or Y to accept]"
 read install_arduino
-if [[ $install_boards == "Y" || $install_boards == "y" ]]; then
+if [[ $install_arduino == "Y" || $install_arduino == "y" ]]; then
   wget https://downloads.arduino.cc/arduino-1.8.13-linux64.tar.xz
   tar -xf arduino-1.8.13-linux64.tar.xz
 fi
