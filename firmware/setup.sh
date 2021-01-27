@@ -9,9 +9,13 @@ rosrun rosserial_arduino make_libraries.py libraries
 echo "Do you wish to install the arduino CLI? [y or Y to accept]"
 read install_arduino
 if [[ $install_arduino == "Y" || $install_arduino == "y" ]]; then
+  CURRENT_DIR=$(pwd)
+  cd ~
   wget https://downloads.arduino.cc/arduino-1.8.13-linux64.tar.xz
   tar -xf arduino-1.8.13-linux64.tar.xz
+  rm arduino-1.8.13-linux64.tar.xz
   sudo ./arduino-1.8.13/install.sh
+  cd $CURRENT_DIR
 fi
 
 arduino --pref "sketchbook.path=/home/$HOSTNAME/catkin_ws/src/versavis/firmware"
