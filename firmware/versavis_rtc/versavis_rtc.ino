@@ -62,7 +62,7 @@ void setup() {
                                 CAM_EXP_COMPENSATION);
   cam0 = &bfly;
 
-  static ExternalClockGnss gnss(nh, &Serial, 115200);
+  static ExternalClockGnss gnss(nh, &Serial, 9600);
   ext_clock = &gnss;
 
   static UsD1 us_d1(nh, &Serial1);
