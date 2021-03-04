@@ -23,7 +23,13 @@ public:
   bool publish();
 
 protected:
-  enum class RemoteTimeStatus { kWaiting, kReceived, kTimeout, kReading };
+  enum class RemoteTimeStatus {
+    kInitialize,
+    kWaiting,
+    kReceived,
+    kTimeout,
+    kReading
+  };
   virtual RemoteTimeStatus setRemoteTime() = 0;
   versavis::ExtClk *clock_msg_ = NULL;
 

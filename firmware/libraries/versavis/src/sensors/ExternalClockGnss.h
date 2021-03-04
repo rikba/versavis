@@ -24,7 +24,8 @@ protected:
   NmeaParser nmea_parser_;
 
   // State
-  RemoteTimeStatus result_ = RemoteTimeStatus::kWaiting;
+  RemoteTimeStatus result_ = RemoteTimeStatus::kInitialize;
+  bool received_time_ = false;
 };
 
 #endif
