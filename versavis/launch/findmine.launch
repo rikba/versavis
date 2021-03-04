@@ -9,6 +9,7 @@
   <arg name="ns" default=""/>
   <arg name="output" default="screen"/>
   <arg name="image_transport" default="true"/>
+  <arg name="binning" default="1"/>
 
   <group ns="$(arg ns)">
     <!-- Camera driver. -->
@@ -41,6 +42,9 @@
 
         <param name="acquisition_frame_rate_enable" value="False"/>
         <param name="acquisition_frame_rate" value="20.0"/>
+
+        <param name="image_format_x_binning" value="$(arg binning)" />
+        <param name="image_format_y_binning" value="$(arg binning)" />
 
         <!-- Analog related config -->
         <param name="auto_gain" value="Continuous"/>
