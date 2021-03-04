@@ -15,6 +15,14 @@ ExternalClockGnss::ExternalClockGnss(ros::NodeHandle *nh, Uart *uart,
 ExternalClock::RemoteTimeStatus ExternalClockGnss::setRemoteTime() {
 
   switch (result_) {
+  case RemoteTimeStatus::kInitialize: {
+    // Clear buffer.
+    while (uart_->available()) {
+      uart_->read(); // Clear UART buffer.
+    }
+    received_time_ = false;
+    result_ = RemoteTimeStatus::kWaiting;
+  }
   case RemoteTimeStatus::kWaiting: {
     // Try to get time 200ms after last PPS and 200ms before next PPS.
     if (clock_msg_) {
@@ -43,25 +51,11 @@ ExternalClock::RemoteTimeStatus ExternalClockGnss::setRemoteTime() {
   case RemoteTimeStatus::kReading: {
     if (uart_ && uart_->available()) {
       auto nmea_result = nmea_parser_.parseChar(uart_->read());
-      bool received_time = (nmea_result == NmeaParser::SentenceType::kGpZda) &&
-                           (nmea_parser_.getGpZdaMessage().hundreths == 0);
+      received_time_ |= (nmea_result == NmeaParser::SentenceType::kGpZda) &&
+                        (nmea_parser_.getGpZdaMessage().hundreths == 0);
       // TODO(rikba): Actually the nmea parser should return an empty buffer.
-      if (received_time && uart_->available() > 1) {
-        // Ensure that the time on the serial is definitly the current time.
-        // There is more on the buffer left after receiving the time.
-        if (nh_) {
-          char warning[255];
-          sprintf(warning,
-                  "Data remaining on serial buffer after receiving GNSS time. "
-                  "Buffer size: %d",
-                  uart_->available());
-          nh_->logwarn(warning);
-        }
-        while (uart_->available()) {
-          uart_->read(); // Clear UART buffer.
-        }
-        result_ = RemoteTimeStatus::kTimeout;
-      } else if (received_time) {
+      // Is there more left on the buffer? Keep reading.
+      if (received_time_ && uart_->available() == 0) {
         DateTime date_time(nmea_parser_.getGpZdaMessage().year,
                            nmea_parser_.getGpZdaMessage().month,
                            nmea_parser_.getGpZdaMessage().day,
@@ -70,10 +64,6 @@ ExternalClock::RemoteTimeStatus ExternalClockGnss::setRemoteTime() {
                            nmea_parser_.getGpZdaMessage().second);
         if (clock_msg_) {
           clock_msg_->remote_time = ros::Time(date_time.unixtime(), 0);
-        }
-        // TODO(rikba): Actually the nmea parser should return an empty buffer.
-        while (uart_->available()) {
-          nmea_parser_.parseChar(uart_->read()); // Clear UART buffer.
         }
         result_ = RemoteTimeStatus::kReceived;
       }
@@ -91,15 +81,15 @@ ExternalClock::RemoteTimeStatus ExternalClockGnss::setRemoteTime() {
     break;
   }
   case RemoteTimeStatus::kReceived: {
-    result_ = RemoteTimeStatus::kWaiting;
+    result_ = RemoteTimeStatus::kInitialize;
     break;
   }
   case RemoteTimeStatus::kTimeout: {
-    result_ = RemoteTimeStatus::kWaiting;
+    result_ = RemoteTimeStatus::kInitialize;
     break;
   }
   default: {
-    result_ = RemoteTimeStatus::kWaiting;
+    result_ = RemoteTimeStatus::kInitialize;
     break;
   }
   }
