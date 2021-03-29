@@ -3,13 +3,17 @@
 <launch>
   <!-- camera name prefix -->
   <arg name="camera_name" default="bfly"/>
-  <arg name="camera_info_url" default="file://$(find versavis)/cfg/$(arg camera_name).yaml"/>
   <arg name="rate" default="1"/>
   <arg name="throttle" default="1"/>
   <arg name="ns" default=""/>
   <arg name="output" default="screen"/>
   <arg name="image_transport" default="true"/>
   <arg name="binning" default="1"/>
+
+  <arg name="camera_info_url" value="file://$(find versavis)/cfg/$(arg camera_name)_1.yaml"
+  if="$(eval arg binning == 1)"/>
+  <arg name="camera_info_url" value="file://$(find versavis)/cfg/$(arg camera_name)_2.yaml"
+  unless="$(eval binning == 1)"/>
 
   <group ns="$(arg ns)">
     <!-- Camera driver. -->
