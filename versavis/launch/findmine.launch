@@ -11,9 +11,9 @@
   <arg name="binning" default="1"/>
 
   <arg name="camera_info_url" value="file://$(find versavis)/cfg/$(arg camera_name)_1.yaml"
-  if="$(eval arg binning == 1)"/>
+  if="$(eval binning == 1)"/>
   <arg name="camera_info_url" value="file://$(find versavis)/cfg/$(arg camera_name)_2.yaml"
-  unless="$(eval binning == 1)"/>
+  if="$(eval binning == 2)"/>
 
   <group ns="$(arg ns)">
     <!-- Camera driver. -->
