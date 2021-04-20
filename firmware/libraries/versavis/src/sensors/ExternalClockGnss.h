@@ -20,6 +20,9 @@ public:
 protected:
   RemoteTimeStatus setRemoteTime() override;
 
+private:
+  void clearBuffer();
+
   Uart *uart_ = NULL;
   NmeaParser nmea_parser_;
 

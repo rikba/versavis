@@ -12,14 +12,16 @@ ExternalClockGnss::ExternalClockGnss(ros::NodeHandle *nh, Uart *uart,
   }
 }
 
+void ExternalClockGnss::clearBuffer() {
+  while (uart_->available()) {
+    uart_->read();
+  }
+}
+
 ExternalClock::RemoteTimeStatus ExternalClockGnss::setRemoteTime() {
 
   switch (result_) {
   case RemoteTimeStatus::kInitialize: {
-    // Clear buffer.
-    while (uart_->available()) {
-      uart_->read(); // Clear UART buffer.
-    }
     received_time_ = false;
     result_ = RemoteTimeStatus::kWaiting;
   }
@@ -66,6 +68,7 @@ ExternalClock::RemoteTimeStatus ExternalClockGnss::setRemoteTime() {
           clock_msg_->remote_time = ros::Time(date_time.unixtime(), 0);
         }
         result_ = RemoteTimeStatus::kReceived;
+        clearBuffer();
       }
     } else {
       auto now = RtcSync::getInstance().getTimeNow();
@@ -76,6 +79,7 @@ ExternalClock::RemoteTimeStatus ExternalClockGnss::setRemoteTime() {
           nh_->logerror("Timeout. No data on GNSS time buffer.");
         }
         result_ = RemoteTimeStatus::kTimeout;
+        clearBuffer();
       }
     }
     break;
