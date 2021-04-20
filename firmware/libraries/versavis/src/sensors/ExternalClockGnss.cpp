@@ -24,7 +24,7 @@ ExternalClock::RemoteTimeStatus ExternalClockGnss::setRemoteTime() {
     result_ = RemoteTimeStatus::kWaiting;
   }
   case RemoteTimeStatus::kWaiting: {
-    // Try to get time 200ms after last PPS and 200ms before next PPS.
+    // Try to get time 310ms after last PPS and 200ms before next PPS.
     if (clock_msg_) {
       auto now = RtcSync::getInstance().getTimeNow();
       auto duration_since_pulse = now - clock_msg_->receive_time;
@@ -42,7 +42,7 @@ ExternalClock::RemoteTimeStatus ExternalClockGnss::setRemoteTime() {
           nh_->logwarn(warning);
         }
         result_ = RemoteTimeStatus::kTimeout;
-      } else if (duration_sec > 0.2) {
+      } else if (duration_sec > 0.31) {
         result_ = RemoteTimeStatus::kReading;
       }
     }
